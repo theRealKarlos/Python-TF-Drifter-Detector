@@ -4,7 +4,6 @@ Configuration loader for Terraform Drift Detector Lambda.
 
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -12,7 +11,7 @@ class Config:
     """Configuration class for the drift detector."""
 
     s3_state_path: str
-    aws_region: Optional[str] = None
+    aws_region: str  # Always set
     log_level: str = "INFO"
     max_retries: int = 3
     timeout_seconds: int = 30
@@ -21,6 +20,10 @@ class Config:
 def load_config() -> Config:
     """
     Loads and validates configuration for the Lambda function.
+
+    The AWS region is set in this order of precedence:
+    1. AWS_REGION environment variable (if set)
+    2. Default: 'eu-west-2'
 
     Returns:
         Config object with validated settings
@@ -40,7 +43,7 @@ def load_config() -> Config:
         )
 
     # Optional configuration with defaults
-    aws_region = os.environ.get("AWS_REGION")
+    aws_region = os.environ.get("AWS_REGION", "eu-west-2")
     log_level = os.environ.get("LOG_LEVEL", "INFO")
     max_retries = int(os.environ.get("MAX_RETRIES", "3"))
     timeout_seconds = int(os.environ.get("TIMEOUT_SECONDS", "30"))

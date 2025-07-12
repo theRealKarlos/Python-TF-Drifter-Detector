@@ -6,12 +6,14 @@ Each resource type has its own comparator function that handles the specific att
 comparisons required for that resource type.
 """
 
+import json
+from datetime import datetime
 from typing import Any, Dict, List
 
-import boto3
 
-
-def compare_resources(state_data: Dict, live_resources: Dict) -> Dict[str, Any]:
+def compare_resources(
+    state_data: Dict[str, Any], live_resources: Dict[str, Any]
+) -> Dict[str, Any]:
     """
     Compares Terraform state resources with live AWS resources to identify drift.
 
@@ -26,46 +28,61 @@ def compare_resources(state_data: Dict, live_resources: Dict) -> Dict[str, Any]:
     Returns:
         Dictionary containing drift information and timestamp
     """
-    drifts = []
+    drifts: List[Dict[str, Any]] = []
 
     # Iterate through each resource in the Terraform state
     for resource in state_data.get("resources", []):
-        resource_type = resource.get("type", "")
-        resource_name = resource.get("name", "")
+        resource_type = resource.get("type")
+        resource_name = resource.get("name")
         resource_key = f"{resource_type}.{resource_name}"
 
-        # Check if resource exists in live AWS (Missing Resource Detection)
+        # Debug output for IAM role policy
+        if resource_key == "aws_iam_role_policy.github_actions":
+            print(f"DEBUG: Checking IAM role policy drift for {resource_key}")
+            print(f"DEBUG: Resource type: {resource_type}")
+            print(
+                f"DEBUG: State attributes: "
+                f"{resource.get('instances', [{}])[0].get('attributes', {})}"
+            )
+            if resource_key in live_resources:
+                print(f"DEBUG: Live attributes: {live_resources[resource_key]}")
+            else:
+                print("DEBUG: Resource not found in live_resources")
+
+        # Check if resource exists in live AWS
         if resource_key not in live_resources:
             drifts.append(
                 {
-                    "resource": resource_key,
-                    "type": "missing",
-                    "description": f"Resource {resource_key} exists in state but not in AWS",
+                    "resource_key": resource_key,
+                    "drift_type": "missing_resource",
+                    "description": f"Resource {resource_key} exists in state but not in live AWS",
                 }
             )
-        else:
-            # Resource exists in both state and live AWS - check for attribute drift
-            state_attrs = resource.get("instances", [{}])[0].get("attributes", {})
-            live_attrs = live_resources[resource_key]
+            continue
 
-            # Compare specific attributes based on resource type
-            drift_details = compare_attributes(state_attrs, live_attrs, resource_type)
-            if drift_details:
-                # mypy false positive: 'drift_details' is a List[Dict[str, Any]], which is valid
-                # for our JSON-like output structure. This suppression is safe and ensures all other
-                # type errors are still detected, as per best practice.
-                drifts.append(
-                    {
-                        "resource": resource_key,
-                        "type": "attribute_drift",
-                        "description": f"Attribute drift detected for {resource_key}",
-                        "details": drift_details,  # type: ignore
-                    }
-                )
+        # Compare attributes for existing resources
+        state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
+        live_attributes = live_resources[resource_key]
+
+        # Compare key attributes (customize based on resource type)
+        differences = compare_attributes(
+            state_attributes, live_attributes, resource_type
+        )
+
+        if differences:
+            drifts.append(
+                {
+                    "resource_key": resource_key,
+                    "drift_type": "attribute_drift",
+                    "description": f"Attribute drift detected for {resource_key}",
+                    "differences": differences,
+                }
+            )
 
     return {
         "drifts": drifts,
-        "timestamp": str(boto3.client("sts").get_caller_identity()["Account"]),
+        "total_drifts": len(drifts),
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -79,6 +96,10 @@ def compare_attributes(
     Each resource type has different key attributes that are important for drift detection.
     The comparison focuses on the most critical attributes for each resource type.
 
+    IMPORTANT: More specific resource types (e.g. aws_iam_role_policy) must be checked
+    before more general ones (e.g. aws_iam_role), otherwise the wrong comparator may be
+    called. This is a common source of subtle bugs.
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
@@ -90,6 +111,7 @@ def compare_attributes(
     drift_details = []
 
     # Route to appropriate comparator based on resource type
+    # Order matters: more specific types must come before general ones!
     if resource_type.startswith("aws_instance"):
         drift_details.extend(_compare_ec2_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_s3_bucket"):
@@ -98,6 +120,11 @@ def compare_attributes(
         drift_details.extend(_compare_dynamodb_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_lambda_function"):
         drift_details.extend(_compare_lambda_attributes(state_attrs, live_attrs))
+    elif resource_type.startswith("aws_iam_role_policy"):
+        # Must come before aws_iam_role!
+        drift_details.extend(
+            _compare_iam_role_policy_attributes(state_attrs, live_attrs)
+        )
     elif resource_type.startswith("aws_iam_role"):
         drift_details.extend(_compare_iam_role_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_iam_policy"):
@@ -126,7 +153,6 @@ def compare_attributes(
         drift_details.extend(
             _compare_cloudwatch_alarm_attributes(state_attrs, live_attrs)
         )
-
     return drift_details
 
 
@@ -230,6 +256,86 @@ def _compare_iam_role_attributes(
                 "attribute": "role_name",
                 "state_value": str(state_role_name),
                 "live_value": str(live_role_name),
+            }
+        )
+    return drift_details
+
+
+def _compare_iam_role_policy_attributes(
+    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """
+    Compare IAM role policy attributes between Terraform state and live AWS.
+    This comparator normalises policy document format differences (e.g. JSON string vs dict),
+    so only real content drift is reported. This prevents false positives when the state file
+    stores the policy as a JSON string and AWS returns it as a dict.
+
+    Args:
+        state_attrs: Attributes from Terraform state resource (may have policy as JSON string)
+        live_attrs: Attributes from live AWS resource (policy as dict)
+
+    Returns:
+        List of drift details for any mismatched attributes
+    """
+    drift_details = []
+    # Compare role name
+    state_role = state_attrs.get("role")
+    live_role = live_attrs.get("role_name")
+    if state_role != live_role:
+        drift_details.append(
+            {
+                "attribute": "role_name",
+                "state_value": str(state_role),
+                "live_value": str(live_role),
+            }
+        )
+    # Compare policy name
+    state_policy = state_attrs.get("name")
+    live_policy = live_attrs.get("policy_name")
+    if state_policy != live_policy:
+        drift_details.append(
+            {
+                "attribute": "policy_name",
+                "state_value": str(state_policy),
+                "live_value": str(live_policy),
+            }
+        )
+    # Compare policy document (normalized comparison)
+    state_policy_doc = state_attrs.get("policy")
+    live_policy_doc = live_attrs.get("policy")
+    if state_policy_doc and live_policy_doc:
+        try:
+            # Parse state policy if it's a string (Terraform state stores as JSON string)
+            if isinstance(state_policy_doc, str):
+                state_policy_parsed = json.loads(state_policy_doc)
+            else:
+                state_policy_parsed = state_policy_doc
+            # Compare the parsed content (dict vs dict)
+            if state_policy_parsed != live_policy_doc:
+                drift_details.append(
+                    {
+                        "attribute": "policy_document",
+                        "state_value": str(state_policy_doc),
+                        "live_value": str(live_policy_doc),
+                    }
+                )
+        except (json.JSONDecodeError, TypeError):
+            # If parsing fails, fall back to string comparison
+            if state_policy_doc != live_policy_doc:
+                drift_details.append(
+                    {
+                        "attribute": "policy_document",
+                        "state_value": str(state_policy_doc),
+                        "live_value": str(live_policy_doc),
+                    }
+                )
+    elif state_policy_doc != live_policy_doc:
+        # Handle case where one is None/empty and the other isn't
+        drift_details.append(
+            {
+                "attribute": "policy_document",
+                "state_value": str(state_policy_doc),
+                "live_value": str(live_policy_doc),
             }
         )
     return drift_details

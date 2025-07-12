@@ -1,6 +1,9 @@
 # Terraform Drift Detector
 
-A best-practice Python application for detecting drift between Terraform state and live AWS resources. Runs as an AWS Lambda function on an hourly schedule. Includes a lightweight React UI for visualising drift.
+> **⚠️ Lab Project Disclaimer**  
+> This is a **laboratory project** designed to demonstrate Python and AWS Lambda best practices. It is intended for educational purposes and learning about cloud infrastructure management, not for production use. The code showcases modern Python development practices, AWS integration patterns, and infrastructure-as-code concepts.
+
+A best-practice Python application for detecting drift between Terraform state and live AWS resources. Designed to run as an AWS Lambda function with comprehensive drift detection capabilities.
 
 ## Features
 
@@ -27,28 +30,7 @@ src/
 
 ## Development Setup (Python 3.13+)
 
-### 1. Automated Environment Setup
-
-**Windows/PowerShell:**
-
-```powershell
-# This script will:
-# - Check for Python 3.13
-# - Create a virtual environment (env/) with Python 3.13
-# - Install all dependencies and dev tools
-# - Run initial code quality checks and tests
-
-./scripts/dev-setup.ps1
-
-# To activate the virtual environment in a new shell, run:
-.\env\Scripts\Activate.ps1
-```
-
-**Unix/Linux:**
-
-- Manual setup is required (see below), or adapt the PowerShell script to Bash.
-
-### 2. Manual Setup (if not using dev-setup.ps1)
+### 1. Manual Setup
 
 ```powershell
 # Ensure you have Python 3.13 installed
@@ -64,31 +46,32 @@ python -m venv env
 pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration
+### 2. Environment Configuration
 
 ```powershell
 # Required
 $env:STATE_FILE_S3_PATH = 's3://your-bucket/path/to/terraform.tfstate'
 
 # Optional
+$env:AWS_REGION = 'eu-west-2'  # AWS region for all API calls (default: eu-west-2)
 $env:LOG_LEVEL = 'INFO'  # DEBUG, INFO, WARNING, ERROR
 $env:MAX_RETRIES = '3'
 $env:TIMEOUT_SECONDS = '30'
 ```
 
-### 4. Code Quality & Security Workflow
+- The AWS region is set in the config file (`src/config.py`) and defaults to `eu-west-2`.
+- You can override the region by setting the `AWS_REGION` environment variable.
 
-The lint script now includes:
+### 3. Code Quality & Security Workflow
+
+The project uses several code quality tools:
 
 - **flake8** (style checks)
 - **mypy** (type checks)
 - **Safety** (dependency security scan)
 
 ```powershell
-# Run all linting and security checks
-./scripts/lint.ps1
-
-# Or run individual tools:
+# Run individual tools:
 python -m flake8 src tests      # Linting
 python -m mypy src tests        # Type checking
 python -m black src tests       # Code formatting
@@ -98,7 +81,7 @@ python -m pytest tests/ -v      # Run tests
 ```
 
 **Troubleshooting tip:**
-If the lint script or dev-setup reports formatting or import sorting errors, you can fix them by running black and isort on the affected files or directories. For example:
+If you encounter formatting or import sorting errors, you can fix them by running black and isort on the affected files or directories. For example:
 
 ```powershell
 python -m black tests/
@@ -107,21 +90,11 @@ python -m isort tests/
 
 This will automatically reformat and sort imports in your test files.
 
-**For Unix/Linux systems:**
-
-```bash
-# Run all linting checks
-./scripts/lint.sh
-
-# Run with custom target
-./scripts/lint.sh "src"
-```
-
 #### Safety Setup
 
-- The first time you run the lint script, you may be prompted to register or log in to Safety (free account).
+- The first time you run Safety, you may be prompted to register or log in (free account).
 - Follow the instructions in your terminal to complete registration.
-- After setup, Safety will automatically scan your dependencies for known vulnerabilities every time you run the lint script.
+- After setup, Safety will automatically scan your dependencies for known vulnerabilities.
 
 ## Testing
 
@@ -140,7 +113,11 @@ python -m pytest tests/test_config.py -v
 
 ## Deployment
 
-Deployment is handled via Terraform and GitHub Actions (see infra/ and .github/workflows/).
+This is a lab project designed for educational purposes. For production deployment, you would need to:
+
+1. Set up AWS Lambda function with appropriate IAM permissions
+2. Configure environment variables for S3 state file access
+3. Set up CloudWatch logging and monitoring
 
 ### Lambda Configuration
 
@@ -150,6 +127,7 @@ Required environment variables:
 
 Optional environment variables:
 
+- `AWS_REGION`: AWS region for all API calls (default: eu-west-2)
 - `LOG_LEVEL`: Logging level (default: INFO)
 - `MAX_RETRIES`: Number of retries for AWS API calls (default: 3)
 - `TIMEOUT_SECONDS`: Timeout for AWS API calls (default: 30)
@@ -158,16 +136,25 @@ Optional environment variables:
 
 The drift detector supports comparison of the following AWS resources:
 
-- **EC2**: Instances, VPCs
-- **S3**: Buckets
-- **RDS**: Database instances
-- **DynamoDB**: Tables
-- **Lambda**: Functions
-- **IAM**: Roles and policies
-- **EventBridge**: Buses and rules
-- **ECS**: Clusters and services
-- **API Gateway**: REST APIs
-- **CloudWatch**: Dashboards and alarms
+- **EC2**: Instances, VPCs ⚠️ **Implemented but not tested**
+- **S3**: Buckets ✅ **Tested**
+- **RDS**: Database instances ⚠️ **Implemented but not tested**
+- **DynamoDB**: Tables ✅ **Tested**
+- **Lambda**: Functions ✅ **Tested**
+- **IAM**: Roles and policies (with special handling for IAM role policy document format differences; see below) ✅ **Tested**
+- **EventBridge**: Buses and rules ⚠️ **Implemented but not tested**
+- **ECS**: Clusters and services ⚠️ **Implemented but not tested**
+- **API Gateway**: REST APIs ⚠️ **Implemented but not tested**
+- **CloudWatch**: Dashboards and alarms ⚠️ **Implemented but not tested**
+
+**Legend:**
+
+- ✅ **Tested**: Resource type has been verified with real AWS resources and drift detection confirmed working
+- ⚠️ **Implemented but not tested**: Resource fetcher and comparator implemented, but not yet tested with live AWS resources
+
+### Special Handling: IAM Role Policy Normalization
+
+The drift detector normalises IAM role policy document comparisons. This means that differences in format (e.g. JSON string in state vs dict from AWS) do **not** cause false drift. Only real content differences are reported. This is implemented in the IAM role policy comparator in `src/drift_detector/resource_comparators.py`.
 
 ## Adding New Resource Types
 
@@ -177,6 +164,8 @@ To add support for new AWS resource types:
 2. Add comparator function to `src/drift_detector/resource_comparators.py`
 3. Register the new functions in the main routing logic
 4. Add corresponding tests
+
+**Important:** When adding new comparators, always register more specific resource types (e.g. `aws_iam_role_policy`) before more general ones (e.g. `aws_iam_role`) in the routing logic. This ensures the correct comparator is called and prevents subtle bugs.
 
 ## Code Quality Standards
 
@@ -188,14 +177,6 @@ To add support for new AWS resource types:
 - **Formatting**: Black and isort for consistent code style
 - **Security**: Safety scan for dependency vulnerabilities
 
-## Contributing
-
-1. Follow the established code style (Black + isort)
-2. Add type hints to all new functions
-3. Include comprehensive docstrings
-4. Write unit tests for new functionality
-5. Ensure all tests pass and linting is clean
-
 ## Troubleshooting
 
 ### Deprecation Warnings
@@ -203,8 +184,6 @@ To add support for new AWS resource types:
 The project suppresses deprecation warnings from the AWS SDK (`botocore`) that use the deprecated `datetime.datetime.utcnow()` method. This is configured in `pyproject.toml` and is a known issue in the AWS SDK that doesn't affect functionality.
 
 If you see other deprecation warnings, they can be addressed by updating dependencies or adding specific filters to the pytest configuration.
-
-### Common Issues
 
 ### Common Issues
 
@@ -222,3 +201,40 @@ $env:LOG_LEVEL = 'DEBUG'
 ```
 
 Check CloudWatch logs for detailed execution information.
+
+## Future Improvements
+
+This lab project demonstrates core drift detection concepts. For a production-ready system, consider these enhancements:
+
+### AWS Lambda Deployment
+
+- **Scheduled Execution**: Set up CloudWatch Events/EventBridge rules for hourly drift detection
+- **IAM Permissions**: Configure least-privilege IAM roles for Lambda execution
+- **Environment Variables**: Secure configuration management for S3 paths and AWS regions
+- **CloudWatch Logging**: Structured logging with proper log levels and filtering
+
+### React UI for Drift Visualization
+
+- **Real-time Dashboard**: Web interface showing current drift status
+- **Historical Tracking**: Timeline view of drift changes over time
+- **Resource Details**: Drill-down views for individual resource drift
+- **Alert Management**: Configure and manage drift notifications
+- **User Authentication**: Secure access control for drift reports
+
+### CI/CD Workflow Automation
+
+- **GitHub Actions**: Automated testing and deployment pipelines
+- **Terraform Infrastructure**: IaC for Lambda, S3, and supporting resources
+- **Security Scanning**: Automated dependency and code security checks
+- **Environment Promotion**: Staging to production deployment workflows
+- **Monitoring Integration**: CloudWatch alarms and SNS notifications
+
+### Enhanced Features
+
+- **Multi-Region Support**: Detect drift across multiple AWS regions
+- **Custom Resource Types**: Extensible framework for new AWS services
+- **Drift Remediation**: Automated fixes for common drift scenarios
+- **Integration APIs**: REST API for external system integration
+- **Advanced Filtering**: Resource type and attribute-based drift filtering
+
+These improvements would transform this educational project into a production-ready infrastructure monitoring solution.

@@ -71,9 +71,9 @@ class TestDriftDetector(unittest.TestCase):
         live_resources: dict = {}  # Simulate no live resources in AWS
         drift_report = compare_resources(self.sample_state, live_resources)
 
-        # There should be one drift, and its type should be 'missing'
+        # There should be one drift, and its type should be 'missing_resource'
         self.assertEqual(len(drift_report["drifts"]), 1)
-        self.assertEqual(drift_report["drifts"][0]["type"], "missing")
+        self.assertEqual(drift_report["drifts"][0]["drift_type"], "missing_resource")
 
 
 if __name__ == "__main__":
