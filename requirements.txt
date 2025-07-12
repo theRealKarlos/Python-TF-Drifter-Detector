@@ -1,0 +1,11 @@
+# Runtime dependencies
+boto3>=1.39.4,<2.0.0
+botocore>=1.39.4,<2.0.0
+
+# Development dependencies
+flake8>=7.3.0,<8.0.0
+pytest>=7.0.0,<8.0.0
+pytest-cov>=4.0.0,<5.0.0
+mypy>=1.0.0,<2.0.0
+black>=23.0.0,<24.0.0
+isort>=5.0.0,<6.0.0 
