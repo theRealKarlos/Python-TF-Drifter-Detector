@@ -75,4 +75,7 @@ addopts = [
     "--cov=src",
     "--cov-report=term-missing",
     "--cov-report=html",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:botocore.*",
 ] 

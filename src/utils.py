@@ -99,6 +99,7 @@ def parse_terraform_state(
 
     try:
         logger.info("Parsing Terraform state file")
+        print("DEBUG: state_content being parsed:", repr(state_content))
         state_data = json.loads(state_content)
         if not isinstance(state_data, dict):
             raise ValueError("State file did not parse to a dictionary.")
@@ -110,21 +111,3 @@ def parse_terraform_state(
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in state file: {e}")
         raise ValueError(f"Invalid JSON in state file: {e}")
-
-
-def get_resource_id(resource: Dict[str, Any]) -> str:
-    """
-    Extracts the resource ID from a Terraform state resource.
-
-    Args:
-        resource: Resource dict from Terraform state
-
-    Returns:
-        Resource ID as string
-    """
-    instances = resource.get("instances", [])
-    if instances and len(instances) > 0:
-        attributes = instances[0].get("attributes", {})
-        if isinstance(attributes, dict):
-            return str(attributes.get("id", ""))
-    return ""

@@ -93,7 +93,10 @@ def get_live_aws_resources(state_data: Dict) -> Dict[str, Any]:
 
 
 def _fetch_ec2_instances(ec2_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch EC2 instances from AWS."""
+    """
+    Fetch EC2 instances from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to instance data.
+    """
     try:
         response = ec2_client.describe_instances()
         live_resources = {}
@@ -107,7 +110,10 @@ def _fetch_ec2_instances(ec2_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_s3_buckets(s3_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch S3 buckets from AWS."""
+    """
+    Fetch S3 buckets from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to bucket data.
+    """
     try:
         response = s3_client.list_buckets()
         live_resources = {}
@@ -120,7 +126,10 @@ def _fetch_s3_buckets(s3_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_rds_instances(rds_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch RDS database instances from AWS."""
+    """
+    Fetch RDS database instances from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to database instance data.
+    """
     try:
         response = rds_client.describe_db_instances()
         live_resources = {}
@@ -133,7 +142,10 @@ def _fetch_rds_instances(rds_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_dynamodb_tables(dynamodb_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch DynamoDB tables from AWS."""
+    """
+    Fetch DynamoDB tables from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to table data.
+    """
     try:
         response = dynamodb_client.list_tables()
         live_resources = {}
@@ -147,7 +159,10 @@ def _fetch_dynamodb_tables(dynamodb_client: Any, resource_name: str) -> Dict[str
 
 
 def _fetch_lambda_functions(lambda_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch Lambda functions from AWS."""
+    """
+    Fetch Lambda functions from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to function data.
+    """
     try:
         response = lambda_client.list_functions()
         live_resources = {}
@@ -160,7 +175,10 @@ def _fetch_lambda_functions(lambda_client: Any, resource_name: str) -> Dict[str,
 
 
 def _fetch_iam_roles(iam_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch IAM roles from AWS."""
+    """
+    Fetch IAM roles from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to role data.
+    """
     try:
         response = iam_client.list_roles()
         live_resources = {}
@@ -173,7 +191,10 @@ def _fetch_iam_roles(iam_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_iam_policies(iam_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch IAM policies from AWS."""
+    """
+    Fetch IAM policies from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to policy data.
+    """
     try:
         response = iam_client.list_policies(Scope="Local")
         live_resources = {}
@@ -186,7 +207,10 @@ def _fetch_iam_policies(iam_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_eventbridge_buses(events_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch EventBridge buses from AWS."""
+    """
+    Fetch EventBridge buses from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to bus data.
+    """
     try:
         response = events_client.list_event_buses()
         live_resources = {}
@@ -199,7 +223,10 @@ def _fetch_eventbridge_buses(events_client: Any, resource_name: str) -> Dict[str
 
 
 def _fetch_eventbridge_rules(events_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch EventBridge rules from AWS."""
+    """
+    Fetch EventBridge rules from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to rule data.
+    """
     try:
         response = events_client.list_rules()
         live_resources = {}
@@ -212,7 +239,10 @@ def _fetch_eventbridge_rules(events_client: Any, resource_name: str) -> Dict[str
 
 
 def _fetch_ecs_clusters(ecs_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch ECS clusters from AWS."""
+    """
+    Fetch ECS clusters from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to cluster data.
+    """
     try:
         response = ecs_client.list_clusters()
         live_resources = {}
@@ -228,7 +258,10 @@ def _fetch_ecs_clusters(ecs_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_ecs_services(ecs_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch ECS services from AWS."""
+    """
+    Fetch ECS services from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to service data.
+    """
     try:
         response = ecs_client.list_services()
         live_resources = {}
@@ -244,7 +277,10 @@ def _fetch_ecs_services(ecs_client: Any, resource_name: str) -> Dict[str, Any]:
 
 
 def _fetch_vpcs(ec2_client: Any, resource_name: str) -> Dict[str, Any]:
-    """Fetch VPCs from AWS."""
+    """
+    Fetch VPCs from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to VPC data.
+    """
     try:
         response = ec2_client.describe_vpcs()
         live_resources = {}
@@ -259,7 +295,10 @@ def _fetch_vpcs(ec2_client: Any, resource_name: str) -> Dict[str, Any]:
 def _fetch_api_gateway_apis(
     apigateway_client: Any, resource_name: str
 ) -> Dict[str, Any]:
-    """Fetch API Gateway REST APIs from AWS."""
+    """
+    Fetch API Gateway REST APIs from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to API Gateway data.
+    """
     try:
         response = apigateway_client.get_rest_apis()
         live_resources = {}
@@ -274,7 +313,10 @@ def _fetch_api_gateway_apis(
 def _fetch_cloudwatch_dashboards(
     cloudwatch_client: Any, resource_name: str
 ) -> Dict[str, Any]:
-    """Fetch CloudWatch dashboards from AWS."""
+    """
+    Fetch CloudWatch dashboards from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to dashboard data.
+    """
     try:
         response = cloudwatch_client.list_dashboards()
         live_resources = {}
@@ -289,7 +331,10 @@ def _fetch_cloudwatch_dashboards(
 def _fetch_cloudwatch_alarms(
     cloudwatch_client: Any, resource_name: str
 ) -> Dict[str, Any]:
-    """Fetch CloudWatch alarms from AWS."""
+    """
+    Fetch CloudWatch alarms from AWS and map them by resource name for drift comparison.
+    Returns a dictionary of resource keys to alarm data.
+    """
     try:
         response = cloudwatch_client.describe_alarms()
         live_resources = {}

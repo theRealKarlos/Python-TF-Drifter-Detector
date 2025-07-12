@@ -1,10 +1,11 @@
 """
-Tests for drift detection functionality.
+Unit tests for drift detection logic in the Terraform Drift Detector Lambda.
+All AWS interactions are mocked to avoid real API calls.
 """
 
 import json
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from src.drift_detector import detect_drift
 from src.drift_detector.resource_comparators import compare_resources
@@ -21,23 +22,24 @@ class TestDriftDetector(unittest.TestCase):
         Set up a sample Terraform state for use in tests.
         """
         with open("tests/sample_state.json", "r") as f:
-            self.sample_state_json = f.read()
             f.seek(0)
             self.sample_state = json.load(f)
 
-    @patch("src.utils.download_s3_file")
+    # The order of patch decorators is important: boto3.client is patched before download_s3_file.
+    # This ensures the correct mock objects are injected into the test method.
     @patch("src.drift_detector.resource_fetchers.boto3.client")
+    @patch("src.drift_detector.core.download_s3_file")
     def test_detect_drift_success(
-        self, mock_boto3_client: MagicMock, mock_download: MagicMock
+        self, mock_download: MagicMock, mock_boto3_client: MagicMock
     ) -> None:
         """
         Test that drift detection completes successfully and returns the expected keys.
         All AWS clients and state file operations are mocked.
         """
-        # Mock the S3 download
-        mock_download.return_value = self.sample_state_json
+        # Mock the S3 download to return a valid JSON string
+        mock_download.return_value = json.dumps(self.sample_state)
 
-        # Mock all AWS clients to return empty responses
+        # Mock all AWS clients to return empty responses for all resource types
         mock_client = MagicMock()
         mock_client.describe_instances.return_value = {"Reservations": []}
         mock_client.list_buckets.return_value = {"Buckets": []}

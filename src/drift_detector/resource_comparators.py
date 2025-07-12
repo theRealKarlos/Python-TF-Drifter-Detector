@@ -133,7 +133,10 @@ def compare_attributes(
 def _compare_ec2_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare EC2 instance attributes."""
+    """
+    Compare EC2 instance attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details: List[Dict[str, Any]] = []
     state_instance_type = state_attrs.get("instance_type")
     live_instance_type = live_attrs.get("InstanceType")
@@ -151,7 +154,10 @@ def _compare_ec2_attributes(
 def _compare_s3_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare S3 bucket attributes."""
+    """
+    Compare S3 bucket attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_bucket_name = state_attrs.get("bucket")
     live_bucket_name = live_attrs.get("Name")
@@ -169,7 +175,10 @@ def _compare_s3_attributes(
 def _compare_dynamodb_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare DynamoDB table attributes."""
+    """
+    Compare DynamoDB table attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_table_name = state_attrs.get("name")
     live_table_name = live_attrs.get("TableName")
@@ -187,7 +196,10 @@ def _compare_dynamodb_attributes(
 def _compare_lambda_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare Lambda function attributes."""
+    """
+    Compare Lambda function attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_function_name = state_attrs.get("function_name")
     live_function_name = live_attrs.get("FunctionName")
@@ -205,7 +217,10 @@ def _compare_lambda_attributes(
 def _compare_iam_role_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare IAM role attributes."""
+    """
+    Compare IAM role attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_role_name = state_attrs.get("name")
     live_role_name = live_attrs.get("RoleName")
@@ -223,7 +238,10 @@ def _compare_iam_role_attributes(
 def _compare_iam_policy_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare IAM policy attributes."""
+    """
+    Compare IAM policy attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_policy_name = state_attrs.get("name")
     live_policy_name = live_attrs.get("PolicyName")
@@ -241,7 +259,10 @@ def _compare_iam_policy_attributes(
 def _compare_eventbridge_bus_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare EventBridge bus attributes."""
+    """
+    Compare EventBridge bus attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_bus_name = state_attrs.get("name")
     live_bus_name = live_attrs.get("Name")
@@ -259,7 +280,10 @@ def _compare_eventbridge_bus_attributes(
 def _compare_eventbridge_rule_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare EventBridge rule attributes."""
+    """
+    Compare EventBridge rule attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_rule_name = state_attrs.get("name")
     live_rule_name = live_attrs.get("Name")
@@ -277,7 +301,10 @@ def _compare_eventbridge_rule_attributes(
 def _compare_ecs_cluster_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare ECS cluster attributes."""
+    """
+    Compare ECS cluster attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_cluster_name = state_attrs.get("name")
     live_cluster_name = live_attrs.get("clusterName")
@@ -295,7 +322,10 @@ def _compare_ecs_cluster_attributes(
 def _compare_ecs_service_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare ECS service attributes."""
+    """
+    Compare ECS service attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_service_name = state_attrs.get("name")
     live_service_name = live_attrs.get("serviceName")
@@ -313,7 +343,10 @@ def _compare_ecs_service_attributes(
 def _compare_vpc_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare VPC attributes."""
+    """
+    Compare VPC attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_vpc_id = state_attrs.get("id")
     live_vpc_id = live_attrs.get("VpcId")
@@ -331,7 +364,10 @@ def _compare_vpc_attributes(
 def _compare_api_gateway_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare API Gateway REST API attributes."""
+    """
+    Compare API Gateway REST API attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_api_name = state_attrs.get("name")
     live_api_name = live_attrs.get("name")
@@ -349,7 +385,10 @@ def _compare_api_gateway_attributes(
 def _compare_cloudwatch_dashboard_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare CloudWatch dashboard attributes."""
+    """
+    Compare CloudWatch dashboard attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_dashboard_name = state_attrs.get("dashboard_name")
     live_dashboard_name = live_attrs.get("DashboardName")
@@ -367,7 +406,10 @@ def _compare_cloudwatch_dashboard_attributes(
 def _compare_cloudwatch_alarm_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[Dict[str, Any]]:
-    """Compare CloudWatch alarm attributes."""
+    """
+    Compare CloudWatch alarm attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
     drift_details = []
     state_alarm_name = state_attrs.get("alarm_name")
     live_alarm_name = live_attrs.get("AlarmName")

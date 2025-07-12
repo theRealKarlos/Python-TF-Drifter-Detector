@@ -39,6 +39,9 @@ src/
 # - Run initial code quality checks and tests
 
 ./scripts/dev-setup.ps1
+
+# To activate the virtual environment in a new shell, run:
+.\env\Scripts\Activate.ps1
 ```
 
 **Unix/Linux:**
@@ -53,6 +56,8 @@ python --version  # Should show Python 3.13.x
 
 # Create virtual environment
 python -m venv env
+
+# Activate the virtual environment
 .\env\Scripts\Activate.ps1
 
 # Install dependencies
@@ -91,6 +96,16 @@ python -m isort src tests       # Import sorting
 python -m safety scan           # Dependency security scan
 python -m pytest tests/ -v      # Run tests
 ```
+
+**Troubleshooting tip:**
+If the lint script or dev-setup reports formatting or import sorting errors, you can fix them by running black and isort on the affected files or directories. For example:
+
+```powershell
+python -m black tests/
+python -m isort tests/
+```
+
+This will automatically reformat and sort imports in your test files.
 
 **For Unix/Linux systems:**
 
@@ -182,6 +197,14 @@ To add support for new AWS resource types:
 5. Ensure all tests pass and linting is clean
 
 ## Troubleshooting
+
+### Deprecation Warnings
+
+The project suppresses deprecation warnings from the AWS SDK (`botocore`) that use the deprecated `datetime.datetime.utcnow()` method. This is configured in `pyproject.toml` and is a known issue in the AWS SDK that doesn't affect functionality.
+
+If you see other deprecation warnings, they can be addressed by updating dependencies or adding specific filters to the pytest configuration.
+
+### Common Issues
 
 ### Common Issues
 
