@@ -25,23 +25,41 @@ src/
     └── resource_comparators.py # Resource comparison logic
 ```
 
-## Development Setup
+## Development Setup (Python 3.13+)
 
-### 1. Install Dependencies
+### 1. Automated Environment Setup
+
+**Windows/PowerShell:**
 
 ```powershell
+# This script will:
+# - Check for Python 3.13
+# - Create a virtual environment (env/) with Python 3.13
+# - Install all dependencies and dev tools
+# - Run initial code quality checks and tests
+
+./scripts/dev-setup.ps1
+```
+
+**Unix/Linux:**
+
+- Manual setup is required (see below), or adapt the PowerShell script to Bash.
+
+### 2. Manual Setup (if not using dev-setup.ps1)
+
+```powershell
+# Ensure you have Python 3.13 installed
+python --version  # Should show Python 3.13.x
+
 # Create virtual environment
 python -m venv env
 .\env\Scripts\Activate.ps1
 
-# Install runtime dependencies
+# Install dependencies
 pip install -r requirements.txt
-
-# Install development dependencies
-pip install -e ".[dev]"
 ```
 
-### 2. Environment Configuration
+### 3. Environment Configuration
 
 ```powershell
 # Required
@@ -53,22 +71,42 @@ $env:MAX_RETRIES = '3'
 $env:TIMEOUT_SECONDS = '30'
 ```
 
-### 3. Code Quality Tools
+### 4. Code Quality & Security Workflow
+
+The lint script now includes:
+
+- **flake8** (style checks)
+- **mypy** (type checks)
+- **Safety** (dependency security scan)
 
 ```powershell
-# Linting
-python -m flake8 src tests
+# Run all linting and security checks
+./scripts/lint.ps1
 
-# Type checking
-python -m mypy src
-
-# Code formatting
-python -m black src tests
-python -m isort src tests
-
-# Run tests
-python -m pytest tests/ -v --cov=src --cov-report=html
+# Or run individual tools:
+python -m flake8 src tests      # Linting
+python -m mypy src tests        # Type checking
+python -m black src tests       # Code formatting
+python -m isort src tests       # Import sorting
+python -m safety scan           # Dependency security scan
+python -m pytest tests/ -v      # Run tests
 ```
+
+**For Unix/Linux systems:**
+
+```bash
+# Run all linting checks
+./scripts/lint.sh
+
+# Run with custom target
+./scripts/lint.sh "src"
+```
+
+#### Safety Setup
+
+- The first time you run the lint script, you may be prompted to register or log in to Safety (free account).
+- Follow the instructions in your terminal to complete registration.
+- After setup, Safety will automatically scan your dependencies for known vulnerabilities every time you run the lint script.
 
 ## Testing
 
@@ -133,6 +171,7 @@ To add support for new AWS resource types:
 - **Testing**: Unit tests with mocking for all AWS interactions
 - **Linting**: flake8 compliance with custom configuration
 - **Formatting**: Black and isort for consistent code style
+- **Security**: Safety scan for dependency vulnerabilities
 
 ## Contributing
 

@@ -6,9 +6,9 @@ build-backend = "setuptools.build_meta"
 name = "terraform-drift-detector"
 version = "0.1.0"
 description = "AWS Lambda for detecting Terraform drift"
-authors = [{name = "Your Name", email = "your.email@example.com"}]
+authors = [{name = "Karl Hitchcock", email = "karl.hitchcock@googlemail.com"}]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.13"
 dependencies = [
     "boto3>=1.39.4,<2.0.0",
     "botocore>=1.39.4,<2.0.0",
@@ -22,6 +22,7 @@ dev = [
     "mypy>=1.0.0,<2.0.0",
     "black>=23.0.0,<24.0.0",
     "isort>=5.0.0,<6.0.0",
+    "boto3-stubs[essential]>=1.39.0,<2.0.0",
 ]
 
 [tool.black]
@@ -49,7 +50,7 @@ line_length = 88
 known_first_party = ["src"]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

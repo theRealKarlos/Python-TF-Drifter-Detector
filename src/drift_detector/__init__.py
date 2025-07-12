@@ -15,4 +15,4 @@ The drift detection process:
 
 from .core import detect_drift
 
-__all__ = ['detect_drift']
+__all__ = ["detect_drift"]

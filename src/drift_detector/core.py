@@ -5,10 +5,11 @@ This module contains the main entry point for drift detection and coordinates
 the overall drift detection process across all supported AWS resource types.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from ..utils import download_s3_file, parse_terraform_state
-from .resource_fetchers import get_live_aws_resources
 from .resource_comparators import compare_resources
+from .resource_fetchers import get_live_aws_resources
 
 
 def detect_drift(config: Dict) -> Dict[str, Any]:
@@ -30,7 +31,7 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
     """
     try:
         # Step 1: Download and parse Terraform state file from S3
-        state_content = download_s3_file(config['s3_state_path'])
+        state_content = download_s3_file(config["s3_state_path"])
         state_data = parse_terraform_state(state_content)
 
         # Step 2: Fetch live AWS resources for comparison
@@ -41,19 +42,15 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
 
         # Step 4: Return comprehensive drift report with summary
         return {
-            'drift_detected': len(drift_report['drifts']) > 0,
-            'drifts': drift_report['drifts'],
-            'summary': {
-                'total_resources': len(state_data.get('resources', [])),
-                'drift_count': len(drift_report['drifts']),
-                'timestamp': drift_report['timestamp']
-            }
+            "drift_detected": len(drift_report["drifts"]) > 0,
+            "drifts": drift_report["drifts"],
+            "summary": {
+                "total_resources": len(state_data.get("resources", [])),
+                "drift_count": len(drift_report["drifts"]),
+                "timestamp": drift_report["timestamp"],
+            },
         }
 
     except Exception as e:
         # Handle any errors during drift detection and return error information
-        return {
-            'error': str(e),
-            'drift_detected': False,
-            'drifts': []
-        }
+        return {"error": str(e), "drift_detected": False, "drifts": []}

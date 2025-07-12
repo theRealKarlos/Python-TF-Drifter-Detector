@@ -3,20 +3,28 @@
 
 Write-Host "Setting up Terraform Drift Detector development environment..." -ForegroundColor Green
 
-# Check if Python is installed
+# Check for Python 3.13 specifically
+$python313 = $null
 try {
-    $pythonVersion = python --version
-    Write-Host "Python found: $pythonVersion" -ForegroundColor Green
-} catch {
-    Write-Host "Python not found. Please install Python 3.9 or later." -ForegroundColor Red
+    $python313 = & py -3.13 --version 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Python 3.13 found: $python313" -ForegroundColor Green
+    }
+    else {
+        throw
+    }
+}
+catch {
+    Write-Host "Python 3.13 not found. Please install Python 3.13 from https://www.python.org/downloads/ before continuing." -ForegroundColor Red
     exit 1
 }
 
-# Create virtual environment if it doesn't exist
+# Create virtual environment with Python 3.13 if it doesn't exist
 if (-not (Test-Path "env")) {
-    Write-Host "Creating virtual environment..." -ForegroundColor Yellow
-    python -m venv env
-} else {
+    Write-Host "Creating virtual environment with Python 3.13..." -ForegroundColor Yellow
+    & py -3.13 -m venv env
+}
+else {
     Write-Host "Virtual environment already exists." -ForegroundColor Yellow
 }
 
