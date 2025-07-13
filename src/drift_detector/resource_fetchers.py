@@ -102,8 +102,18 @@ def get_live_aws_resources(
                 _fetch_eventbridge_buses(events_client, resource_key, attributes)
             )
         elif resource_type.startswith("aws_cloudwatch_event_rule"):
+            # Create unique key for EventBridge rules using event bus name
+            event_bus_name = attributes.get("event_bus_name", "")
+            unique_resource_key = f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
             live_resources.update(
-                _fetch_eventbridge_rules(events_client, resource_key, attributes)
+                _fetch_eventbridge_rules(events_client, unique_resource_key, attributes)
+            )
+        elif resource_type.startswith("aws_cloudwatch_event_target"):
+            # Create unique key for EventBridge targets using event bus name
+            event_bus_name = attributes.get("event_bus_name", "")
+            unique_resource_key = f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            live_resources.update(
+                _fetch_eventbridge_targets(events_client, unique_resource_key, attributes)
             )
         elif resource_type.startswith("aws_ecs_cluster"):
             live_resources.update(
@@ -460,23 +470,71 @@ def _fetch_eventbridge_rules(
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge rules from AWS and map them by resource key for drift comparison.
+    Only searches the specific event bus given in the Terraform state. If no event_bus_name is present,
+    does not search or return any rules. This strictness avoids false positives from fallback logic.
     Returns a dictionary of resource keys to rule data.
     """
     try:
-        response = events_client.list_rules()
+        event_bus_name = attributes.get("event_bus_name")
+        if not event_bus_name:
+            # No event bus specified in state, do not search (strict, avoids false positives)
+            return {}
+        response = events_client.list_rules(EventBusName=event_bus_name)
         live_resources = {}
-        rule_name = attributes.get("name") or attributes.get("id")
+        rule_name = attributes.get("name")
 
         for rule in response["Rules"]:
             if rule_name and rule["Name"] == rule_name:
                 live_resources[resource_key] = rule
                 return live_resources
 
-        # If no exact match, return empty dict (no fallback)
-        # This ensures we only report drift when there's a real mismatch
+        # No match found, return empty dict (no fallback)
         return live_resources
     except Exception as e:
         print(f"Error fetching EventBridge rules: {e}")
+        return {}
+
+
+def _fetch_eventbridge_targets(
+    events_client: Any, resource_key: str, attributes: Dict
+) -> Dict[str, Any]:
+    """
+    Fetch EventBridge targets from AWS and map them by resource key for drift comparison.
+    Only searches the specific event bus and rule given in the Terraform state. If no event_bus_name
+    or rule name is present, does not search or return any targets. This strictness avoids false positives.
+    Returns a dictionary of resource keys to target data.
+    """
+    try:
+        event_bus_name = attributes.get("event_bus_name")
+        rule_name = attributes.get("rule")
+        target_id = attributes.get("target_id")
+        
+        print(f"DEBUG: Fetching EventBridge target - event_bus: {event_bus_name}, rule: {rule_name}, target_id: {target_id}")
+        
+        if not event_bus_name or not rule_name:
+            # No event bus or rule specified in state, do not search (strict, avoids false positives)
+            print(f"DEBUG: Missing event_bus_name or rule_name, skipping")
+            return {}
+            
+        response = events_client.list_targets_by_rule(
+            Rule=rule_name,
+            EventBusName=event_bus_name
+        )
+        live_resources = {}
+        
+        print(f"DEBUG: Found {len(response['Targets'])} targets in AWS")
+        for target in response["Targets"]:
+            print(f"DEBUG: Checking target {target['Id']} against {target_id}")
+            if target_id and target["Id"] == target_id:
+                print(f"DEBUG: Match found! Adding to live_resources")
+                live_resources[resource_key] = target
+                return live_resources
+
+        print(f"DEBUG: No match found for target_id {target_id}")
+        # No match found, return empty dict (no fallback)
+        return live_resources
+    except Exception as e:
+        print(f"Error fetching EventBridge targets: {e}")
         return {}
 
 

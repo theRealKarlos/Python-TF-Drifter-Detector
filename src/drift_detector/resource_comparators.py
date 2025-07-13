@@ -36,6 +36,18 @@ def compare_resources(
         resource_name = resource.get("name")
         resource_key = f"{resource_type}.{resource_name}"
 
+        # Handle EventBridge rules specially - create unique key with event bus name
+        if resource_type.startswith("aws_cloudwatch_event_rule"):
+            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
+            event_bus_name = state_attributes.get("event_bus_name", "")
+            unique_resource_key = f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+        elif resource_type.startswith("aws_cloudwatch_event_target"):
+            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
+            event_bus_name = state_attributes.get("event_bus_name", "")
+            unique_resource_key = f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+        else:
+            unique_resource_key = resource_key
+
         # Debug output for IAM role policy
         if resource_key == "aws_iam_role_policy.github_actions":
             print(f"DEBUG: Checking IAM role policy drift for {resource_key}")
@@ -44,13 +56,13 @@ def compare_resources(
                 f"DEBUG: State attributes: "
                 f"{resource.get('instances', [{}])[0].get('attributes', {})}"
             )
-            if resource_key in live_resources:
-                print(f"DEBUG: Live attributes: {live_resources[resource_key]}")
+            if unique_resource_key in live_resources:
+                print(f"DEBUG: Live attributes: {live_resources[unique_resource_key]}")
             else:
                 print("DEBUG: Resource not found in live_resources")
 
         # Check if resource exists in live AWS
-        if resource_key not in live_resources:
+        if unique_resource_key not in live_resources:
             drifts.append(
                 {
                     "resource_key": resource_key,
@@ -62,7 +74,7 @@ def compare_resources(
 
         # Compare attributes for existing resources
         state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
-        live_attributes = live_resources[resource_key]
+        live_attributes = live_resources[unique_resource_key]
 
         # Compare key attributes (customize based on resource type)
         differences = compare_attributes(
@@ -136,6 +148,10 @@ def compare_attributes(
     elif resource_type.startswith("aws_cloudwatch_event_rule"):
         drift_details.extend(
             _compare_eventbridge_rule_attributes(state_attrs, live_attrs)
+        )
+    elif resource_type.startswith("aws_cloudwatch_event_target"):
+        drift_details.extend(
+            _compare_eventbridge_target_attributes(state_attrs, live_attrs)
         )
     elif resource_type.startswith("aws_ecs_cluster"):
         drift_details.extend(_compare_ecs_cluster_attributes(state_attrs, live_attrs))
@@ -399,6 +415,38 @@ def _compare_eventbridge_rule_attributes(
                 "attribute": "rule_name",
                 "state_value": str(state_rule_name),
                 "live_value": str(live_rule_name),
+            }
+        )
+    return drift_details
+
+
+def _compare_eventbridge_target_attributes(
+    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
+) -> List[Dict[str, Any]]:
+    """
+    Compare EventBridge target attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
+    drift_details = []
+    state_target_id = state_attrs.get("target_id")
+    live_target_id = live_attrs.get("Id")
+    if state_target_id != live_target_id:
+        drift_details.append(
+            {
+                "attribute": "target_id",
+                "state_value": str(state_target_id),
+                "live_value": str(live_target_id),
+            }
+        )
+    
+    state_arn = state_attrs.get("arn")
+    live_arn = live_attrs.get("Arn")
+    if state_arn != live_arn:
+        drift_details.append(
+            {
+                "attribute": "arn",
+                "state_value": str(state_arn),
+                "live_value": str(live_arn),
             }
         )
     return drift_details
