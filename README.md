@@ -78,6 +78,13 @@ python -m black src tests       # Code formatting
 python -m isort src tests       # Import sorting
 python -m safety scan           # Dependency security scan
 python -m pytest tests/ -v      # Run tests
+
+# Or use the provided scripts:
+# Windows (PowerShell):
+.\scripts\lint.ps1 src,tests
+
+# Linux/macOS (bash):
+./scripts/lint.sh src,tests
 ```
 
 **Troubleshooting tip:**
@@ -96,7 +103,75 @@ This will automatically reformat and sort imports in your test files.
 - Follow the instructions in your terminal to complete registration.
 - After setup, Safety will automatically scan your dependencies for known vulnerabilities.
 
-## Testing
+## Running the Drift Detector
+
+### Local Execution with Real S3 Path
+
+While this project is designed to run as an AWS Lambda function, we provide local execution tools for **development, testing, and debugging** with real Terraform state files. This is particularly useful for:
+
+- **Testing drift detection** with your actual infrastructure state files
+- **Debugging drift issues** with detailed logging and error messages
+- **CI/CD integration** for automated drift detection in pipelines
+- **Development workflow** without needing to deploy Lambda functions
+
+#### Why Local Execution Instead of Lambda?
+
+The `src/main.py` file contains the AWS Lambda handler function, which is designed for AWS's serverless environment. While you _could_ run it locally by mocking the Lambda event and context, our approach provides several advantages:
+
+**Lambda Function Limitations for Local Use:**
+
+- Expects Lambda event/context objects
+- Returns HTTP-style responses with status codes
+- Configuration via environment variables only
+- Designed for AWS Lambda runtime environment
+
+**Our Local Tools Provide:**
+
+- **Command-line interface** with flexible parameters
+- **Better error handling** and debugging output
+- **Multiple output formats** (pretty, JSON) for different use cases
+- **Direct access** to core drift detection logic
+- **Easy integration** into scripts and automation
+
+### Running the Drift Detector Locally
+
+You can run the drift detector locally with a real S3 path using the provided command-line script:
+
+```powershell
+# Basic usage with S3 path
+python run_drift_detector.py --s3-path s3://your-bucket/path/to/terraform.tfstate
+
+# Specify AWS region
+python run_drift_detector.py --s3-path s3://your-bucket/terraform.tfstate --region us-east-1
+
+# Enable debug logging
+python run_drift_detector.py --s3-path s3://your-bucket/terraform.tfstate --log-level DEBUG
+
+# Output as JSON format
+python run_drift_detector.py --s3-path s3://your-bucket/terraform.tfstate --output-format json
+
+# Using PowerShell script (Windows)
+.\scripts\run-drift-detector.ps1 -S3Path "s3://your-bucket/terraform.tfstate" -Region "us-east-1" -LogLevel "DEBUG"
+
+# Using bash script (Linux/macOS)
+./scripts/lint.sh src,tests
+
+# Note: PowerShell parameters are case-insensitive, but log level values should be uppercase
+# Valid log levels: DEBUG, INFO, WARNING, ERROR
+```
+
+**Prerequisites:**
+
+- AWS credentials configured (via AWS CLI, environment variables, or IAM roles)
+- Python 3.13+ and virtual environment set up
+- Dependencies installed (`pip install -r requirements.txt`)
+
+**Exit Codes:**
+
+- `0`: No drift detected
+- `1`: Drift detected or error occurred
+
+### Testing
 
 The project includes comprehensive unit tests with mocking for AWS services:
 
