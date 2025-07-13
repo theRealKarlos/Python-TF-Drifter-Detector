@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 from pathlib import Path
+
 from src.drift_detector import detect_drift
 from src.utils import parse_terraform_state
 
@@ -31,21 +32,25 @@ def test_with_local_state() -> None:
     aws_region = os.environ.get("AWS_REGION", "eu-west-2")
     try:
         print(f"Reading state file: {state_file_path}")
-        with open(state_file_path, 'r') as f:
+        with open(state_file_path, "r") as f:
             state_content = f.read()
         state_data = parse_terraform_state(state_content)
-        print(f"Parsed state file with {len(state_data.get('resources', []))} resources")
+        print(
+            f"Parsed state file with {len(state_data.get('resources', []))} resources"
+        )
         config = {
             "s3_state_path": "local://" + state_file_path,
             "log_level": log_level,
-            "aws_region": aws_region
+            "aws_region": aws_region,
         }
         print("Starting drift detection...")
         result = detect_drift(config)
         assert isinstance(result, dict)
         assert "drift_detected" in result
         assert "drifts" in result
-        print(f"Drift detection completed. Drift detected: {result.get('drift_detected', False)}")
+        print(
+            f"Drift detection completed. Drift detected: {result.get('drift_detected', False)}"
+        )
     except Exception as e:
         print(f"Error during drift detection: {e}")
         pass

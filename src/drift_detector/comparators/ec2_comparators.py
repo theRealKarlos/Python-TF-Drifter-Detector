@@ -12,16 +12,16 @@ def compare_ec2_attributes(
 ) -> List[Dict[str, Any]]:
     """
     Compare EC2 resource attributes between Terraform state and live AWS.
-    
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
-        
+
     Returns:
         List of drift details for any mismatched attributes
     """
     drift_details: List[Dict[str, Any]] = []
-    
+
     # Compare instance type for EC2 instances
     state_instance_type = state_attrs.get("instance_type")
     live_instance_type = live_attrs.get("InstanceType")
@@ -33,7 +33,7 @@ def compare_ec2_attributes(
                 "live_value": str(live_instance_type),
             }
         )
-    
+
     # Compare VPC ID for VPCs
     state_vpc_id = state_attrs.get("id")
     live_vpc_id = live_attrs.get("VpcId")
@@ -45,5 +45,5 @@ def compare_ec2_attributes(
                 "live_value": str(live_vpc_id),
             }
         )
-    
-    return drift_details 
+
+    return drift_details

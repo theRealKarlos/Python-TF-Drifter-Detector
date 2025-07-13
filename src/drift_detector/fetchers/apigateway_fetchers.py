@@ -12,12 +12,12 @@ def fetch_apigateway_resources(
 ) -> Dict[str, Any]:
     """
     Fetch API Gateway resources from AWS.
-    
+
     Args:
         apigateway_client: Boto3 API Gateway client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -46,4 +46,4 @@ def _fetch_api_gateway_apis(
         return live_resources
     except Exception as e:
         print(f"Error fetching API Gateway REST APIs: {e}")
-        return {} 
+        return {}

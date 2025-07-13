@@ -12,12 +12,12 @@ def fetch_rds_resources(
 ) -> Dict[str, Any]:
     """
     Fetch RDS resources from AWS.
-    
+
     Args:
         rds_client: Boto3 RDS client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -46,4 +46,4 @@ def _fetch_rds_instances(
         return live_resources
     except Exception as e:
         print(f"Error fetching RDS instances: {e}")
-        return {} 
+        return {}

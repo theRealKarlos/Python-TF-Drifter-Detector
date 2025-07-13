@@ -13,12 +13,12 @@ def compare_iam_attributes(
 ) -> List[Dict[str, Any]]:
     """
     Compare IAM resource attributes between Terraform state and live AWS.
-    
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
         resource_type: Type of IAM resource
-        
+
     Returns:
         List of drift details for any mismatched attributes
     """
@@ -174,4 +174,4 @@ def _compare_iam_openid_connect_provider_attributes(
                 "live_value": str(live_provider_arn),
             }
         )
-    return drift_details 
+    return drift_details

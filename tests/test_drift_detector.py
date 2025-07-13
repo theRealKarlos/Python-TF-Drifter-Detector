@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from src.drift_detector import detect_drift
-from src.drift_detector.resource_comparators import compare_resources
+from src.drift_detector.comparators import compare_resources
 
 
 class TestDriftDetector(unittest.TestCase):

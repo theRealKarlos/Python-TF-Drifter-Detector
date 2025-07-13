@@ -12,13 +12,13 @@ def fetch_ec2_resources(
 ) -> Dict[str, Any]:
     """
     Fetch EC2 resources from AWS based on resource type.
-    
+
     Args:
         ec2_client: Boto3 EC2 client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of EC2 resource (optional, for routing)
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -75,4 +75,4 @@ def _fetch_vpcs(ec2_client: Any, resource_key: str, attributes: Dict) -> Dict[st
         return live_resources
     except Exception as e:
         print(f"Error fetching VPCs: {e}")
-        return {} 
+        return {}

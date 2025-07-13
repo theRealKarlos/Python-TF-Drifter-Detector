@@ -12,12 +12,12 @@ def compare_events_attributes(
 ) -> List[Dict[str, Any]]:
     """
     Compare EventBridge resource attributes between Terraform state and live AWS.
-    
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
         resource_type: Type of EventBridge resource
-        
+
     Returns:
         List of drift details for any mismatched attributes
     """
@@ -91,7 +91,7 @@ def _compare_eventbridge_target_attributes(
                 "live_value": str(live_target_id),
             }
         )
-    
+
     state_arn = state_attrs.get("arn")
     live_arn = live_attrs.get("Arn")
     if state_arn != live_arn:
@@ -102,4 +102,4 @@ def _compare_eventbridge_target_attributes(
                 "live_value": str(live_arn),
             }
         )
-    return drift_details 
+    return drift_details

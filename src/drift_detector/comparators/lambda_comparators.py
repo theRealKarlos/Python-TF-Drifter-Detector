@@ -4,7 +4,6 @@ Lambda Resource Comparators Module.
 This module contains functions for comparing Lambda-related AWS resources.
 """
 
-import json
 from typing import Any, Dict, List
 
 
@@ -13,12 +12,12 @@ def compare_lambda_attributes(
 ) -> List[Dict[str, Any]]:
     """
     Compare Lambda resource attributes between Terraform state and live AWS.
-    
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
         resource_type: Type of Lambda resource (optional, for routing)
-        
+
     Returns:
         List of drift details for any mismatched attributes
     """
@@ -67,7 +66,7 @@ def _compare_lambda_permission_attributes(
                 "live_value": str(live_statement_id),
             }
         )
-    
+
     state_action = state_attrs.get("action")
     live_action = live_attrs.get("Action")
     if state_action != live_action:
@@ -78,17 +77,17 @@ def _compare_lambda_permission_attributes(
                 "live_value": str(live_action),
             }
         )
-    
+
     state_principal = state_attrs.get("principal")
     live_principal = live_attrs.get("Principal")
-    
+
     # Handle different principal formats
     # State might have "events.amazonaws.com" while AWS returns {"Service": "events.amazonaws.com"}
     if isinstance(live_principal, dict) and "Service" in live_principal:
         live_principal_service = live_principal["Service"]
     else:
         live_principal_service = live_principal
-        
+
     if state_principal != live_principal_service:
         drift_details.append(
             {
@@ -97,4 +96,4 @@ def _compare_lambda_permission_attributes(
                 "live_value": str(live_principal),
             }
         )
-    return drift_details 
+    return drift_details

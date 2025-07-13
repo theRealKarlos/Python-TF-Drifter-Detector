@@ -12,12 +12,12 @@ def fetch_dynamodb_resources(
 ) -> Dict[str, Any]:
     """
     Fetch DynamoDB resources from AWS.
-    
+
     Args:
         dynamodb_client: Boto3 DynamoDB client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -49,4 +49,4 @@ def _fetch_dynamodb_tables(
         return live_resources
     except Exception as e:
         print(f"Error fetching DynamoDB tables: {e}")
-        return {} 
+        return {}

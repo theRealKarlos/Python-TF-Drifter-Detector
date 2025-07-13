@@ -10,7 +10,8 @@ comparator logic for IAM role policies.
 
 import sys
 from pathlib import Path
-from src.drift_detector.resource_comparators import _compare_iam_role_policy_attributes
+
+from src.drift_detector.comparators.iam_comparators import _compare_iam_role_policy_attributes
 
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -35,9 +36,9 @@ def test_policy_comparison() -> None:
                 {
                     "Action": ["lambda:CreateFunction"],
                     "Effect": "Allow",
-                    "Resource": "*"
+                    "Resource": "*",
                 }
-            ]
+            ],
         },
     }
     drift_details = _compare_iam_role_policy_attributes(state_attrs, live_attrs)
@@ -50,8 +51,12 @@ def test_policy_comparison() -> None:
     print(f"Live policy type: {type(live_attrs['policy'])}")
     print(f"Drift details found: {len(drift_details)}")
     for detail in drift_details:
-        print(f"  - {detail['attribute']}: {detail['state_value']} -> {detail['live_value']}")
-    assert len(drift_details) == 0, f"Expected no drift details, but found {len(drift_details)}"
+        print(
+            f"  - {detail['attribute']}: {detail['state_value']} -> {detail['live_value']}"
+        )
+    assert (
+        len(drift_details) == 0
+    ), f"Expected no drift details, but found {len(drift_details)}"
     print("✅ SUCCESS: No drift detected - format differences handled correctly!")
 
 

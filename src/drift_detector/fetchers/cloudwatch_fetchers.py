@@ -12,13 +12,13 @@ def fetch_cloudwatch_resources(
 ) -> Dict[str, Any]:
     """
     Fetch CloudWatch resources from AWS based on resource type.
-    
+
     Args:
         cloudwatch_client: Boto3 CloudWatch client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of CloudWatch resource
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -77,4 +77,4 @@ def _fetch_cloudwatch_alarms(
         return live_resources
     except Exception as e:
         print(f"Error fetching CloudWatch alarms: {e}")
-        return {} 
+        return {}

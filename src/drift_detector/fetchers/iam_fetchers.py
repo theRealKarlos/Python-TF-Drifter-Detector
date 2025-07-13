@@ -12,13 +12,13 @@ def fetch_iam_resources(
 ) -> Dict[str, Any]:
     """
     Fetch IAM resources from AWS based on resource type.
-    
+
     Args:
         iam_client: Boto3 IAM client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of IAM resource
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -190,4 +190,4 @@ def _fetch_iam_openid_connect_providers(
         return live_resources
     except Exception as e:
         print(f"Error fetching IAM OpenID Connect providers: {e}")
-        return {} 
+        return {}

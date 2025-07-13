@@ -5,21 +5,21 @@ This module contains the main orchestration logic for comparing Terraform state 
 with live AWS resources to identify drift.
 """
 
-import json
 from datetime import datetime
 from typing import Any, Dict, List
 
-# Import service-specific comparators
-from .ec2_comparators import compare_ec2_attributes
-from .s3_comparators import compare_s3_attributes
-from .rds_comparators import compare_rds_attributes
-from .dynamodb_comparators import compare_dynamodb_attributes
-from .lambda_comparators import compare_lambda_attributes
-from .iam_comparators import compare_iam_attributes
-from .events_comparators import compare_events_attributes
-from .ecs_comparators import compare_ecs_attributes
 from .apigateway_comparators import compare_apigateway_attributes
 from .cloudwatch_comparators import compare_cloudwatch_attributes
+from .dynamodb_comparators import compare_dynamodb_attributes
+
+# Import service-specific comparators
+from .ec2_comparators import compare_ec2_attributes
+from .ecs_comparators import compare_ecs_attributes
+from .events_comparators import compare_events_attributes
+from .iam_comparators import compare_iam_attributes
+from .lambda_comparators import compare_lambda_attributes
+from .rds_comparators import compare_rds_attributes
+from .s3_comparators import compare_s3_attributes
 
 
 def compare_resources(
@@ -51,18 +51,24 @@ def compare_resources(
         if resource_type.startswith("aws_cloudwatch_event_rule"):
             state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
             event_bus_name = state_attributes.get("event_bus_name", "")
-            unique_resource_key = f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            unique_resource_key = (
+                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            )
         elif resource_type.startswith("aws_cloudwatch_event_target"):
             state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
             event_bus_name = state_attributes.get("event_bus_name", "")
-            unique_resource_key = f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            unique_resource_key = (
+                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            )
         elif resource_type.startswith("aws_lambda_permission"):
             state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
             function_name = state_attributes.get("function_name", "")
             if function_name.startswith("arn:aws:lambda:"):
                 # Extract function name from ARN
                 function_name = function_name.split(":")[-1]
-            unique_resource_key = f"{resource_key}_{function_name}" if function_name else resource_key
+            unique_resource_key = (
+                f"{resource_key}_{function_name}" if function_name else resource_key
+            )
         else:
             unique_resource_key = resource_key
 
@@ -152,22 +158,46 @@ def compare_attributes(
         drift_details.extend(compare_lambda_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_iam_role_policy"):
         # Must come before aws_iam_role!
-        drift_details.extend(compare_iam_attributes(state_attrs, live_attrs, resource_type))
-    elif resource_type.startswith("aws_iam_role") or resource_type.startswith("aws_iam_policy") or resource_type.startswith("aws_iam_openid_connect_provider"):
-        drift_details.extend(compare_iam_attributes(state_attrs, live_attrs, resource_type))
-    elif resource_type.startswith("aws_cloudwatch_event_bus") or resource_type.startswith("aws_cloudwatch_event_rule") or resource_type.startswith("aws_cloudwatch_event_target"):
-        drift_details.extend(compare_events_attributes(state_attrs, live_attrs, resource_type))
+        drift_details.extend(
+            compare_iam_attributes(state_attrs, live_attrs, resource_type)
+        )
+    elif (
+        resource_type.startswith("aws_iam_role")
+        or resource_type.startswith("aws_iam_policy")
+        or resource_type.startswith("aws_iam_openid_connect_provider")
+    ):
+        drift_details.extend(
+            compare_iam_attributes(state_attrs, live_attrs, resource_type)
+        )
+    elif (
+        resource_type.startswith("aws_cloudwatch_event_bus")
+        or resource_type.startswith("aws_cloudwatch_event_rule")
+        or resource_type.startswith("aws_cloudwatch_event_target")
+    ):
+        drift_details.extend(
+            compare_events_attributes(state_attrs, live_attrs, resource_type)
+        )
     elif resource_type.startswith("aws_lambda_permission"):
-        drift_details.extend(compare_lambda_attributes(state_attrs, live_attrs, resource_type))
-    elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith("aws_ecs_service"):
-        drift_details.extend(compare_ecs_attributes(state_attrs, live_attrs, resource_type))
+        drift_details.extend(
+            compare_lambda_attributes(state_attrs, live_attrs, resource_type)
+        )
+    elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
+        "aws_ecs_service"
+    ):
+        drift_details.extend(
+            compare_ecs_attributes(state_attrs, live_attrs, resource_type)
+        )
     elif resource_type.startswith("aws_vpc"):
         drift_details.extend(compare_ec2_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_api_gateway_rest_api"):
         drift_details.extend(compare_apigateway_attributes(state_attrs, live_attrs))
-    elif resource_type.startswith("aws_cloudwatch_dashboard") or resource_type.startswith("aws_cloudwatch_metric_alarm"):
-        drift_details.extend(compare_cloudwatch_attributes(state_attrs, live_attrs, resource_type))
+    elif resource_type.startswith(
+        "aws_cloudwatch_dashboard"
+    ) or resource_type.startswith("aws_cloudwatch_metric_alarm"):
+        drift_details.extend(
+            compare_cloudwatch_attributes(state_attrs, live_attrs, resource_type)
+        )
     elif resource_type.startswith("aws_db_instance"):
         drift_details.extend(compare_rds_attributes(state_attrs, live_attrs))
-    
-    return drift_details 
+
+    return drift_details

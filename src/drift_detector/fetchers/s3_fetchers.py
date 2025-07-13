@@ -12,12 +12,12 @@ def fetch_s3_resources(
 ) -> Dict[str, Any]:
     """
     Fetch S3 resources from AWS.
-    
+
     Args:
         s3_client: Boto3 S3 client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -46,4 +46,4 @@ def _fetch_s3_buckets(
         return live_resources
     except Exception as e:
         print(f"Error fetching S3 buckets: {e}")
-        return {} 
+        return {}

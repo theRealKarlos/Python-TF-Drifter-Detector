@@ -12,11 +12,11 @@ def compare_dynamodb_attributes(
 ) -> List[Dict[str, Any]]:
     """
     Compare DynamoDB resource attributes between Terraform state and live AWS.
-    
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
-        
+
     Returns:
         List of drift details for any mismatched attributes
     """
@@ -31,4 +31,4 @@ def compare_dynamodb_attributes(
                 "live_value": str(live_table_name),
             }
         )
-    return drift_details 
+    return drift_details

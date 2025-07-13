@@ -12,13 +12,13 @@ def fetch_ecs_resources(
 ) -> Dict[str, Any]:
     """
     Fetch ECS resources from AWS based on resource type.
-    
+
     Args:
         ecs_client: Boto3 ECS client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of ECS resource
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -85,4 +85,4 @@ def _fetch_ecs_services(
         return live_resources
     except Exception as e:
         print(f"Error fetching ECS services: {e}")
-        return {} 
+        return {}

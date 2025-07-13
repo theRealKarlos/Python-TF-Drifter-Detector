@@ -8,18 +8,22 @@ from typing import Any, Dict
 
 
 def fetch_data_source_resources(
-    sts_client: Any, region_name: str, resource_key: str, attributes: Dict, resource_type: str
+    sts_client: Any,
+    region_name: str,
+    resource_key: str,
+    attributes: Dict,
+    resource_type: str,
 ) -> Dict[str, Any]:
     """
     Fetch Terraform data source information.
-    
+
     Args:
         sts_client: Boto3 STS client
         region_name: AWS region name
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of data source
-        
+
     Returns:
         Dictionary mapping resource keys to data source information
     """
@@ -84,4 +88,4 @@ def _fetch_aws_caller_identity_data(
         return {resource_key: caller_identity_data}
     except Exception as e:
         print(f"Error fetching AWS caller identity data: {e}")
-        return {} 
+        return {}

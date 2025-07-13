@@ -44,17 +44,17 @@ def get_live_aws_resources(
     cloudwatch_client = boto3.client("cloudwatch", region_name=region_name)
 
     # Import service-specific fetchers
-    from .ec2_fetchers import fetch_ec2_resources
-    from .s3_fetchers import fetch_s3_resources
-    from .rds_fetchers import fetch_rds_resources
-    from .dynamodb_fetchers import fetch_dynamodb_resources
-    from .lambda_fetchers import fetch_lambda_resources
-    from .iam_fetchers import fetch_iam_resources
-    from .events_fetchers import fetch_events_resources
-    from .ecs_fetchers import fetch_ecs_resources
     from .apigateway_fetchers import fetch_apigateway_resources
     from .cloudwatch_fetchers import fetch_cloudwatch_resources
     from .data_source_fetchers import fetch_data_source_resources
+    from .dynamodb_fetchers import fetch_dynamodb_resources
+    from .ec2_fetchers import fetch_ec2_resources
+    from .ecs_fetchers import fetch_ecs_resources
+    from .events_fetchers import fetch_events_resources
+    from .iam_fetchers import fetch_iam_resources
+    from .lambda_fetchers import fetch_lambda_resources
+    from .rds_fetchers import fetch_rds_resources
+    from .s3_fetchers import fetch_s3_resources
 
     # Iterate through each resource defined in the Terraform state
     for resource in state_data.get("resources", []):
@@ -91,19 +91,34 @@ def get_live_aws_resources(
             live_resources.update(
                 fetch_lambda_resources(lambda_client, resource_key, attributes)
             )
-        elif resource_type.startswith("aws_iam_role_policy") or resource_type.startswith("aws_iam_role") or resource_type.startswith("aws_iam_policy") or resource_type.startswith("aws_iam_openid_connect_provider"):
+        elif (
+            resource_type.startswith("aws_iam_role_policy")
+            or resource_type.startswith("aws_iam_role")
+            or resource_type.startswith("aws_iam_policy")
+            or resource_type.startswith("aws_iam_openid_connect_provider")
+        ):
             live_resources.update(
                 fetch_iam_resources(iam_client, resource_key, attributes, resource_type)
             )
-        elif resource_type.startswith("aws_cloudwatch_event_bus") or resource_type.startswith("aws_cloudwatch_event_rule") or resource_type.startswith("aws_cloudwatch_event_target"):
+        elif (
+            resource_type.startswith("aws_cloudwatch_event_bus")
+            or resource_type.startswith("aws_cloudwatch_event_rule")
+            or resource_type.startswith("aws_cloudwatch_event_target")
+        ):
             live_resources.update(
-                fetch_events_resources(events_client, resource_key, attributes, resource_type)
+                fetch_events_resources(
+                    events_client, resource_key, attributes, resource_type
+                )
             )
         elif resource_type.startswith("aws_lambda_permission"):
             live_resources.update(
-                fetch_lambda_resources(lambda_client, resource_key, attributes, resource_type)
+                fetch_lambda_resources(
+                    lambda_client, resource_key, attributes, resource_type
+                )
             )
-        elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith("aws_ecs_service"):
+        elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
+            "aws_ecs_service"
+        ):
             live_resources.update(
                 fetch_ecs_resources(ecs_client, resource_key, attributes, resource_type)
             )
@@ -115,13 +130,21 @@ def get_live_aws_resources(
             live_resources.update(
                 fetch_apigateway_resources(apigateway_client, resource_key, attributes)
             )
-        elif resource_type.startswith("aws_cloudwatch_dashboard") or resource_type.startswith("aws_cloudwatch_metric_alarm"):
+        elif resource_type.startswith(
+            "aws_cloudwatch_dashboard"
+        ) or resource_type.startswith("aws_cloudwatch_metric_alarm"):
             live_resources.update(
-                fetch_cloudwatch_resources(cloudwatch_client, resource_key, attributes, resource_type)
+                fetch_cloudwatch_resources(
+                    cloudwatch_client, resource_key, attributes, resource_type
+                )
             )
-        elif resource_type.startswith("aws_region") or resource_type.startswith("aws_caller_identity"):
+        elif resource_type.startswith("aws_region") or resource_type.startswith(
+            "aws_caller_identity"
+        ):
             live_resources.update(
-                fetch_data_source_resources(sts_client, region_name, resource_key, attributes, resource_type)
+                fetch_data_source_resources(
+                    sts_client, region_name, resource_key, attributes, resource_type
+                )
             )
 
-    return live_resources 
+    return live_resources

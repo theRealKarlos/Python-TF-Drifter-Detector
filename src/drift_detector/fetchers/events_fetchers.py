@@ -12,13 +12,13 @@ def fetch_events_resources(
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge resources from AWS based on resource type.
-    
+
     Args:
         events_client: Boto3 Events client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of EventBridge resource
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -62,8 +62,9 @@ def _fetch_eventbridge_rules(
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge rules from AWS and map them by resource key for drift comparison.
-    Only searches the specific event bus given in the Terraform state. If no event_bus_name is present,
-    does not search or return any rules. This strictness avoids false positives from fallback logic.
+    Only searches the specific event bus given in the Terraform state. If no
+    event_bus_name is present, does not search or return any rules. This strictness
+    avoids false positives from fallback logic.
     Returns a dictionary of resource keys to rule data.
     """
     try:
@@ -92,33 +93,37 @@ def _fetch_eventbridge_targets(
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge targets from AWS and map them by resource key for drift comparison.
-    Only searches the specific event bus and rule given in the Terraform state. If no event_bus_name
-    or rule name is present, does not search or return any targets. This strictness avoids false positives.
+    Only searches the specific event bus and rule given in the Terraform state. If no
+    event_bus_name or rule name is present, does not search or return any targets.
+    This strictness avoids false positives.
     Returns a dictionary of resource keys to target data.
     """
     try:
         event_bus_name = attributes.get("event_bus_name")
         rule_name = attributes.get("rule")
         target_id = attributes.get("target_id")
-        
-        print(f"DEBUG: Fetching EventBridge target - event_bus: {event_bus_name}, rule: {rule_name}, target_id: {target_id}")
-        
+
+        print(
+            f"DEBUG: Fetching EventBridge target - event_bus: {event_bus_name}, "
+            f"rule: {rule_name}, target_id: {target_id}"
+        )
+
         if not event_bus_name or not rule_name:
-            # No event bus or rule specified in state, do not search (strict, avoids false positives)
-            print(f"DEBUG: Missing event_bus_name or rule_name, skipping")
+            # No event bus or rule specified in state, do not search (strict, avoids false
+            # positives)
+            print("DEBUG: Missing event_bus_name or rule_name, skipping")
             return {}
-            
+
         response = events_client.list_targets_by_rule(
-            Rule=rule_name,
-            EventBusName=event_bus_name
+            Rule=rule_name, EventBusName=event_bus_name
         )
         live_resources = {}
-        
+
         print(f"DEBUG: Found {len(response['Targets'])} targets in AWS")
         for target in response["Targets"]:
             print(f"DEBUG: Checking target {target['Id']} against {target_id}")
             if target_id and target["Id"] == target_id:
-                print(f"DEBUG: Match found! Adding to live_resources")
+                print("DEBUG: Match found! Adding to live_resources")
                 live_resources[resource_key] = target
                 return live_resources
 
@@ -127,4 +132,4 @@ def _fetch_eventbridge_targets(
         return live_resources
     except Exception as e:
         print(f"Error fetching EventBridge targets: {e}")
-        return {} 
+        return {}

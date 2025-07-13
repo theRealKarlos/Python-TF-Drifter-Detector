@@ -12,12 +12,12 @@ def compare_cloudwatch_attributes(
 ) -> List[Dict[str, Any]]:
     """
     Compare CloudWatch resource attributes between Terraform state and live AWS.
-    
+
     Args:
         state_attrs: Attributes from Terraform state resource
         live_attrs: Attributes from live AWS resource
         resource_type: Type of CloudWatch resource
-        
+
     Returns:
         List of drift details for any mismatched attributes
     """
@@ -68,4 +68,4 @@ def _compare_cloudwatch_alarm_attributes(
                 "live_value": str(live_alarm_name),
             }
         )
-    return drift_details 
+    return drift_details
