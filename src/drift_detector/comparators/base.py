@@ -63,12 +63,15 @@ def compare_resources(
         elif resource_type.startswith("aws_lambda_permission"):
             state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
             function_name = state_attributes.get("function_name", "")
+            statement_id = state_attributes.get("statement_id", "")
             if function_name.startswith("arn:aws:lambda:"):
                 # Extract function name from ARN
                 function_name = function_name.split(":")[-1]
-            unique_resource_key = (
-                f"{resource_key}_{function_name}" if function_name else resource_key
-            )
+            unique_resource_key = resource_key
+            if function_name:
+                unique_resource_key += f"_{function_name}"
+            if statement_id:
+                unique_resource_key += f"_{statement_id}"
         else:
             unique_resource_key = resource_key
 

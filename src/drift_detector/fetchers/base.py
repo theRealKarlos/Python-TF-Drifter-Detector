@@ -100,20 +100,49 @@ def get_live_aws_resources(
             live_resources.update(
                 fetch_iam_resources(iam_client, resource_key, attributes, resource_type)
             )
-        elif (
-            resource_type.startswith("aws_cloudwatch_event_bus")
-            or resource_type.startswith("aws_cloudwatch_event_rule")
-            or resource_type.startswith("aws_cloudwatch_event_target")
-        ):
+        elif resource_type.startswith("aws_cloudwatch_event_rule"):
+            event_bus_name = attributes.get("event_bus_name", "")
+            unique_resource_key = (
+                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            )
+            live_resources.update(
+                fetch_events_resources(
+                    events_client, unique_resource_key, attributes, resource_type
+                )
+            )
+        elif resource_type.startswith("aws_cloudwatch_event_target"):
+            event_bus_name = attributes.get("event_bus_name", "")
+            unique_resource_key = (
+                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
+            )
+            live_resources.update(
+                fetch_events_resources(
+                    events_client, unique_resource_key, attributes, resource_type
+                )
+            )
+        elif resource_type.startswith("aws_cloudwatch_event_bus"):
             live_resources.update(
                 fetch_events_resources(
                     events_client, resource_key, attributes, resource_type
                 )
             )
         elif resource_type.startswith("aws_lambda_permission"):
+            function_name = attributes.get("function_name", "")
+            statement_id = attributes.get("statement_id", "")
+            unique_resource_key = resource_key
+            if function_name or statement_id:
+                # Use underscores to separate, but only add if present
+                unique_resource_key = resource_key
+                if function_name:
+                    # Extract function name from ARN if needed
+                    if function_name.startswith("arn:aws:lambda:"):
+                        function_name = function_name.split(":")[-1]
+                    unique_resource_key += f"_{function_name}"
+                if statement_id:
+                    unique_resource_key += f"_{statement_id}"
             live_resources.update(
                 fetch_lambda_resources(
-                    lambda_client, resource_key, attributes, resource_type
+                    lambda_client, unique_resource_key, attributes, resource_type
                 )
             )
         elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
