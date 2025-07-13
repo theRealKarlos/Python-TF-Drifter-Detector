@@ -6,9 +6,11 @@ This module contains functions for fetching S3-related AWS resources.
 
 from typing import Any, Dict
 
+from ..types import S3Client
+
 
 def fetch_s3_resources(
-    s3_client: Any, resource_key: str, attributes: Dict
+    s3_client: S3Client, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch S3 resources from AWS.
@@ -25,7 +27,7 @@ def fetch_s3_resources(
 
 
 def _fetch_s3_buckets(
-    s3_client: Any, resource_key: str, attributes: Dict
+    s3_client: S3Client, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch S3 buckets from AWS and map them by resource key for drift comparison.

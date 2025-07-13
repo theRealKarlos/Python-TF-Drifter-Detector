@@ -27,7 +27,7 @@ class TestDriftDetector(unittest.TestCase):
 
     # The order of patch decorators is important: boto3.client is patched before download_s3_file.
     # This ensures the correct mock objects are injected into the test method.
-    @patch("src.drift_detector.resource_fetchers.boto3.client")
+    @patch("src.drift_detector.fetchers.base.boto3.client")
     @patch("src.drift_detector.core.download_s3_file")
     def test_detect_drift_success(
         self, mock_download: MagicMock, mock_boto3_client: MagicMock

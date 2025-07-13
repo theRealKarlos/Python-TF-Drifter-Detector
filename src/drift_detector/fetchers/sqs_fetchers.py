@@ -13,9 +13,11 @@ Key points:
 
 from typing import Any, Dict
 
+from ..types import SQSClient
+
 
 def fetch_sqs_resources(
-    sqs_client: Any, resource_key: str, attributes: Dict, resource_type: str = ""
+    sqs_client: SQSClient, resource_key: str, attributes: Dict, resource_type: str = ""
 ) -> Dict[str, Any]:
     """
     Fetch SQS resources from AWS based on resource type.
@@ -33,7 +35,7 @@ def fetch_sqs_resources(
 
 
 def _fetch_sqs_queues(
-    sqs_client: Any, resource_key: str, attributes: Dict
+    sqs_client: SQSClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch SQS queues from AWS and map them by resource key for drift comparison.

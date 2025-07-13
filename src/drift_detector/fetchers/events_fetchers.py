@@ -6,9 +6,11 @@ This module contains functions for fetching EventBridge-related AWS resources.
 
 from typing import Any, Dict
 
+from ..types import EventsClient
+
 
 def fetch_events_resources(
-    events_client: Any, resource_key: str, attributes: Dict, resource_type: str
+    events_client: EventsClient, resource_key: str, attributes: Dict, resource_type: str
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge resources from AWS based on resource type.
@@ -33,7 +35,7 @@ def fetch_events_resources(
 
 
 def _fetch_eventbridge_buses(
-    events_client: Any, resource_key: str, attributes: Dict
+    events_client: EventsClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge buses from AWS and map them by resource key for drift comparison.
@@ -58,7 +60,7 @@ def _fetch_eventbridge_buses(
 
 
 def _fetch_eventbridge_rules(
-    events_client: Any, resource_key: str, attributes: Dict
+    events_client: EventsClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge rules from AWS and map them by resource key for drift comparison.
@@ -89,7 +91,7 @@ def _fetch_eventbridge_rules(
 
 
 def _fetch_eventbridge_targets(
-    events_client: Any, resource_key: str, attributes: Dict
+    events_client: EventsClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch EventBridge targets from AWS and map them by resource key for drift comparison.

@@ -9,6 +9,21 @@ from typing import Any, Dict
 
 import boto3
 
+from ..types import (
+    APIGatewayClient,
+    CloudWatchClient,
+    DynamoDBClient,
+    ECSClient,
+    EC2Client,
+    EventsClient,
+    IAMClient,
+    LambdaClient,
+    RDSClient,
+    S3Client,
+    SQSClient,
+    STSClient,
+)
+
 
 def get_live_aws_resources(
     state_data: Dict, region_name: str = "eu-west-2"
@@ -31,18 +46,18 @@ def get_live_aws_resources(
 
     # Initialize AWS service clients for all supported services
     # Each client is used to fetch live resources from the respective AWS service
-    ec2_client = boto3.client("ec2", region_name=region_name)
-    s3_client = boto3.client("s3", region_name=region_name)
-    rds_client = boto3.client("rds", region_name=region_name)
-    dynamodb_client = boto3.client("dynamodb", region_name=region_name)
-    lambda_client = boto3.client("lambda", region_name=region_name)
-    iam_client = boto3.client("iam", region_name=region_name)
-    sts_client = boto3.client("sts", region_name=region_name)
-    events_client = boto3.client("events", region_name=region_name)
-    ecs_client = boto3.client("ecs", region_name=region_name)
-    apigateway_client = boto3.client("apigateway", region_name=region_name)
-    cloudwatch_client = boto3.client("cloudwatch", region_name=region_name)
-    sqs_client = boto3.client("sqs", region_name=region_name)
+    ec2_client: EC2Client = boto3.client("ec2", region_name=region_name)
+    s3_client: S3Client = boto3.client("s3", region_name=region_name)
+    rds_client: RDSClient = boto3.client("rds", region_name=region_name)
+    dynamodb_client: DynamoDBClient = boto3.client("dynamodb", region_name=region_name)
+    lambda_client: LambdaClient = boto3.client("lambda", region_name=region_name)
+    iam_client: IAMClient = boto3.client("iam", region_name=region_name)
+    sts_client: STSClient = boto3.client("sts", region_name=region_name)
+    events_client: EventsClient = boto3.client("events", region_name=region_name)
+    ecs_client: ECSClient = boto3.client("ecs", region_name=region_name)
+    apigateway_client: APIGatewayClient = boto3.client("apigateway", region_name=region_name)
+    cloudwatch_client: CloudWatchClient = boto3.client("cloudwatch", region_name=region_name)
+    sqs_client: SQSClient = boto3.client("sqs", region_name=region_name)
 
     # Import service-specific fetchers
     from .apigateway_fetchers import fetch_apigateway_resources

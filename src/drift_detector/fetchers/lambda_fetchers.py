@@ -7,9 +7,11 @@ This module contains functions for fetching Lambda-related AWS resources.
 import json
 from typing import Any, Dict
 
+from ..types import LambdaClient
+
 
 def fetch_lambda_resources(
-    lambda_client: Any, resource_key: str, attributes: Dict, resource_type: str = ""
+    lambda_client: LambdaClient, resource_key: str, attributes: Dict, resource_type: str = ""
 ) -> Dict[str, Any]:
     """
     Fetch Lambda resources from AWS based on resource type.
@@ -30,7 +32,7 @@ def fetch_lambda_resources(
 
 
 def _fetch_lambda_functions(
-    lambda_client: Any, resource_key: str, attributes: Dict
+    lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch Lambda functions from AWS and map them by resource key for drift comparison.
@@ -55,7 +57,7 @@ def _fetch_lambda_functions(
 
 
 def _fetch_lambda_permissions(
-    lambda_client: Any, resource_key: str, attributes: Dict
+    lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
     Fetch Lambda permissions from AWS and map them by resource key for drift comparison.

@@ -4,7 +4,7 @@ Utility functions for Terraform Drift Detector Lambda.
 
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import boto3
@@ -80,7 +80,7 @@ def download_s3_file(s3_path: str, logger: Optional[logging.Logger] = None) -> s
 
 def parse_terraform_state(
     state_content: str, logger: Optional[logging.Logger] = None
-) -> Dict[str, Any]:
+) -> Dict:
     """
     Parses Terraform state file content into a Python dict.
 
