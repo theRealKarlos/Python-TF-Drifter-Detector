@@ -151,9 +151,8 @@ def _fetch_ec2_instances(
                 ):
                     live_resources[resource_key] = instance
                     return live_resources
-        # If no exact match, return first instance (fallback)
-        if response["Reservations"]:
-            live_resources[resource_key] = response["Reservations"][0]["Instances"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching EC2 instances: {e}")
@@ -177,9 +176,8 @@ def _fetch_s3_buckets(
                 live_resources[resource_key] = bucket
                 return live_resources
 
-        # If no exact match, return first bucket (fallback)
-        if response["Buckets"]:
-            live_resources[resource_key] = response["Buckets"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching S3 buckets: {e}")
@@ -203,9 +201,8 @@ def _fetch_rds_instances(
                 live_resources[resource_key] = db_instance
                 return live_resources
 
-        # If no exact match, return first instance (fallback)
-        if response["DBInstances"]:
-            live_resources[resource_key] = response["DBInstances"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching RDS instances: {e}")
@@ -232,12 +229,8 @@ def _fetch_dynamodb_tables(
                 live_resources[resource_key] = table_info["Table"]
                 return live_resources
 
-        # If no exact match, return first table (fallback)
-        if response["TableNames"]:
-            table_info = dynamodb_client.describe_table(
-                TableName=response["TableNames"][0]
-            )
-            live_resources[resource_key] = table_info["Table"]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching DynamoDB tables: {e}")
@@ -261,9 +254,8 @@ def _fetch_lambda_functions(
                 live_resources[resource_key] = function
                 return live_resources
 
-        # If no exact match, return first function (fallback)
-        if response["Functions"]:
-            live_resources[resource_key] = response["Functions"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching Lambda functions: {e}")
@@ -287,9 +279,8 @@ def _fetch_iam_roles(
                 live_resources[resource_key] = role
                 return live_resources
 
-        # If no exact match, return first role (fallback)
-        if response["Roles"]:
-            live_resources[resource_key] = response["Roles"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching IAM roles: {e}")
@@ -313,9 +304,8 @@ def _fetch_iam_policies(
                 live_resources[resource_key] = policy
                 return live_resources
 
-        # If no exact match, return first policy (fallback)
-        if response["Policies"]:
-            live_resources[resource_key] = response["Policies"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching IAM policies: {e}")
@@ -423,19 +413,8 @@ def _fetch_iam_openid_connect_providers(
                     print(f"Error getting OIDC provider details: {e}")
                     continue
 
-        # If no exact match, return first provider (fallback)
-        if provider_list:
-            try:
-                first_provider_arn = provider_list[0].get("Arn")
-                provider_response = iam_client.get_open_id_connect_provider(
-                    OpenIDConnectProviderArn=first_provider_arn
-                )
-                live_resources[resource_key] = {
-                    "arn": first_provider_arn,
-                    **provider_response,
-                }
-            except Exception as e:
-                print(f"Error getting first OIDC provider details: {e}")
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching IAM OpenID Connect providers: {e}")
@@ -459,9 +438,8 @@ def _fetch_eventbridge_buses(
                 live_resources[resource_key] = bus
                 return live_resources
 
-        # If no exact match, return first bus (fallback)
-        if response["EventBuses"]:
-            live_resources[resource_key] = response["EventBuses"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching EventBridge buses: {e}")
@@ -485,9 +463,8 @@ def _fetch_eventbridge_rules(
                 live_resources[resource_key] = rule
                 return live_resources
 
-        # If no exact match, return first rule (fallback)
-        if response["Rules"]:
-            live_resources[resource_key] = response["Rules"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching EventBridge rules: {e}")
@@ -515,12 +492,8 @@ def _fetch_ecs_clusters(
                 live_resources[resource_key] = cluster_info["clusters"][0]
                 return live_resources
 
-        # If no exact match, return first cluster (fallback)
-        if response["clusterArns"]:
-            cluster_info = ecs_client.describe_clusters(
-                clusters=[response["clusterArns"][0]]
-            )
-            live_resources[resource_key] = cluster_info["clusters"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching ECS clusters: {e}")
@@ -548,12 +521,8 @@ def _fetch_ecs_services(
                 live_resources[resource_key] = service_info["services"][0]
                 return live_resources
 
-        # If no exact match, return first service (fallback)
-        if response["serviceArns"]:
-            service_info = ecs_client.describe_services(
-                services=[response["serviceArns"][0]]
-            )
-            live_resources[resource_key] = service_info["services"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching ECS services: {e}")
@@ -575,9 +544,8 @@ def _fetch_vpcs(ec2_client: Any, resource_key: str, attributes: Dict) -> Dict[st
                 live_resources[resource_key] = vpc
                 return live_resources
 
-        # If no exact match, return first VPC (fallback)
-        if response["Vpcs"]:
-            live_resources[resource_key] = response["Vpcs"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching VPCs: {e}")
@@ -601,9 +569,8 @@ def _fetch_api_gateway_apis(
                 live_resources[resource_key] = api
                 return live_resources
 
-        # If no exact match, return first API (fallback)
-        if response["items"]:
-            live_resources[resource_key] = response["items"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching API Gateway REST APIs: {e}")
@@ -627,9 +594,8 @@ def _fetch_cloudwatch_dashboards(
                 live_resources[resource_key] = dashboard
                 return live_resources
 
-        # If no exact match, return first dashboard (fallback)
-        if response["DashboardEntries"]:
-            live_resources[resource_key] = response["DashboardEntries"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching CloudWatch dashboards: {e}")
@@ -653,9 +619,8 @@ def _fetch_cloudwatch_alarms(
                 live_resources[resource_key] = alarm
                 return live_resources
 
-        # If no exact match, return first alarm (fallback)
-        if response["MetricAlarms"]:
-            live_resources[resource_key] = response["MetricAlarms"][0]
+        # If no exact match, return empty dict (no fallback)
+        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         print(f"Error fetching CloudWatch alarms: {e}")
