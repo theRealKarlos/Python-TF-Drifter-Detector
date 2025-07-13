@@ -7,6 +7,9 @@ This module contains functions for fetching IAM-related AWS resources.
 from typing import Dict
 
 from ..types import IAMClient, ResourceAttributes, LiveResourceData
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_iam_resources(
@@ -60,7 +63,7 @@ def _fetch_iam_roles(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching IAM roles: {e}")
+        logger.error(f"Error fetching IAM roles: {e}")
         return {}
 
 
@@ -85,7 +88,7 @@ def _fetch_iam_policies(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching IAM policies: {e}")
+        logger.error(f"Error fetching IAM policies: {e}")
         return {}
 
 
@@ -93,10 +96,10 @@ def _fetch_iam_role_policies(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch IAM role policies from AWS and map them by resource key for drift comparison.
-    Returns a dictionary of resource keys to role policy data.
+    Fetch IAM role policies from AWS and map them by resource key for drift
+    comparison. Returns a dictionary of resource keys to role policy data.
     """
-    print(
+    logger.debug(
         f"DEBUG: Entered _fetch_iam_role_policies with "
         f"resource_key={resource_key}, attributes={attributes}"
     )
@@ -104,27 +107,30 @@ def _fetch_iam_role_policies(
         role_name = attributes.get("role") or attributes.get("name")
         policy_name = attributes.get("name")
 
-        print(
-            f"DEBUG: IAM role policy fetcher - looking for role: {role_name}, policy: {policy_name}"
+        logger.debug(
+            f"DEBUG: IAM role policy fetcher - looking for role: {role_name}, "
+            f"policy: {policy_name}"
         )
 
         if not role_name or not policy_name:
-            print(f"DEBUG: No role or policy name found in attributes: {attributes}")
+            logger.debug(
+                f"DEBUG: No role or policy name found in attributes: {attributes}"
+            )
             return {}
 
         # Get the role first
         try:
             role_response = iam_client.get_role(RoleName=role_name)
             role = role_response["Role"]
-            print(f"DEBUG: Found role: {role['RoleName']}")
+            logger.debug(f"DEBUG: Found role: {role['RoleName']}")
         except iam_client.exceptions.NoSuchEntityException:
-            print(f"DEBUG: Role {role_name} not found")
+            logger.debug(f"DEBUG: Role {role_name} not found")
             return {}
 
         # Get inline policies for the role
         try:
             policies_response = iam_client.list_role_policies(RoleName=role_name)
-            print(
+            logger.debug(
                 f"DEBUG: Available policies for role {role_name}: "
                 f"{policies_response['PolicyNames']}"
             )
@@ -140,17 +146,19 @@ def _fetch_iam_role_policies(
                         "policy": policy_response["PolicyDocument"],
                     }
                 }
-                print(f"DEBUG: IAM role policy fetcher returning: {result}")
+                logger.debug(f"DEBUG: IAM role policy fetcher returning: {result}")
                 return result
             else:
-                print(f"DEBUG: Policy {policy_name} not found for role {role_name}")
-                print("DEBUG: IAM role policy fetcher returning empty dict")
+                logger.debug(
+                    f"DEBUG: Policy {policy_name} not found for role {role_name}"
+                )
+                logger.debug("DEBUG: IAM role policy fetcher returning empty dict")
                 return {}
         except Exception as e:
-            print(f"Error fetching IAM role policies: {e}")
+            logger.error(f"Error fetching IAM role policies: {e}")
             return {}
     except Exception as e:
-        print(f"Error fetching IAM role policies: {e}")
+        logger.error(f"Error fetching IAM role policies: {e}")
         return {}
 
 
@@ -169,10 +177,10 @@ def _fetch_iam_openid_connect_providers(
         # The response structure is 'OpenIDConnectProviderList' with 'Arn' fields
         provider_list = response.get("OpenIDConnectProviderList", [])
 
-        print(
+        logger.debug(
             f"DEBUG: OIDC provider ARNs from AWS: {[p.get('Arn') for p in provider_list]}"
         )
-        print(f"DEBUG: Looking for provider ARN: {provider_arn}")
+        logger.debug(f"DEBUG: Looking for provider ARN: {provider_arn}")
 
         for provider in provider_list:
             provider_arn_from_aws = provider.get("Arn")
@@ -187,12 +195,12 @@ def _fetch_iam_openid_connect_providers(
                     }
                     return live_resources
                 except Exception as e:
-                    print(f"Error getting OIDC provider details: {e}")
+                    logger.error(f"Error getting OIDC provider details: {e}")
                     continue
 
         # If no exact match, return empty dict (no fallback)
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching IAM OpenID Connect providers: {e}")
+        logger.error(f"Error fetching IAM OpenID Connect providers: {e}")
         return {}

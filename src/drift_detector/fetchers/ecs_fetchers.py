@@ -7,6 +7,9 @@ This module contains functions for fetching ECS-related AWS resources.
 from typing import Dict
 
 from ..types import ECSClient, ResourceAttributes, LiveResourceData
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_ecs_resources(
@@ -60,7 +63,7 @@ def _fetch_ecs_clusters(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching ECS clusters: {e}")
+        logger.error(f"Error fetching ECS clusters: {e}")
         return {}
 
 
@@ -89,5 +92,5 @@ def _fetch_ecs_services(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching ECS services: {e}")
+        logger.error(f"Error fetching ECS services: {e}")
         return {}

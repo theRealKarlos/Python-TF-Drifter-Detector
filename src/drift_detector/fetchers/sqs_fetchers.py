@@ -11,14 +11,23 @@ Key points:
 - Debug output: Prints are included to aid debugging and show matching logic in action.
 """
 
-from typing import Any, Dict
+from typing import Dict
+from ..types import (
+    SQSClient,
+    ResourceAttributes,
+    LiveResourceData,
+)
+from ...utils import setup_logging
 
-from ..types import SQSClient
+logger = setup_logging()
 
 
 def fetch_sqs_resources(
-    sqs_client: SQSClient, resource_key: str, attributes: Dict, resource_type: str = ""
-) -> Dict[str, Any]:
+    sqs_client: SQSClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = "",
+) -> Dict[str, LiveResourceData]:
     """
     Fetch SQS resources from AWS based on resource type.
 
@@ -35,32 +44,36 @@ def fetch_sqs_resources(
 
 
 def _fetch_sqs_queues(
-    sqs_client: SQSClient, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    sqs_client: SQSClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch SQS queues from AWS and map them by resource key for drift comparison.
-    Only queues with an exact name match are considered. This strictness avoids false
-    positives. The queue name from state may be a URL or a name; we always normalise to
-    the name. Returns a dictionary of resource keys to queue data.
+    Only queues with an exact name match are considered. This strictness avoids
+    false positives. The queue name from state may be a URL or a name; we always
+    normalise to the name. Returns a dictionary of resource keys to queue data.
     """
     try:
         response = sqs_client.list_queues()
         live_resources = {}
         queue_name = attributes.get("name") or attributes.get("id")
         # Normalise: if queue_name is a URL, extract the last part
-        if queue_name and queue_name.startswith("https://"):
+        if (
+            queue_name
+            and isinstance(queue_name, str)
+            and queue_name.startswith("https://")
+        ):
             queue_name = queue_name.split("/")[-1]
 
-        print(f"[DEBUG] State queue_name: {queue_name}")
-        print(f"[DEBUG] AWS QueueUrls: {response.get('QueueUrls', [])}")
+        logger.debug(f"[SQS] State queue_name: {queue_name}")
+        logger.debug(f"[SQS] AWS QueueUrls: {response.get('QueueUrls', [])}")
 
         for queue_url in response.get("QueueUrls", []):
             # Extract queue name from URL
             queue_name_from_url = queue_url.split("/")[-1]
-            print(f"[DEBUG] Checking AWS queue: {queue_name_from_url}")
+            logger.debug(f"[SQS] Checking AWS queue: {queue_name_from_url}")
 
             if queue_name and queue_name_from_url == queue_name:
-                print(f"[DEBUG] Matched queue: {queue_name_from_url}")
+                logger.debug(f"[SQS] Matched queue: {queue_name_from_url}")
                 # Get detailed queue attributes
                 queue_attributes = sqs_client.get_queue_attributes(
                     QueueUrl=queue_url, AttributeNames=["All"]
@@ -68,10 +81,9 @@ def _fetch_sqs_queues(
                 live_resources[resource_key] = queue_attributes["Attributes"]
                 return live_resources
 
-        print("[DEBUG] No matching queue found for state queue_name.")
+        logger.debug("[SQS] No matching queue found for state queue_name.")
         # If no exact match, return empty dict (no fallback)
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching SQS queues: {e}")
+        logger.error(f"[SQS] Error fetching SQS queues: {e}")
         return {}

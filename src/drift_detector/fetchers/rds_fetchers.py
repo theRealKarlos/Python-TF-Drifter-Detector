@@ -7,6 +7,9 @@ This module contains functions for fetching RDS-related AWS resources.
 from typing import Dict
 
 from ..types import RDSClient, ResourceAttributes, LiveResourceData
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_rds_resources(
@@ -30,22 +33,18 @@ def _fetch_rds_instances(
     rds_client: RDSClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch RDS database instances from AWS and map them by resource key for drift comparison.
-    Returns a dictionary of resource keys to database instance data.
+    Fetch RDS database instances from AWS and map them by resource key for drift
+    comparison. Returns a dictionary of resource keys to instance data.
     """
     try:
         response = rds_client.describe_db_instances()
         live_resources = {}
-        db_identifier = attributes.get("db_instance_identifier") or attributes.get("id")
-
+        db_instance_id = attributes.get("id")
         for db_instance in response["DBInstances"]:
-            if db_identifier and db_instance["DBInstanceIdentifier"] == db_identifier:
+            if db_instance_id and db_instance["DBInstanceIdentifier"] == db_instance_id:
                 live_resources[resource_key] = db_instance
                 return live_resources
-
-        # If no exact match, return empty dict (no fallback)
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching RDS instances: {e}")
+        logger.error(f"[RDS] Error fetching RDS instances: {e}")
         return {}

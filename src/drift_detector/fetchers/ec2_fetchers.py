@@ -7,6 +7,9 @@ This module contains functions for fetching EC2-related AWS resources.
 from typing import Dict
 
 from ..types import EC2Client, ResourceAttributes, LiveResourceData
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_ec2_resources(
@@ -56,7 +59,7 @@ def _fetch_ec2_instances(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching EC2 instances: {e}")
+        logger.error(f"Error fetching EC2 instances: {e}")
         return {}
 
 
@@ -81,5 +84,5 @@ def _fetch_vpcs(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching VPCs: {e}")
+        logger.error(f"Error fetching VPCs: {e}")
         return {}

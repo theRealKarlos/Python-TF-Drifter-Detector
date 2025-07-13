@@ -22,6 +22,10 @@ from .rds_comparators import compare_rds_attributes
 from .s3_comparators import compare_s3_attributes
 from .sqs_comparators import compare_sqs_attributes
 
+from ...utils import setup_logging
+
+logger = setup_logging()
+
 
 def compare_resources(
     state_data: Dict[str, Any], live_resources: Dict[str, Any]
@@ -87,16 +91,18 @@ def compare_resources(
 
         # Debug output for IAM role policy
         if resource_key == "aws_iam_role_policy.github_actions":
-            print(f"DEBUG: Checking IAM role policy drift for {resource_key}")
-            print(f"DEBUG: Resource type: {resource_type}")
-            print(
+            logger.debug(f"DEBUG: Checking IAM role policy drift for {resource_key}")
+            logger.debug(f"DEBUG: Resource type: {resource_type}")
+            logger.debug(
                 f"DEBUG: State attributes: "
                 f"{resource.get('instances', [{}])[0].get('attributes', {})}"
             )
             if unique_resource_key in live_resources:
-                print(f"DEBUG: Live attributes: {live_resources[unique_resource_key]}")
+                logger.debug(
+                    f"DEBUG: Live attributes: {live_resources[unique_resource_key]}"
+                )
             else:
-                print("DEBUG: Resource not found in live_resources")
+                logger.debug("DEBUG: Resource not found in live_resources")
 
         # Check if resource exists in live AWS
         if unique_resource_key not in live_resources:

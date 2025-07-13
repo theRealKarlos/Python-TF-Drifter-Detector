@@ -99,7 +99,7 @@ def parse_terraform_state(
 
     try:
         logger.info("Parsing Terraform state file")
-        print("DEBUG: state_content being parsed:", repr(state_content))
+        logger.debug("DEBUG: state_content being parsed:", repr(state_content))
         state_data = json.loads(state_content)
         if not isinstance(state_data, dict):
             raise ValueError("State file did not parse to a dictionary.")

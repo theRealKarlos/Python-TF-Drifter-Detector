@@ -41,7 +41,9 @@ ComparatorAttributes = Dict[str, Union[str, int, float, bool, List, Dict, None]]
 
 # Drift detection types - More specific than Any
 # Flexible for drift details that can contain various types
-DriftDetail = Dict[str, Any]  # Flexible for drift details that can contain various types
+DriftDetail = Dict[
+    str, Any
+]  # Flexible for drift details that can contain various types
 DriftReport = Dict[str, Union[bool, List[DriftDetail], Dict[str, Union[int, str]]]]
 
 # Terraform state types

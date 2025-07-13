@@ -8,6 +8,9 @@ import json
 from typing import Any, Dict
 
 from ..types import LambdaClient
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_lambda_resources(
@@ -38,8 +41,8 @@ def _fetch_lambda_functions(
     lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch Lambda functions from AWS and map them by resource key for drift comparison.
-    Returns a dictionary of resource keys to function data.
+    Fetch Lambda function resources from AWS and map them by resource key for drift
+    comparison. Returns a dictionary of resource keys to function data.
     """
     try:
         response = lambda_client.list_functions()
@@ -55,7 +58,7 @@ def _fetch_lambda_functions(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching Lambda functions: {e}")
+        logger.error(f"[Lambda] Error fetching Lambda functions: {e}")
         return {}
 
 
@@ -95,5 +98,5 @@ def _fetch_lambda_permissions(
         # No match found, return empty dict (no fallback)
         return live_resources
     except Exception as e:
-        print(f"Error fetching Lambda permissions: {e}")
+        logger.error(f"[Lambda] Error fetching Lambda permissions: {e}")
         return {}

@@ -5,6 +5,9 @@ This module contains functions for fetching API Gateway-related AWS resources.
 """
 
 from typing import Any, Dict
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_apigateway_resources(
@@ -45,5 +48,5 @@ def _fetch_api_gateway_apis(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching API Gateway REST APIs: {e}")
+        logger.error(f"Error fetching API Gateway REST APIs: {e}")
         return {}

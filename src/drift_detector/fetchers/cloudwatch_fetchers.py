@@ -5,6 +5,9 @@ This module contains functions for fetching CloudWatch-related AWS resources.
 """
 
 from typing import Any, Dict
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_cloudwatch_resources(
@@ -51,7 +54,7 @@ def _fetch_cloudwatch_dashboards(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching CloudWatch dashboards: {e}")
+        logger.error(f"Error fetching CloudWatch dashboards: {e}")
         return {}
 
 
@@ -76,5 +79,5 @@ def _fetch_cloudwatch_alarms(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching CloudWatch alarms: {e}")
+        logger.error(f"Error fetching CloudWatch alarms: {e}")
         return {}

@@ -7,6 +7,9 @@ This module contains functions for fetching Terraform data source information.
 from typing import Dict, cast
 
 from ..types import STSClient, ResourceAttributes, LiveResourceData, ResourceValue
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_data_source_resources(
@@ -63,7 +66,7 @@ def _fetch_aws_region_data(
         )
         return {resource_key: region_data}
     except Exception as e:
-        print(f"Error creating AWS region data: {e}")
+        logger.error(f"Error creating AWS region data: {e}")
         return {}
 
 
@@ -95,5 +98,5 @@ def _fetch_aws_caller_identity_data(
         )
         return {resource_key: caller_identity_data}
     except Exception as e:
-        print(f"Error fetching AWS caller identity data: {e}")
+        logger.error(f"Error fetching AWS caller identity data: {e}")
         return {}

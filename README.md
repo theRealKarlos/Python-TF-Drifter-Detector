@@ -243,15 +243,18 @@ To add support for new AWS resource types:
 
 **Important:** When adding new comparators, always register more specific resource types (e.g. `aws_iam_role_policy`) before more general ones (e.g. `aws_iam_role`) in the routing logic. This ensures the correct comparator is called and prevents subtle bugs.
 
+## Centralised Logging
+
+- All logging is centralised using Python's `logging` module, configured via `setup_logging()` in `src/utils.py`.
+- All operational, debug, and error output uses the logger (`logger.debug`, `logger.info`, `logger.error`, etc.).
+- No `print()` statements are used in the main codebase; all output is routed through the logger for consistency and production readiness.
+- Log level can be configured via the `LOG_LEVEL` environment variable (e.g., `DEBUG`, `INFO`, `WARNING`, `ERROR`).
+
 ## Code Quality Standards
 
-- **Type Hints**: All functions include proper type annotations
+- **Type Hints**: All functions include proper type annotations. For AWS clients, `Any` is used intentionally due to the dynamic nature of boto3 clients. For drift details and resource attributes, `Dict[str, Any]` is used for flexibility and to accommodate the variety of AWS resource data.
 - **Documentation**: Comprehensive docstrings for all public APIs
-- **Error Handling**: Graceful error handling with proper logging
-- **Testing**: Unit tests with mocking for all AWS interactions
-- **Linting**: flake8 compliance with custom configuration
-- **Formatting**: Black and isort for consistent code style
-- **Security**: Safety scan for dependency vulnerabilities
+- **Error Handling & Logging**: Graceful error handling with proper, centralised logging throughout the codebase. All logs are routed through a single logger instance for consistency and easy configuration.
 
 ## Troubleshooting
 

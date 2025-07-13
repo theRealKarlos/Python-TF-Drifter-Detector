@@ -7,6 +7,9 @@ This module contains functions for fetching DynamoDB-related AWS resources.
 from typing import Dict
 
 from ..types import DynamoDBClient, ResourceAttributes, LiveResourceData
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_dynamodb_resources(
@@ -50,5 +53,5 @@ def _fetch_dynamodb_tables(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching DynamoDB tables: {e}")
+        logger.error(f"Error fetching DynamoDB tables: {e}")
         return {}

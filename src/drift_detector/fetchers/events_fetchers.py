@@ -7,6 +7,9 @@ This module contains functions for fetching EventBridge-related AWS resources.
 from typing import Any, Dict
 
 from ..types import EventsClient
+from ...utils import setup_logging
+
+logger = setup_logging()
 
 
 def fetch_events_resources(
@@ -55,7 +58,7 @@ def _fetch_eventbridge_buses(
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
-        print(f"Error fetching EventBridge buses: {e}")
+        logger.error(f"Error fetching EventBridge buses: {e}")
         return {}
 
 
@@ -86,7 +89,7 @@ def _fetch_eventbridge_rules(
         # No match found, return empty dict (no fallback)
         return live_resources
     except Exception as e:
-        print(f"Error fetching EventBridge rules: {e}")
+        logger.error(f"Error fetching EventBridge rules: {e}")
         return {}
 
 
@@ -105,15 +108,15 @@ def _fetch_eventbridge_targets(
         rule_name = attributes.get("rule")
         target_id = attributes.get("target_id")
 
-        print(
-            f"DEBUG: Fetching EventBridge target - event_bus: {event_bus_name}, "
+        logger.debug(
+            f"Fetching EventBridge target - event_bus: {event_bus_name}, "
             f"rule: {rule_name}, target_id: {target_id}"
         )
 
         if not event_bus_name or not rule_name:
             # No event bus or rule specified in state, do not search (strict, avoids false
             # positives)
-            print("DEBUG: Missing event_bus_name or rule_name, skipping")
+            logger.debug("Missing event_bus_name or rule_name, skipping")
             return {}
 
         response = events_client.list_targets_by_rule(
@@ -121,17 +124,17 @@ def _fetch_eventbridge_targets(
         )
         live_resources = {}
 
-        print(f"DEBUG: Found {len(response['Targets'])} targets in AWS")
+        logger.debug(f"Found {len(response['Targets'])} targets in AWS")
         for target in response["Targets"]:
-            print(f"DEBUG: Checking target {target['Id']} against {target_id}")
+            logger.debug(f"Checking target {target['Id']} against {target_id}")
             if target_id and target["Id"] == target_id:
-                print("DEBUG: Match found! Adding to live_resources")
+                logger.debug("Match found! Adding to live_resources")
                 live_resources[resource_key] = target
                 return live_resources
 
-        print(f"DEBUG: No match found for target_id {target_id}")
+        logger.debug(f"No match found for target_id {target_id}")
         # No match found, return empty dict (no fallback)
         return live_resources
     except Exception as e:
-        print(f"Error fetching EventBridge targets: {e}")
+        logger.error(f"Error fetching EventBridge targets: {e}")
         return {}
