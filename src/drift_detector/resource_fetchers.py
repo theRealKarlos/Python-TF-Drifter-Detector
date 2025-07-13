@@ -38,6 +38,7 @@ def get_live_aws_resources(
     dynamodb_client = boto3.client("dynamodb", region_name=region_name)
     lambda_client = boto3.client("lambda", region_name=region_name)
     iam_client = boto3.client("iam", region_name=region_name)
+    sts_client = boto3.client("sts", region_name=region_name)
     events_client = boto3.client("events", region_name=region_name)
     ecs_client = boto3.client("ecs", region_name=region_name)
     apigateway_client = boto3.client("apigateway", region_name=region_name)
@@ -127,6 +128,14 @@ def get_live_aws_resources(
         elif resource_type.startswith("aws_cloudwatch_metric_alarm"):
             live_resources.update(
                 _fetch_cloudwatch_alarms(cloudwatch_client, resource_key, attributes)
+            )
+        elif resource_type.startswith("aws_region"):
+            live_resources.update(
+                _fetch_aws_region_data(region_name, resource_key, attributes)
+            )
+        elif resource_type.startswith("aws_caller_identity"):
+            live_resources.update(
+                _fetch_aws_caller_identity_data(sts_client, resource_key, attributes)
             )
 
     return live_resources
@@ -624,4 +633,60 @@ def _fetch_cloudwatch_alarms(
         return live_resources
     except Exception as e:
         print(f"Error fetching CloudWatch alarms: {e}")
+        return {}
+
+
+def _fetch_aws_region_data(
+    region_name: str, resource_key: str, attributes: Dict
+) -> Dict[str, Any]:
+    """
+    Fetch AWS region data for Terraform data source.
+
+    This handles the aws_region data source which provides information about
+    the current AWS region. Since this is a data source, we create a mock
+    resource that represents the current region information.
+
+    Returns a dictionary with region information that matches the Terraform data source.
+    """
+    try:
+        # Create a mock resource that represents the current region
+        # This matches what Terraform's aws_region data source provides
+        region_data = {
+            "name": region_name,
+            "description": f"Current AWS region: {region_name}",
+            "endpoint": f"https://{region_name}.amazonaws.com",
+            "id": region_name,
+        }
+        return {resource_key: region_data}
+    except Exception as e:
+        print(f"Error creating AWS region data: {e}")
+        return {}
+
+
+def _fetch_aws_caller_identity_data(
+    sts_client: Any, resource_key: str, attributes: Dict
+) -> Dict[str, Any]:
+    """
+    Fetch AWS caller identity data for Terraform data source.
+
+    This handles the aws_caller_identity data source which provides information about
+    the current AWS account and user/role. Since this is a data source, we create a mock
+    resource that represents the current caller identity information.
+
+    Returns a dictionary with caller identity information that matches the Terraform data source.
+    """
+    try:
+        # Get the current caller identity from AWS
+        response = sts_client.get_caller_identity()
+        # Create a mock resource that represents the current caller identity
+        # This matches what Terraform's aws_caller_identity data source provides
+        caller_identity_data = {
+            "account_id": response["Account"],
+            "arn": response["Arn"],
+            "user_id": response["UserId"],
+            "id": response["Account"],  # Terraform uses account ID as the ID
+        }
+        return {resource_key: caller_identity_data}
+    except Exception as e:
+        print(f"Error fetching AWS caller identity data: {e}")
         return {}
