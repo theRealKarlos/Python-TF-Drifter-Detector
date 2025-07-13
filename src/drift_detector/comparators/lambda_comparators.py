@@ -6,10 +6,12 @@ This module contains functions for comparing Lambda-related AWS resources.
 
 from typing import Any, Dict, List
 
+from ..types import DriftDetail
+
 
 def compare_lambda_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str = ""
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare Lambda resource attributes between Terraform state and live AWS.
 
@@ -29,7 +31,7 @@ def compare_lambda_attributes(
 
 def _compare_lambda_function_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare Lambda function attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -50,7 +52,7 @@ def _compare_lambda_function_attributes(
 
 def _compare_lambda_permission_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare Lambda permission attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.

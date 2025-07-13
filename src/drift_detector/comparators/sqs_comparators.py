@@ -13,10 +13,12 @@ Key points:
 
 from typing import Any, Dict, List
 
+from ..types import DriftDetail
+
 
 def compare_sqs_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str = ""
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare SQS resource attributes between Terraform state and live AWS.
 
@@ -33,7 +35,7 @@ def compare_sqs_attributes(
 
 def _compare_sqs_queue_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare SQS queue attributes between Terraform state and live AWS.
     Only report drift if the values are actually different (after string conversion).

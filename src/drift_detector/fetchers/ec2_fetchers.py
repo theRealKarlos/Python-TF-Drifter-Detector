@@ -4,12 +4,17 @@ EC2 Resource Fetchers Module.
 This module contains functions for fetching EC2-related AWS resources.
 """
 
-from typing import Any, Dict
+from typing import Dict
+
+from ..types import EC2Client, ResourceAttributes, LiveResourceData
 
 
 def fetch_ec2_resources(
-    ec2_client: Any, resource_key: str, attributes: Dict, resource_type: str = ""
-) -> Dict[str, Any]:
+    ec2_client: EC2Client,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = "",
+) -> Dict[str, LiveResourceData]:
     """
     Fetch EC2 resources from AWS based on resource type.
 
@@ -29,8 +34,8 @@ def fetch_ec2_resources(
 
 
 def _fetch_ec2_instances(
-    ec2_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    ec2_client: EC2Client, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch EC2 instances from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to instance data.
@@ -55,7 +60,9 @@ def _fetch_ec2_instances(
         return {}
 
 
-def _fetch_vpcs(ec2_client: Any, resource_key: str, attributes: Dict) -> Dict[str, Any]:
+def _fetch_vpcs(
+    ec2_client: EC2Client, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch VPCs from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to VPC data.

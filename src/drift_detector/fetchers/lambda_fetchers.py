@@ -11,7 +11,10 @@ from ..types import LambdaClient
 
 
 def fetch_lambda_resources(
-    lambda_client: LambdaClient, resource_key: str, attributes: Dict, resource_type: str = ""
+    lambda_client: LambdaClient,
+    resource_key: str,
+    attributes: Dict,
+    resource_type: str = "",
 ) -> Dict[str, Any]:
     """
     Fetch Lambda resources from AWS based on resource type.

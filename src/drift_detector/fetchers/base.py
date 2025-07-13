@@ -55,8 +55,12 @@ def get_live_aws_resources(
     sts_client: STSClient = boto3.client("sts", region_name=region_name)
     events_client: EventsClient = boto3.client("events", region_name=region_name)
     ecs_client: ECSClient = boto3.client("ecs", region_name=region_name)
-    apigateway_client: APIGatewayClient = boto3.client("apigateway", region_name=region_name)
-    cloudwatch_client: CloudWatchClient = boto3.client("cloudwatch", region_name=region_name)
+    apigateway_client: APIGatewayClient = boto3.client(
+        "apigateway", region_name=region_name
+    )
+    cloudwatch_client: CloudWatchClient = boto3.client(
+        "cloudwatch", region_name=region_name
+    )
     sqs_client: SQSClient = boto3.client("sqs", region_name=region_name)
 
     # Import service-specific fetchers

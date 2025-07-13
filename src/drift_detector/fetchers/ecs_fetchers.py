@@ -4,12 +4,17 @@ ECS Resource Fetchers Module.
 This module contains functions for fetching ECS-related AWS resources.
 """
 
-from typing import Any, Dict
+from typing import Dict
+
+from ..types import ECSClient, ResourceAttributes, LiveResourceData
 
 
 def fetch_ecs_resources(
-    ecs_client: Any, resource_key: str, attributes: Dict, resource_type: str
-) -> Dict[str, Any]:
+    ecs_client: ECSClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str,
+) -> Dict[str, LiveResourceData]:
     """
     Fetch ECS resources from AWS based on resource type.
 
@@ -31,8 +36,8 @@ def fetch_ecs_resources(
 
 
 def _fetch_ecs_clusters(
-    ecs_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    ecs_client: ECSClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch ECS clusters from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to cluster data.
@@ -60,8 +65,8 @@ def _fetch_ecs_clusters(
 
 
 def _fetch_ecs_services(
-    ecs_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    ecs_client: ECSClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch ECS services from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to service data.

@@ -6,10 +6,12 @@ This module contains functions for comparing EC2-related AWS resources.
 
 from typing import Any, Dict, List
 
+from ..types import DriftDetail
+
 
 def compare_ec2_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare EC2 resource attributes between Terraform state and live AWS.
 
@@ -20,7 +22,7 @@ def compare_ec2_attributes(
     Returns:
         List of drift details for any mismatched attributes
     """
-    drift_details: List[Dict[str, Any]] = []
+    drift_details: List[DriftDetail] = []
 
     # Compare instance type for EC2 instances
     state_instance_type = state_attrs.get("instance_type")

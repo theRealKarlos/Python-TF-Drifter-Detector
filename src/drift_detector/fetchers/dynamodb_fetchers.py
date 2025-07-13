@@ -4,12 +4,14 @@ DynamoDB Resource Fetchers Module.
 This module contains functions for fetching DynamoDB-related AWS resources.
 """
 
-from typing import Any, Dict
+from typing import Dict
+
+from ..types import DynamoDBClient, ResourceAttributes, LiveResourceData
 
 
 def fetch_dynamodb_resources(
-    dynamodb_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    dynamodb_client: DynamoDBClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch DynamoDB resources from AWS.
 
@@ -25,8 +27,8 @@ def fetch_dynamodb_resources(
 
 
 def _fetch_dynamodb_tables(
-    dynamodb_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    dynamodb_client: DynamoDBClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch DynamoDB tables from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to table data.

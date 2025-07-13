@@ -6,10 +6,12 @@ This module contains functions for comparing RDS-related AWS resources.
 
 from typing import Any, Dict, List
 
+from ..types import DriftDetail
+
 
 def compare_rds_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare RDS resource attributes between Terraform state and live AWS.
 

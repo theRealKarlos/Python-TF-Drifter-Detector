@@ -4,16 +4,18 @@ Data Source Fetchers Module.
 This module contains functions for fetching Terraform data source information.
 """
 
-from typing import Any, Dict
+from typing import Dict, cast
+
+from ..types import STSClient, ResourceAttributes, LiveResourceData, ResourceValue
 
 
 def fetch_data_source_resources(
-    sts_client: Any,
+    sts_client: STSClient,
     region_name: str,
     resource_key: str,
-    attributes: Dict,
+    attributes: ResourceAttributes,
     resource_type: str,
-) -> Dict[str, Any]:
+) -> Dict[str, LiveResourceData]:
     """
     Fetch Terraform data source information.
 
@@ -36,8 +38,8 @@ def fetch_data_source_resources(
 
 
 def _fetch_aws_region_data(
-    region_name: str, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    region_name: str, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, Dict[str, ResourceValue]]:
     """
     Fetch AWS region data for Terraform data source.
 
@@ -50,12 +52,15 @@ def _fetch_aws_region_data(
     try:
         # Create a mock resource that represents the current region
         # This matches what Terraform's aws_region data source provides
-        region_data = {
-            "name": region_name,
-            "description": f"Current AWS region: {region_name}",
-            "endpoint": f"https://{region_name}.amazonaws.com",
-            "id": region_name,
-        }
+        region_data = cast(
+            Dict[str, ResourceValue],
+            {
+                "name": region_name,
+                "description": f"Current AWS region: {region_name}",
+                "endpoint": f"https://{region_name}.amazonaws.com",
+                "id": region_name,
+            },
+        )
         return {resource_key: region_data}
     except Exception as e:
         print(f"Error creating AWS region data: {e}")
@@ -63,8 +68,8 @@ def _fetch_aws_region_data(
 
 
 def _fetch_aws_caller_identity_data(
-    sts_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    sts_client: STSClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, Dict[str, ResourceValue]]:
     """
     Fetch AWS caller identity data for Terraform data source.
 
@@ -79,12 +84,15 @@ def _fetch_aws_caller_identity_data(
         response = sts_client.get_caller_identity()
         # Create a mock resource that represents the current caller identity
         # This matches what Terraform's aws_caller_identity data source provides
-        caller_identity_data = {
-            "account_id": response["Account"],
-            "arn": response["Arn"],
-            "user_id": response["UserId"],
-            "id": response["Account"],  # Terraform uses account ID as the ID
-        }
+        caller_identity_data = cast(
+            Dict[str, ResourceValue],
+            {
+                "account_id": response["Account"],
+                "arn": response["Arn"],
+                "user_id": response["UserId"],
+                "id": response["Account"],  # Terraform uses account ID as the ID
+            },
+        )
         return {resource_key: caller_identity_data}
     except Exception as e:
         print(f"Error fetching AWS caller identity data: {e}")

@@ -4,12 +4,17 @@ IAM Resource Fetchers Module.
 This module contains functions for fetching IAM-related AWS resources.
 """
 
-from typing import Any, Dict
+from typing import Dict
+
+from ..types import IAMClient, ResourceAttributes, LiveResourceData
 
 
 def fetch_iam_resources(
-    iam_client: Any, resource_key: str, attributes: Dict, resource_type: str
-) -> Dict[str, Any]:
+    iam_client: IAMClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str,
+) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM resources from AWS based on resource type.
 
@@ -35,8 +40,8 @@ def fetch_iam_resources(
 
 
 def _fetch_iam_roles(
-    iam_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM roles from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to role data.
@@ -60,8 +65,8 @@ def _fetch_iam_roles(
 
 
 def _fetch_iam_policies(
-    iam_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM policies from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to policy data.
@@ -85,8 +90,8 @@ def _fetch_iam_policies(
 
 
 def _fetch_iam_role_policies(
-    iam_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM role policies from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to role policy data.
@@ -150,8 +155,8 @@ def _fetch_iam_role_policies(
 
 
 def _fetch_iam_openid_connect_providers(
-    iam_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM OpenID Connect providers from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to provider data.

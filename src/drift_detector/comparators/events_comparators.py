@@ -6,10 +6,12 @@ This module contains functions for comparing EventBridge-related AWS resources.
 
 from typing import Any, Dict, List
 
+from ..types import DriftDetail
+
 
 def compare_events_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare EventBridge resource attributes between Terraform state and live AWS.
 
@@ -33,7 +35,7 @@ def compare_events_attributes(
 
 def _compare_eventbridge_bus_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare EventBridge bus attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -54,7 +56,7 @@ def _compare_eventbridge_bus_attributes(
 
 def _compare_eventbridge_rule_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare EventBridge rule attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -75,7 +77,7 @@ def _compare_eventbridge_rule_attributes(
 
 def _compare_eventbridge_target_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare EventBridge target attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.

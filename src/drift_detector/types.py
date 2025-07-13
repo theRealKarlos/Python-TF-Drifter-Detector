@@ -30,13 +30,18 @@ APIGatewayClient = Any
 CloudWatchClient = Any
 SQSClient = Any
 
-# Resource data types
-ResourceAttributes = Dict[str, Union[str, int, float, bool, List, Dict, None]]
-LiveResourceData = Dict[str, Union[str, int, float, bool, List, Dict, None]]
+# Resource data types - More specific than Any
+ResourceValue = Union[str, int, float, bool, List, Dict, None]
+ResourceAttributes = Dict[str, ResourceValue]
+LiveResourceData = Dict[str, ResourceValue]
 ResourceData = Dict[str, LiveResourceData]
 
-# Drift detection types
-DriftDetail = Dict[str, Union[str, List[str]]]
+# Comparator-specific types - More flexible for attribute comparison
+ComparatorAttributes = Dict[str, Union[str, int, float, bool, List, Dict, None]]
+
+# Drift detection types - More specific than Any
+# Flexible for drift details that can contain various types
+DriftDetail = Dict[str, Any]  # Flexible for drift details that can contain various types
 DriftReport = Dict[str, Union[bool, List[DriftDetail], Dict[str, Union[int, str]]]]
 
 # Terraform state types

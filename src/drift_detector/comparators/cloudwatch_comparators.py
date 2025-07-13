@@ -6,10 +6,12 @@ This module contains functions for comparing CloudWatch-related AWS resources.
 
 from typing import Any, Dict, List
 
+from ..types import DriftDetail
+
 
 def compare_cloudwatch_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare CloudWatch resource attributes between Terraform state and live AWS.
 
@@ -31,7 +33,7 @@ def compare_cloudwatch_attributes(
 
 def _compare_cloudwatch_dashboard_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare CloudWatch dashboard attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -52,7 +54,7 @@ def _compare_cloudwatch_dashboard_attributes(
 
 def _compare_cloudwatch_alarm_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[Dict[str, Any]]:
+) -> List[DriftDetail]:
     """
     Compare CloudWatch alarm attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.

@@ -4,12 +4,14 @@ RDS Resource Fetchers Module.
 This module contains functions for fetching RDS-related AWS resources.
 """
 
-from typing import Any, Dict
+from typing import Dict
+
+from ..types import RDSClient, ResourceAttributes, LiveResourceData
 
 
 def fetch_rds_resources(
-    rds_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    rds_client: RDSClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch RDS resources from AWS.
 
@@ -25,8 +27,8 @@ def fetch_rds_resources(
 
 
 def _fetch_rds_instances(
-    rds_client: Any, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+    rds_client: RDSClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
     """
     Fetch RDS database instances from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to database instance data.
