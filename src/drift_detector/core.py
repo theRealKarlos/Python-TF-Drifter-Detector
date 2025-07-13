@@ -8,8 +8,8 @@ the overall drift detection process across all supported AWS resource types.
 from typing import Any, Dict
 
 from ..utils import download_s3_file, parse_terraform_state
-from .resource_comparators import compare_resources
-from .resource_fetchers import get_live_aws_resources
+from .comparators import compare_resources
+from .fetchers import get_live_aws_resources
 
 
 def detect_drift(config: Dict) -> Dict[str, Any]:
