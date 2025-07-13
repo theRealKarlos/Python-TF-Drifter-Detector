@@ -215,12 +215,13 @@ The drift detector supports comparison of the following AWS resources:
 - **S3**: Buckets ✅ **Tested**
 - **RDS**: Database instances ⚠️ **Implemented but not tested**
 - **DynamoDB**: Tables ✅ **Tested**
-- **Lambda**: Functions ✅ **Tested**
+- **Lambda**: Functions and permissions ✅ **Tested**
 - **IAM**: Roles and policies (with special handling for IAM role policy document format differences; see below) ✅ **Tested**
-- **EventBridge**: Buses and rules ⚠️ **Implemented but not tested**
+- **EventBridge**: Buses, rules, and targets ✅ **Tested**
 - **ECS**: Clusters and services ⚠️ **Implemented but not tested**
 - **API Gateway**: REST APIs ⚠️ **Implemented but not tested**
 - **CloudWatch**: Dashboards and alarms ⚠️ **Implemented but not tested**
+- **SQS**: Queues ✅ **Tested**
 
 **Legend:**
 
