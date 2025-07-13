@@ -8,27 +8,24 @@ format difference and should not be considered drift. This test guards against r
 comparator logic for IAM role policies.
 """
 
-import json
 import sys
 from pathlib import Path
+from src.drift_detector.resource_comparators import _compare_iam_role_policy_attributes
 
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from src.drift_detector.resource_comparators import _compare_iam_role_policy_attributes
 
-
-def test_policy_comparison():
+def test_policy_comparison() -> None:
     """Test that policy document format differences are handled correctly."""
-    
-    # State attributes (JSON string format)
     state_attrs = {
         "role": "github-actions-role",
         "name": "github-actions-policy",
-        "policy": '{"Version":"2012-10-17","Statement":[{"Action":["lambda:CreateFunction"],"Effect":"Allow","Resource":"*"}]}'
+        "policy": (
+            '{"Version":"2012-10-17","Statement":[{"Action":["lambda:CreateFunction"],'
+            '"Effect":"Allow","Resource":"*"}]}'
+        ),
     }
-    
-    # Live attributes (dict format)
     live_attrs = {
         "role_name": "github-actions-role",
         "policy_name": "github-actions-policy",
@@ -41,12 +38,9 @@ def test_policy_comparison():
                     "Resource": "*"
                 }
             ]
-        }
+        },
     }
-    
-    # Compare attributes
     drift_details = _compare_iam_role_policy_attributes(state_attrs, live_attrs)
-    
     print("Policy comparison test:")
     print(f"State role: {state_attrs['role']}")
     print(f"Live role: {live_attrs['role_name']}")
@@ -55,15 +49,12 @@ def test_policy_comparison():
     print(f"State policy type: {type(state_attrs['policy'])}")
     print(f"Live policy type: {type(live_attrs['policy'])}")
     print(f"Drift details found: {len(drift_details)}")
-    
     for detail in drift_details:
         print(f"  - {detail['attribute']}: {detail['state_value']} -> {detail['live_value']}")
-    
-    # Should have no drift details if format is handled correctly
     assert len(drift_details) == 0, f"Expected no drift details, but found {len(drift_details)}"
     print("✅ SUCCESS: No drift detected - format differences handled correctly!")
 
 
 if __name__ == "__main__":
     test_policy_comparison()
-    print("Test completed successfully!") 
+    print("Test completed successfully!")

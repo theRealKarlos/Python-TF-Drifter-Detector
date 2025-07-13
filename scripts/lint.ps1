@@ -25,7 +25,7 @@ function Invoke-LintCommand {
     Write-Host "Command: $Command" -ForegroundColor Gray
     
     try {
-        $result = Invoke-Expression $Command
+        Invoke-Expression $Command
         if ($LASTEXITCODE -eq 0) {
             Write-Host "✅ $SuccessMessage" -ForegroundColor Green
             $script:SuccessCount++

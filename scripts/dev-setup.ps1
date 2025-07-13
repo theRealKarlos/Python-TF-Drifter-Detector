@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 # Install development dependencies
 Write-Host "Installing development dependencies..." -ForegroundColor Yellow
-pip install pytest pytest-cov mypy black isort
+pip install pytest pytest-cov mypy black isort safety
 
 # Run initial checks
 Write-Host "Running initial code quality checks..." -ForegroundColor Yellow
