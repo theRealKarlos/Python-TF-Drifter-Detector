@@ -20,6 +20,7 @@ from .iam_comparators import compare_iam_attributes
 from .lambda_comparators import compare_lambda_attributes
 from .rds_comparators import compare_rds_attributes
 from .s3_comparators import compare_s3_attributes
+from .sqs_comparators import compare_sqs_attributes
 
 
 def compare_resources(
@@ -72,6 +73,15 @@ def compare_resources(
                 unique_resource_key += f"_{function_name}"
             if statement_id:
                 unique_resource_key += f"_{statement_id}"
+        elif resource_type.startswith("aws_sqs_queue"):
+            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
+            queue_name = state_attributes.get("name", "")
+            if queue_name.startswith("https://"):
+                # Normalise queue name if it's a URL
+                queue_name = queue_name.split("/")[-1]
+            unique_resource_key = resource_key
+            if queue_name:
+                unique_resource_key = f"{resource_key}_{queue_name}"
         else:
             unique_resource_key = resource_key
 
@@ -202,5 +212,7 @@ def compare_attributes(
         )
     elif resource_type.startswith("aws_db_instance"):
         drift_details.extend(compare_rds_attributes(state_attrs, live_attrs))
+    elif resource_type.startswith("aws_sqs_queue"):
+        drift_details.extend(compare_sqs_attributes(state_attrs, live_attrs))
 
     return drift_details

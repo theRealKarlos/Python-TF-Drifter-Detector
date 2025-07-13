@@ -11,7 +11,9 @@ comparator logic for IAM role policies.
 import sys
 from pathlib import Path
 
-from src.drift_detector.comparators.iam_comparators import _compare_iam_role_policy_attributes
+from src.drift_detector.comparators.iam_comparators import (
+    _compare_iam_role_policy_attributes,
+)
 
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))

@@ -42,6 +42,7 @@ def get_live_aws_resources(
     ecs_client = boto3.client("ecs", region_name=region_name)
     apigateway_client = boto3.client("apigateway", region_name=region_name)
     cloudwatch_client = boto3.client("cloudwatch", region_name=region_name)
+    sqs_client = boto3.client("sqs", region_name=region_name)
 
     # Import service-specific fetchers
     from .apigateway_fetchers import fetch_apigateway_resources
@@ -55,6 +56,7 @@ def get_live_aws_resources(
     from .lambda_fetchers import fetch_lambda_resources
     from .rds_fetchers import fetch_rds_resources
     from .s3_fetchers import fetch_s3_resources
+    from .sqs_fetchers import fetch_sqs_resources
 
     # Iterate through each resource defined in the Terraform state
     for resource in state_data.get("resources", []):
@@ -174,6 +176,17 @@ def get_live_aws_resources(
                 fetch_data_source_resources(
                     sts_client, region_name, resource_key, attributes, resource_type
                 )
+            )
+        elif resource_type.startswith("aws_sqs_queue"):
+            queue_name = attributes.get("name", "")
+            unique_resource_key = resource_key
+            if queue_name:
+                # Normalise queue name if it's a URL
+                if queue_name.startswith("https://"):
+                    queue_name = queue_name.split("/")[-1]
+                unique_resource_key = f"{resource_key}_{queue_name}"
+            live_resources.update(
+                fetch_sqs_resources(sqs_client, unique_resource_key, attributes)
             )
 
     return live_resources
