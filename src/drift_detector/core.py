@@ -52,6 +52,12 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         drift_report = compare_resources(state_data, live_resources)
 
         # Step 4: Collect matching resources (present in both state and live, and with no drift)
+        # Fix: Count all resource instances in the state file
+        total_state_instances = 0
+        for resource in state_data.get("resources", []):
+            total_state_instances += len(resource.get("instances", []))
+        print(f"DEBUG: Total resource instances in state: {total_state_instances}")
+
         all_state_resources = set()
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
@@ -73,9 +79,6 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                 continue
             resource_type, resource_name = resource_key.split(".", 1)
             live_attributes = live_resources[resource_key]
-            # Debug: Print live_attributes for specific resource types
-            if resource_type in ("aws_iam_role_policy", "aws_sqs_queue_policy"):
-                print(f"DEBUG: live_attributes for {resource_type}.{resource_name}: {live_attributes}")
             # Resource-type-specific extraction of AWS live name
             aws_live_name = None
             if resource_type == "aws_api_gateway_rest_api":
@@ -91,22 +94,26 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
             elif resource_type == "aws_iam_role":
                 aws_live_name = live_attributes.get("RoleName")
             elif resource_type == "aws_iam_role_policy":
-                aws_live_name = live_attributes.get("PolicyName")
+                # Fix: Use 'policy_name' (lowercase) as seen in debug output
+                aws_live_name = live_attributes.get("policy_name")
             elif resource_type == "aws_region":
-                aws_live_name = live_attributes.get("name") or live_attributes.get("RegionName")
-            elif resource_type == "aws_sqs_queue_policy":
-                aws_live_name = live_attributes.get("QueueUrl") or live_attributes.get("queue_url")
-            elif resource_type == "aws_vpc":
-                aws_live_name = live_attributes.get("VpcId")
+                aws_live_name = live_attributes.get("RegionName")
             elif resource_type == "aws_sqs_queue":
                 aws_live_name = live_attributes.get("QueueName")
+            elif resource_type == "aws_sqs_queue_policy":
+                # Fix: Use 'QueueUrl' as the live name for SQS queue policies
+                aws_live_name = live_attributes.get("QueueUrl")
+            elif resource_type == "aws_vpc":
+                aws_live_name = live_attributes.get("VpcId")
             else:
-                # Fallback: try common keys
-                aws_live_name = (
-                    live_attributes.get("name")
-                    or live_attributes.get("Name")
-                    or live_attributes.get("id")
-                )
+                # Fallback to common keys
+                for key in ("name", "Name", "id", "Id"):
+                    if key in live_attributes:
+                        aws_live_name = live_attributes[key]
+                        break
+            # Debug print if no name is found
+            if not aws_live_name:
+                print(f"DEBUG: No live name found for {resource_type}.{resource_name}, available keys: {list(live_attributes.keys())}")
             matching_resources.append({
                 "resource_type": resource_type,
                 "resource_name": resource_name,

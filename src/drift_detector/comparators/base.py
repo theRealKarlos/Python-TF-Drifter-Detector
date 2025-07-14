@@ -51,156 +51,107 @@ def compare_resources(
         resource_name = resource.get("name")
         resource_key = f"{resource_type}.{resource_name}"
 
-        # Handle EventBridge rules specially - create unique key with event bus name
-        if resource_type.startswith("aws_cloudwatch_event_rule"):
-            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
-            event_bus_name = state_attributes.get("event_bus_name", "")
-            unique_resource_key = (
-                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
-            )
-        elif resource_type.startswith("aws_cloudwatch_event_target"):
-            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
-            event_bus_name = state_attributes.get("event_bus_name", "")
-            unique_resource_key = (
-                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
-            )
-        elif resource_type.startswith("aws_lambda_permission"):
-            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
-            function_name = state_attributes.get("function_name", "")
-            statement_id = state_attributes.get("statement_id", "")
-            if function_name.startswith("arn:aws:lambda:"):
-                # Extract function name from ARN
-                function_name = function_name.split(":")[-1]
-            unique_resource_key = resource_key
-            if function_name:
-                unique_resource_key += f"_{function_name}"
-            if statement_id:
-                unique_resource_key += f"_{statement_id}"
-        elif resource_type.startswith("aws_sqs_queue_policy"):
-            # For each SQS queue policy instance, use queue_url as the unique identifier.
-            # For each instance, find the matching live resource by queue_url or QueueArn.
-            # Extract the policy from both state and live, parse as JSON, canonicalise, and compare.
-            # Report drift only for the policy attribute, using aws_sqs_queue_policy.<resource_name>
-            # [<queue_url>] as the identifier.
+        # Special handling for SQS queue policy (already loops over all instances)
+        if resource_type.startswith("aws_sqs_queue_policy"):
             import json
             for instance in resource.get("instances", []):
                 state_attributes = instance.get("attributes", {})
                 queue_url = state_attributes.get("queue_url")
                 state_policy_raw = state_attributes.get("policy")
-                # Parse state policy as JSON and canonicalise
-                try:
-                    state_policy_obj = json.loads(state_policy_raw) if state_policy_raw else None
-                    canonical_state_policy = json.dumps(
-                        state_policy_obj, sort_keys=True, separators=(",", ":")
-                    ) if state_policy_obj else None
-                except Exception:
-                    canonical_state_policy = None
-                # Find the live resource for this queue by queue_url or QueueArn
+                # Find the matching live policy for this queue_url
                 live_policy_raw = None
                 for live_key, live_val in live_resources.items():
                     if not isinstance(live_val, dict):
                         continue
-                    # Match by queue_url or QueueArn ending
-                    if (
-                        live_val.get("queue_url") == queue_url
-                        or live_val.get("QueueArn", "").endswith(queue_url.split("/")[-1])
-                    ):
-                        live_policy_raw = (
-                            live_val.get("Policy") or live_val.get("policy")
-                        )
+                    if live_val.get("QueueUrl") == queue_url:
+                        live_policy_raw = live_val.get("Policy")
                         break
-                # Parse live policy as JSON and canonicalise
+                    queue_arn = live_val.get("QueueArn", "")
+                    if queue_url and queue_arn.endswith(queue_url.split("/")[-1]):
+                        live_policy_raw = live_val.get("Policy")
+                        break
                 try:
+                    state_policy_obj = json.loads(state_policy_raw) if state_policy_raw else None
                     live_policy_obj = json.loads(live_policy_raw) if live_policy_raw else None
-                    canonical_live_policy = json.dumps(
-                        live_policy_obj, sort_keys=True, separators=(",", ":")
-                    ) if live_policy_obj else None
-                except Exception:
-                    canonical_live_policy = None
-                # Compare canonicalised policies; report drift if they differ
-                if canonical_state_policy != canonical_live_policy:
-                    resource_identifier = (
-                        f"{resource_type}.{resource_name} [{queue_url}]"
+                    canonical_state_policy = (
+                        json.dumps(state_policy_obj, sort_keys=True, separators=(",", ":"))
+                        if state_policy_obj else None
                     )
+                    canonical_live_policy = (
+                        json.dumps(live_policy_obj, sort_keys=True, separators=(",", ":"))
+                        if live_policy_obj else None
+                    )
+                except Exception as e:
+                    print(f"DEBUG: JSON parse error for queue_url={queue_url!r}: {e}")
+                    canonical_state_policy = state_policy_raw
+                    canonical_live_policy = live_policy_raw
+                print(f"DEBUG: SQS policy compare for {resource_type}.{resource_name} [{queue_url}]:\n  State={canonical_state_policy}\n  Live={canonical_live_policy}")
+                if canonical_state_policy != canonical_live_policy:
+                    resource_identifier = f"{resource_type}.{resource_name} [{queue_url}]"
                     drifts.append({
                         "resource_key": resource_identifier,
                         "drift_type": "attribute_drift",
-                        "description": (
-                            f"Policy drift detected for {resource_identifier}"
-                        ),
+                        "description": f"Policy drift detected for {resource_identifier}",
                         "differences": [
                             {
-                                "attribute": "policy",
-                                "state": (
-                                    canonical_state_policy
-                                    if canonical_state_policy is not None
-                                    else "N/A"
-                                ),
-                                "live": (
-                                    canonical_live_policy
-                                    if canonical_live_policy is not None
-                                    else "N/A"
-                                ),
+                                "name": "policy",
+                                "state": canonical_state_policy,
+                                "live": canonical_live_policy,
                             }
                         ],
                     })
-            continue
-        elif resource_type.startswith("aws_sqs_queue"):
-            state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
-            queue_name = state_attributes.get("name", "")
-            if queue_name.startswith("https://"):
-                # Normalise queue name if it's a URL
-                queue_name = queue_name.split("/")[-1]
-            unique_resource_key = resource_key
-            if queue_name:
-                unique_resource_key = f"{resource_key}_{queue_name}"
-        else:
-            unique_resource_key = resource_key
+            continue  # Skip generic block for SQS queue policy resources
 
-        # Debug output for IAM role policy
-        if resource_key == "aws_iam_role_policy.github_actions":
-            logger.debug(f"DEBUG: Checking IAM role policy drift for {resource_key}")
-            logger.debug(f"DEBUG: Resource type: {resource_type}")
-            logger.debug(
-                f"DEBUG: State attributes: "
-                f"{resource.get('instances', [{}])[0].get('attributes', {})}"
-            )
-            if unique_resource_key in live_resources:
-                logger.debug(
-                    f"DEBUG: Live attributes: {live_resources[unique_resource_key]}"
+        # For all other resource types, loop over all instances
+        for idx, instance in enumerate(resource.get("instances", [])):
+            state_attributes = instance.get("attributes", {})
+            # Construct a unique key for this instance
+            # Prefer id, name, or index if available
+            instance_id = state_attributes.get("id")
+            instance_name = state_attributes.get("name")
+            unique_resource_key = resource_key
+            if instance_id:
+                unique_resource_key = f"{resource_key}_{instance_id}"
+            elif instance_name:
+                unique_resource_key = f"{resource_key}_{instance_name}"
+            elif len(resource.get("instances", [])) > 1:
+                unique_resource_key = f"{resource_key}_{idx}"
+
+            # Debug output for IAM role policy
+            if resource_key == "aws_iam_role_policy.github_actions":
+                logger.debug(f"DEBUG: Checking IAM role policy drift for {resource_key} (instance {idx})")
+                logger.debug(f"DEBUG: Resource type: {resource_type}")
+                logger.debug(f"DEBUG: State attributes: {state_attributes}")
+                if unique_resource_key in live_resources:
+                    logger.debug(f"DEBUG: Live attributes: {live_resources[unique_resource_key]}")
+                else:
+                    logger.debug("DEBUG: Resource not found in live_resources")
+
+            # Check if resource exists in live AWS
+            if unique_resource_key not in live_resources:
+                drifts.append(
+                    {
+                        "resource_key": unique_resource_key,
+                        "drift_type": "missing_resource",
+                        "description": f"Resource {unique_resource_key} exists in state but not in live AWS",
+                    }
                 )
-            else:
-                logger.debug("DEBUG: Resource not found in live_resources")
+                continue
 
-        # Check if resource exists in live AWS
-        if unique_resource_key not in live_resources:
-            drifts.append(
-                {
-                    "resource_key": resource_key,
-                    "drift_type": "missing_resource",
-                    "description": f"Resource {resource_key} exists in state but not in live AWS",
-                }
+            # Compare attributes for existing resources
+            live_attributes = live_resources[unique_resource_key]
+            differences = compare_attributes(
+                state_attributes, live_attributes, resource_type
             )
-            continue
-
-        # Compare attributes for existing resources
-        state_attributes = resource.get("instances", [{}])[0].get("attributes", {})
-        live_attributes = live_resources[unique_resource_key]
-
-        # Compare key attributes (customise based on resource type)
-        differences = compare_attributes(
-            state_attributes, live_attributes, resource_type
-        )
-
-        if differences:
-            drifts.append(
-                {
-                    "resource_key": resource_key,
-                    "drift_type": "attribute_drift",
-                    "description": f"Attribute drift detected for {resource_key}",
-                    "differences": differences,
-                }
-            )
+            if differences:
+                drifts.append(
+                    {
+                        "resource_key": unique_resource_key,
+                        "drift_type": "attribute_drift",
+                        "description": f"Attribute drift detected for {unique_resource_key}",
+                        "differences": differences,
+                    }
+                )
 
     return {
         "drifts": drifts,
