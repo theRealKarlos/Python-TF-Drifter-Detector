@@ -8,6 +8,7 @@ from typing import Dict
 
 from ...utils import fetcher_error_handler, setup_logging
 from ..types import IAMClient, LiveResourceData, ResourceAttributes
+from .base import extract_arn_from_attributes
 
 logger = setup_logging()
 
@@ -33,6 +34,8 @@ def fetch_iam_resources(
     """
     if resource_type.startswith("aws_iam_role_policy"):
         return _fetch_iam_role_policies(iam_client, resource_key, attributes)
+    elif resource_type.startswith("aws_iam_role_policy_attachment"):
+        return _fetch_iam_role_policy_attachments(iam_client, resource_key, attributes)
     elif resource_type.startswith("aws_iam_role"):
         return _fetch_iam_roles(iam_client, resource_key, attributes)
     elif resource_type.startswith("aws_iam_policy"):
@@ -48,19 +51,23 @@ def _fetch_iam_roles(
 ) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM roles from AWS and map them by resource key for drift comparison.
+    Uses ARN-based matching exclusively as ARNs are always present in Terraform
+    state files for AWS managed resources.
     Returns a dictionary of resource keys to role data.
     """
     try:
         response = iam_client.list_roles()
         live_resources = {}
-        role_name = attributes.get("name") or attributes.get("id")
-
+        
+        # Use ARN-based matching exclusively
+        arn = extract_arn_from_attributes(attributes, "aws_iam_role")
+        
         for role in response["Roles"]:
-            if role_name and role["RoleName"] == role_name:
+            if role.get("Arn") == arn:
                 live_resources[resource_key] = role
                 return live_resources
 
-        # If no exact match, return empty dict (no fallback)
+        # If no exact match, return empty dict
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
@@ -73,19 +80,23 @@ def _fetch_iam_policies(
 ) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM policies from AWS and map them by resource key for drift comparison.
+    Uses ARN-based matching exclusively as ARNs are always present in Terraform
+    state files for AWS managed resources.
     Returns a dictionary of resource keys to policy data.
     """
     try:
         response = iam_client.list_policies(Scope="Local")
         live_resources = {}
-        policy_name = attributes.get("name") or attributes.get("id")
-
+        
+        # Use ARN-based matching exclusively
+        arn = extract_arn_from_attributes(attributes, "aws_iam_policy")
+        
         for policy in response["Policies"]:
-            if policy_name and policy["PolicyName"] == policy_name:
+            if policy.get("Arn") == arn:
                 live_resources[resource_key] = policy
                 return live_resources
 
-        # If no exact match, return empty dict (no fallback)
+        # If no exact match, return empty dict
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
@@ -165,29 +176,67 @@ def _fetch_iam_role_policies(
 
 
 @fetcher_error_handler
+def _fetch_iam_role_policy_attachments(
+    iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
+) -> Dict[str, LiveResourceData]:
+    """
+    Fetch IAM role policy attachments from AWS and map them by resource key for drift comparison.
+    Returns a dictionary of resource keys to role policy attachment data.
+    """
+    try:
+        live_resources: Dict[str, LiveResourceData] = {}
+        
+        # Get the role name and policy ARN
+        role_name = attributes.get("role")
+        policy_arn = attributes.get("policy_arn")
+        
+        if not role_name or not policy_arn:
+            return live_resources
+        
+        # Get attached policies for the role
+        try:
+            response = iam_client.list_attached_role_policies(RoleName=role_name)
+            
+            # Check if the policy is attached
+            for attached_policy in response.get("AttachedPolicies", []):
+                if attached_policy.get("PolicyArn") == policy_arn:
+                    live_resources[resource_key] = {
+                        "role_name": role_name,
+                        "policy_arn": policy_arn,
+                        "policy_name": attached_policy.get("PolicyName"),
+                    }
+                    return live_resources
+            
+            return live_resources
+        except iam_client.exceptions.NoSuchEntityException:
+            return live_resources
+        
+    except Exception as e:
+        logger.error(f"Error fetching IAM role policy attachments: {e}")
+        return {}
+
+
+@fetcher_error_handler
 def _fetch_iam_openid_connect_providers(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
     """
     Fetch IAM OpenID Connect providers from AWS and map them by resource key for drift comparison.
+    Uses ARN-based matching exclusively as ARNs are always present in Terraform
+    state files for AWS managed resources.
     Returns a dictionary of resource keys to provider data.
     """
     try:
         response = iam_client.list_open_id_connect_providers()
         live_resources = {}
-        provider_arn = attributes.get("arn") or attributes.get("id")
-
-        # The response structure is 'OpenIDConnectProviderList' with 'Arn' fields
+        
+        # Use ARN-based matching exclusively
+        arn = extract_arn_from_attributes(attributes, "aws_iam_openid_connect_provider")
+        
         provider_list = response.get("OpenIDConnectProviderList", [])
-
-        logger.debug(
-            f"DEBUG: OIDC provider ARNs from AWS: {[p.get('Arn') for p in provider_list]}"
-        )
-        logger.debug(f"DEBUG: Looking for provider ARN: {provider_arn}")
-
         for provider in provider_list:
             provider_arn_from_aws = provider.get("Arn")
-            if provider_arn and provider_arn_from_aws == provider_arn:
+            if provider_arn_from_aws == arn:
                 try:
                     provider_response = iam_client.get_open_id_connect_provider(
                         OpenIDConnectProviderArn=provider_arn_from_aws
@@ -201,7 +250,7 @@ def _fetch_iam_openid_connect_providers(
                     logger.error(f"Error getting OIDC provider details: {e}")
                     continue
 
-        # If no exact match, return empty dict (no fallback)
+        # If no exact match, return empty dict
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:

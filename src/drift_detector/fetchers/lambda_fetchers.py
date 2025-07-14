@@ -9,6 +9,7 @@ from typing import Any, Dict
 
 from ...utils import fetcher_error_handler, setup_logging
 from ..types import LambdaClient
+from .base import extract_arn_from_attributes
 
 logger = setup_logging()
 
@@ -44,19 +45,23 @@ def _fetch_lambda_functions(
 ) -> Dict[str, Any]:
     """
     Fetch Lambda function resources from AWS and map them by resource key for drift
-    comparison. Returns a dictionary of resource keys to function data.
+    comparison. Uses ARN-based matching exclusively as ARNs are always present
+    in Terraform state files for AWS managed resources.
+    Returns a dictionary of resource keys to function data.
     """
     try:
         response = lambda_client.list_functions()
         live_resources = {}
-        function_name = attributes.get("function_name") or attributes.get("id")
-
+        
+        # Use ARN-based matching exclusively
+        arn = extract_arn_from_attributes(attributes, "aws_lambda_function")
+        
         for function in response["Functions"]:
-            if function_name and function["FunctionName"] == function_name:
+            if function.get("FunctionArn") == arn:
                 live_resources[resource_key] = function
                 return live_resources
 
-        # If no exact match, return empty dict (no fallback)
+        # If no exact match, return empty dict
         # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:

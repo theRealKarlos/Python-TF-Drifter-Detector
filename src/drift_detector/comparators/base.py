@@ -102,53 +102,32 @@ def compare_resources(
                     })
             continue  # Skip generic block for SQS queue policy resources
 
-        # For all other resource types, loop over all instances
-        for idx, instance in enumerate(resource.get("instances", [])):
-            state_attributes = instance.get("attributes", {})
-            # Construct a unique key for this instance
-            # Prefer id, name, or index if available
-            instance_id = state_attributes.get("id")
-            instance_name = state_attributes.get("name")
-            unique_resource_key = resource_key
-            if instance_id:
-                unique_resource_key = f"{resource_key}_{instance_id}"
-            elif instance_name:
-                unique_resource_key = f"{resource_key}_{instance_name}"
-            elif len(resource.get("instances", [])) > 1:
-                unique_resource_key = f"{resource_key}_{idx}"
+        # For all other resource types, use the simple resource key that matches fetchers
+        # Check if resource exists in live AWS using the same key construction as fetchers
+        if resource_key not in live_resources:
+            drifts.append(
+                {
+                    "resource_key": resource_key,
+                    "drift_type": "missing_resource",
+                    "description": f"Resource {resource_key} exists in state but not in live AWS",
+                }
+            )
+            continue
 
-            # Debug output for IAM role policy
-            if resource_key == "aws_iam_role_policy.github_actions":
-                logger.debug(f"DEBUG: Checking IAM role policy drift for {resource_key} (instance {idx})")
-                logger.debug(f"DEBUG: Resource type: {resource_type}")
-                logger.debug(f"DEBUG: State attributes: {state_attributes}")
-                if unique_resource_key in live_resources:
-                    logger.debug(f"DEBUG: Live attributes: {live_resources[unique_resource_key]}")
-                else:
-                    logger.debug("DEBUG: Resource not found in live_resources")
-
-            # Check if resource exists in live AWS
-            if unique_resource_key not in live_resources:
-                drifts.append(
-                    {
-                        "resource_key": unique_resource_key,
-                        "drift_type": "missing_resource",
-                        "description": f"Resource {unique_resource_key} exists in state but not in live AWS",
-                    }
-                )
-                continue
-
-            # Compare attributes for existing resources
-            live_attributes = live_resources[unique_resource_key]
+        # Compare attributes for existing resources
+        # Use the first instance for comparison (fetchers only process the first instance)
+        if resource.get("instances"):
+            state_attributes = resource["instances"][0].get("attributes", {})
+            live_attributes = live_resources[resource_key]
             differences = compare_attributes(
                 state_attributes, live_attributes, resource_type
             )
             if differences:
                 drifts.append(
                     {
-                        "resource_key": unique_resource_key,
+                        "resource_key": resource_key,
                         "drift_type": "attribute_drift",
-                        "description": f"Attribute drift detected for {unique_resource_key}",
+                        "description": f"Attribute drift detected for {resource_key}",
                         "differences": differences,
                     }
                 )

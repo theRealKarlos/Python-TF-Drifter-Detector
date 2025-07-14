@@ -5,7 +5,7 @@ This module contains the main orchestration logic for fetching live AWS resource
 and initializes AWS service clients for all supported services.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 
@@ -23,6 +23,113 @@ from ..types import (
     SQSClient,
     STSClient,
 )
+
+
+def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) -> str:
+    """
+    Extract ARN from resource attributes.
+    
+    This function looks for ARN fields in the resource attributes and returns
+    the first valid ARN found. It checks multiple possible ARN field names
+    to handle different resource types and naming conventions.
+    
+    Args:
+        attributes: Resource attributes from Terraform state
+        resource_type: Type of AWS resource
+        
+    Returns:
+        ARN string if found
+        
+    Raises:
+        ValueError: If no valid ARN is found for the resource type
+    """
+    # Special handling for resources that don't have ARNs
+    if resource_type.startswith("aws_route_table"):
+        # Route tables don't have ARNs in the same way as other resources
+        # This will be handled by the specific fetcher using ID-based matching
+        raise ValueError(
+            f"Resource type '{resource_type}' does not support ARN-based matching. "
+            f"Use ID-based matching instead."
+        )
+    
+    # Check for common ARN field names
+    arn_fields = ["arn", "Arn", "ARN"]
+    for field in arn_fields:
+        if field in attributes:
+            arn_value = attributes[field]
+            if arn_value and isinstance(arn_value, str) and arn_value.startswith("arn:aws:"):
+                return str(arn_value)
+    
+    # Check for service-specific ARN fields
+    if resource_type.startswith("aws_lambda_function"):
+        function_arn = attributes.get("invoke_arn") or attributes.get("function_arn")
+        if function_arn and isinstance(function_arn, str) and function_arn.startswith("arn:aws:"):
+            return str(function_arn)
+    
+    # Check for 'id' field that might be an ARN
+    if "id" in attributes:
+        id_value = attributes["id"]
+        if id_value and isinstance(id_value, str) and id_value.startswith("arn:aws:"):
+            return str(id_value)
+    
+    # If we still haven't found an ARN, look for any field ending with '_arn'
+    for field_name, field_value in attributes.items():
+        if (field_name.endswith("_arn") and 
+            field_value and 
+            isinstance(field_value, str) and 
+            field_value.startswith("arn:aws:")):
+            return str(field_value)
+    
+    # Final fallback: look for any field containing 'arn' in the name
+    for field_name, field_value in attributes.items():
+        if ("arn" in field_name.lower() and 
+            field_value and 
+            isinstance(field_value, str) and 
+            field_value.startswith("arn:aws:")):
+            return str(field_value)
+    
+    # If no ARN is found, this indicates a problem with the state file
+    # or an unsupported resource type
+    available_fields = list(attributes.keys())
+    raise ValueError(
+        f"No valid ARN found for resource type '{resource_type}'. "
+        f"Available fields: {available_fields}. "
+        f"This may indicate an unsupported resource type or a corrupted state file."
+    )
+
+
+def get_resource_identifier(attributes: Dict[str, Any], resource_type: str, resource_name: str) -> Dict[str, Any]:
+    """
+    Get the ARN-based identifier for a resource.
+    
+    This function uses ARN-based identification exclusively, as ARNs are
+    always present for AWS managed resources that support them.
+    
+    Args:
+        attributes: Resource attributes from Terraform state
+        resource_type: Type of AWS resource
+        resource_name: Name of the resource in Terraform
+        
+    Returns:
+        Dictionary containing ARN-based identifier information
+    """
+    arn = extract_arn_from_attributes(attributes, resource_type)
+    
+    return {
+        "primary_identifier": "arn",
+        "arn": arn,
+        "resource_type": resource_type,
+        "resource_name": resource_name,
+        # Keep some additional identifiers for debugging purposes
+        "debug_info": {
+            "name": attributes.get("name"),
+            "id": attributes.get("id"),
+            "function_name": attributes.get("function_name"),
+            "role_name": attributes.get("role_name"),
+            "policy_name": attributes.get("policy_name"),
+            "queue_name": attributes.get("name"),  # For SQS queues
+        }
+    }
 
 
 def get_live_aws_resources(
@@ -60,6 +167,9 @@ def get_live_aws_resources(
     )
     cloudwatch_client: CloudWatchClient = boto3.client(
         "cloudwatch", region_name=region_name
+    )
+    cloudwatch_logs_client: CloudWatchClient = boto3.client(
+        "logs", region_name=region_name
     )
     sqs_client: SQSClient = boto3.client("sqs", region_name=region_name)
 
@@ -117,6 +227,7 @@ def get_live_aws_resources(
             or resource_type.startswith("aws_iam_role")
             or resource_type.startswith("aws_iam_policy")
             or resource_type.startswith("aws_iam_openid_connect_provider")
+            or resource_type.startswith("aws_iam_role_policy_attachment")
         ):
             live_resources.update(
                 fetch_iam_resources(iam_client, resource_key, attributes, resource_type)
@@ -168,24 +279,40 @@ def get_live_aws_resources(
             )
         elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
             "aws_ecs_service"
-        ):
+        ) or resource_type.startswith("aws_ecs_task_definition"):
             live_resources.update(
                 fetch_ecs_resources(ecs_client, resource_key, attributes, resource_type)
             )
-        elif resource_type.startswith("aws_vpc"):
+        elif (
+            resource_type.startswith("aws_vpc")
+            or resource_type.startswith("aws_security_group")
+            or resource_type.startswith("aws_subnet")
+            or resource_type.startswith("aws_internet_gateway")
+            or resource_type.startswith("aws_route_table")
+            or resource_type.startswith("aws_route_table_association")
+        ):
             live_resources.update(
                 fetch_ec2_resources(ec2_client, resource_key, attributes, resource_type)
             )
-        elif resource_type.startswith("aws_api_gateway_rest_api"):
+        elif (
+            resource_type.startswith("aws_api_gateway_rest_api")
+            or resource_type.startswith("aws_api_gateway_resource")
+            or resource_type.startswith("aws_api_gateway_method")
+            or resource_type.startswith("aws_api_gateway_integration")
+            or resource_type.startswith("aws_api_gateway_deployment")
+            or resource_type.startswith("aws_api_gateway_stage")
+        ):
             live_resources.update(
                 fetch_apigateway_resources(apigateway_client, resource_key, attributes)
             )
-        elif resource_type.startswith(
-            "aws_cloudwatch_dashboard"
-        ) or resource_type.startswith("aws_cloudwatch_metric_alarm"):
+        elif (
+            resource_type.startswith("aws_cloudwatch_dashboard")
+            or resource_type.startswith("aws_cloudwatch_metric_alarm")
+            or resource_type.startswith("aws_cloudwatch_log_group")
+        ):
             live_resources.update(
                 fetch_cloudwatch_resources(
-                    cloudwatch_client, resource_key, attributes, resource_type
+                    cloudwatch_client, resource_key, attributes, resource_type, cloudwatch_logs_client
                 )
             )
         elif resource_type.startswith("aws_region") or resource_type.startswith(
