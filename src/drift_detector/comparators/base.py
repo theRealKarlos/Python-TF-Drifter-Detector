@@ -23,8 +23,6 @@ from .rds_comparators import compare_rds_attributes
 from .s3_comparators import compare_s3_attributes
 from .sqs_comparators import compare_sqs_attributes
 
-import json
-
 logger = setup_logging()
 
 
@@ -82,21 +80,20 @@ def compare_resources(
             # For each SQS queue policy instance, use queue_url as the unique identifier.
             # For each instance, find the matching live resource by queue_url or QueueArn.
             # Extract the policy from both state and live, parse as JSON, canonicalise, and compare.
-            # Report drift only for the policy attribute, using aws_sqs_queue_policy.<resource_name> [<queue_url>] as the identifier.
+            # Report drift only for the policy attribute, using aws_sqs_queue_policy.<resource_name>
+            # [<queue_url>] as the identifier.
             import json
             for instance in resource.get("instances", []):
                 state_attributes = instance.get("attributes", {})
                 queue_url = state_attributes.get("queue_url")
                 state_policy_raw = state_attributes.get("policy")
-                # DEBUG: print(f"queue_url={queue_url!r}")
-                # DEBUG: print(f"state_policy_raw type={type(state_policy_raw)}, value={state_policy_raw!r}")
                 # Parse state policy as JSON and canonicalise
                 try:
                     state_policy_obj = json.loads(state_policy_raw) if state_policy_raw else None
-                    canonical_state_policy = json.dumps(state_policy_obj, sort_keys=True, separators=(",", ":")) if state_policy_obj else None
-                    # DEBUG: print(f"canonical_state_policy={canonical_state_policy!r}")
-                except Exception as e:
-                    # DEBUG: print(f"WARNING: Failed to parse state_policy_raw for {queue_url}: {e}")
+                    canonical_state_policy = json.dumps(
+                        state_policy_obj, sort_keys=True, separators=(",", ":")
+                    ) if state_policy_obj else None
+                except Exception:
                     canonical_state_policy = None
                 # Find the live resource for this queue by queue_url or QueueArn
                 live_policy_raw = None
@@ -104,33 +101,46 @@ def compare_resources(
                     if not isinstance(live_val, dict):
                         continue
                     # Match by queue_url or QueueArn ending
-                    if live_val.get("queue_url") == queue_url or \
-                       live_val.get("QueueArn", "").endswith(queue_url.split("/")[-1]):
-                        live_policy_raw = live_val.get("Policy") or live_val.get("policy")
-                        # DEBUG: print(f"Matched live resource for queue_url={queue_url!r}: {live_val!r}")
+                    if (
+                        live_val.get("queue_url") == queue_url
+                        or live_val.get("QueueArn", "").endswith(queue_url.split("/")[-1])
+                    ):
+                        live_policy_raw = (
+                            live_val.get("Policy") or live_val.get("policy")
+                        )
                         break
-                # DEBUG: print(f"live_policy_raw type={type(live_policy_raw)}, value={live_policy_raw!r}")
                 # Parse live policy as JSON and canonicalise
                 try:
                     live_policy_obj = json.loads(live_policy_raw) if live_policy_raw else None
-                    canonical_live_policy = json.dumps(live_policy_obj, sort_keys=True, separators=(",", ":")) if live_policy_obj else None
-                    # DEBUG: print(f"canonical_live_policy={canonical_live_policy!r}")
-                except Exception as e:
-                    # DEBUG: print(f"WARNING: Failed to parse live_policy_raw for {queue_url}: {e}")
+                    canonical_live_policy = json.dumps(
+                        live_policy_obj, sort_keys=True, separators=(",", ":")
+                    ) if live_policy_obj else None
+                except Exception:
                     canonical_live_policy = None
                 # Compare canonicalised policies; report drift if they differ
                 if canonical_state_policy != canonical_live_policy:
-                    resource_identifier = f"{resource_type}.{resource_name} [{queue_url}]"
-                    # DEBUG: print(f"Policy drift detected for {resource_identifier}")
+                    resource_identifier = (
+                        f"{resource_type}.{resource_name} [{queue_url}]"
+                    )
                     drifts.append({
                         "resource_key": resource_identifier,
                         "drift_type": "attribute_drift",
-                        "description": f"Policy drift detected for {resource_identifier}",
+                        "description": (
+                            f"Policy drift detected for {resource_identifier}"
+                        ),
                         "differences": [
                             {
                                 "attribute": "policy",
-                                "state": canonical_state_policy if canonical_state_policy is not None else "N/A",
-                                "live": canonical_live_policy if canonical_live_policy is not None else "N/A",
+                                "state": (
+                                    canonical_state_policy
+                                    if canonical_state_policy is not None
+                                    else "N/A"
+                                ),
+                                "live": (
+                                    canonical_live_policy
+                                    if canonical_live_policy is not None
+                                    else "N/A"
+                                ),
                             }
                         ],
                     })
@@ -199,6 +209,7 @@ def compare_resources(
     }
 
 
+# E302: Add two blank lines before function definition
 def compare_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
 ) -> List[Dict[str, Any]]:

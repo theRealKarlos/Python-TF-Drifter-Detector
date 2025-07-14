@@ -53,7 +53,7 @@ python -m flake8 src tests
 
 # Type checking
 Write-Host "Running mypy..." -ForegroundColor Cyan
-python -m mypy src
+python -m mypy src tests
 
 # Formatting
 Write-Host "Running black..." -ForegroundColor Cyan
