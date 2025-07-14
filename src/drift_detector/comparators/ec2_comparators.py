@@ -1,51 +1,21 @@
 """
-EC2 Resource Comparators Module.
+EC2 Resource Comparators Module (Router).
 
-This module contains functions for comparing EC2-related AWS resources.
+This module routes EC2-related resource types to their specific comparators.
 """
 
 from typing import Any, Dict, List
-
 from ..types import DriftDetail
-
+from .ec2_instances_comparator import compare_ec2_instance_attributes
+from .vpc_comparator import compare_vpc_attributes
 
 def compare_ec2_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
+    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str = ""
 ) -> List[DriftDetail]:
     """
-    Compare EC2 resource attributes between Terraform state and live AWS.
-
-    Args:
-        state_attrs: Attributes from Terraform state resource
-        live_attrs: Attributes from live AWS resource
-
-    Returns:
-        List of drift details for any mismatched attributes
+    Route EC2-related resource types to their specific comparators.
     """
-    drift_details: List[DriftDetail] = []
-
-    # Compare instance type for EC2 instances
-    state_instance_type = state_attrs.get("instance_type")
-    live_instance_type = live_attrs.get("InstanceType")
-    if state_instance_type != live_instance_type:
-        drift_details.append(
-            {
-                "attribute": "instance_type",
-                "state_value": str(state_instance_type),
-                "live_value": str(live_instance_type),
-            }
-        )
-
-    # Compare VPC ID for VPCs
-    state_vpc_id = state_attrs.get("id")
-    live_vpc_id = live_attrs.get("VpcId")
-    if state_vpc_id != live_vpc_id:
-        drift_details.append(
-            {
-                "attribute": "vpc_id",
-                "state_value": str(state_vpc_id),
-                "live_value": str(live_vpc_id),
-            }
-        )
-
-    return drift_details
+    if resource_type and resource_type.startswith("aws_vpc"):
+        return compare_vpc_attributes(state_attrs, live_attrs)
+    else:
+        return compare_ec2_instance_attributes(state_attrs, live_attrs)

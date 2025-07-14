@@ -51,7 +51,72 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         # Step 3: Compare state resources with live AWS resources
         drift_report = compare_resources(state_data, live_resources)
 
-        # Step 4: Return comprehensive drift report with summary
+        # Step 4: Collect matching resources (present in both state and live, and with no drift)
+        all_state_resources = set()
+        for resource in state_data.get("resources", []):
+            resource_type = resource.get("type")
+            resource_name = resource.get("name")
+            for instance in resource.get("instances", []):
+                attributes = instance.get("attributes", {})
+                unique_key = f"{resource_type}.{resource_name}"
+                all_state_resources.add(unique_key)
+
+        all_live_resources = set(live_resources.keys())
+        drifted_resources = set(drift["resource_key"].split(" [")[0] for drift in drift_report.get("drifts", []))
+
+        # Debug: Print total number of resources in state
+        print(f"DEBUG: Total resources in state: {len(all_state_resources)}")
+
+        matching_resources = []
+        for resource_key in all_state_resources & all_live_resources:
+            if resource_key in drifted_resources:
+                continue
+            resource_type, resource_name = resource_key.split(".", 1)
+            live_attributes = live_resources[resource_key]
+            # Debug: Print live_attributes for specific resource types
+            if resource_type in ("aws_iam_role_policy", "aws_sqs_queue_policy"):
+                print(f"DEBUG: live_attributes for {resource_type}.{resource_name}: {live_attributes}")
+            # Resource-type-specific extraction of AWS live name
+            aws_live_name = None
+            if resource_type == "aws_api_gateway_rest_api":
+                aws_live_name = live_attributes.get("name")
+            elif resource_type == "aws_cloudwatch_dashboard":
+                aws_live_name = live_attributes.get("DashboardName")
+            elif resource_type == "aws_dynamodb_table":
+                aws_live_name = live_attributes.get("TableName")
+            elif resource_type == "aws_ecs_cluster":
+                aws_live_name = live_attributes.get("clusterName")
+            elif resource_type == "aws_ecs_service":
+                aws_live_name = live_attributes.get("serviceName")
+            elif resource_type == "aws_iam_role":
+                aws_live_name = live_attributes.get("RoleName")
+            elif resource_type == "aws_iam_role_policy":
+                aws_live_name = live_attributes.get("PolicyName")
+            elif resource_type == "aws_region":
+                aws_live_name = live_attributes.get("name") or live_attributes.get("RegionName")
+            elif resource_type == "aws_sqs_queue_policy":
+                aws_live_name = live_attributes.get("QueueUrl") or live_attributes.get("queue_url")
+            elif resource_type == "aws_vpc":
+                aws_live_name = live_attributes.get("VpcId")
+            elif resource_type == "aws_sqs_queue":
+                aws_live_name = live_attributes.get("QueueName")
+            else:
+                # Fallback: try common keys
+                aws_live_name = (
+                    live_attributes.get("name")
+                    or live_attributes.get("Name")
+                    or live_attributes.get("id")
+                )
+            matching_resources.append({
+                "resource_type": resource_type,
+                "resource_name": resource_name,
+                "aws_live_name": aws_live_name,
+            })
+        # Debug: Print number of matched and mismatched resources
+        print(f"DEBUG: Matched resources: {len(matching_resources)}")
+        print(f"DEBUG: Drifted or missing resources: {len(all_state_resources) - len(matching_resources)}")
+
+        # Step 5: Return comprehensive drift report with summary
         return {
             "drift_detected": len(drift_report["drifts"]) > 0,
             "drifts": drift_report["drifts"],
@@ -59,6 +124,7 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                 "total_resources": len(state_data.get("resources", [])),
                 "drift_count": len(drift_report["drifts"]),
                 "timestamp": drift_report["timestamp"],
+                "matching_resources": matching_resources,
             },
         }
 

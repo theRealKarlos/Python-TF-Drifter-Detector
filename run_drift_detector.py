@@ -124,7 +124,7 @@ Examples:
 
 
 def print_drift_report(drift_report: Dict[str, Any]) -> None:
-    """Print a human-readable drift report."""
+    """Print a human-readable drift report, including matching resources."""
     print("\n" + "="*60)
     print("TERRAFORM DRIFT DETECTION REPORT")
     print("="*60)
@@ -133,6 +133,8 @@ def print_drift_report(drift_report: Dict[str, Any]) -> None:
     drifts = drift_report.get("drifts", [])
     summary = drift_report.get("summary", {})
     timestamp = drift_report.get("timestamp", "Unknown")
+    # Print matching resources in alphabetical order
+    matching_resources = summary.get("matching_resources", [])
     
     print(f"Timestamp: {timestamp}")
     print(f"Drift Detected: {'YES' if drift_detected else 'NO'}")
@@ -141,7 +143,8 @@ def print_drift_report(drift_report: Dict[str, Any]) -> None:
     if summary:
         print(f"\nSummary:")
         for key, value in summary.items():
-            print(f"  {key}: {value}")
+            if key != "matching_resources":
+                print(f"  {key}: {value}")
     
     if drifts:
         print(f"\nDetailed Drift Information:")
@@ -161,6 +164,18 @@ def print_drift_report(drift_report: Dict[str, Any]) -> None:
                           f"Live='{diff.get('live_value', 'N/A')}'")
     else:
         print("\n✅ No drift detected - your infrastructure is in sync!")
+    
+    # Print matching resources with a green tick
+    if matching_resources:
+        print("\n=== Matching Resources ===")
+        # Sort by resource_type then resource_name
+        for res in sorted(matching_resources, key=lambda x: (x["resource_type"], x["resource_name"])):
+            # If aws_live_name is present, include it in the output
+            aws_live_name = res.get("aws_live_name")
+            if aws_live_name:
+                print(f"\u2705 {res['resource_type']} {res['resource_name']} - {aws_live_name}")
+            else:
+                print(f"\u2705 {res['resource_type']} {res['resource_name']}")
     
     print("\n" + "="*60)
 
