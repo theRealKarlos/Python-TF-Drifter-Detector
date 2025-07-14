@@ -6,12 +6,15 @@ This module contains functions for fetching S3-related AWS resources.
 
 from typing import Any, Dict
 
-from ..types import S3Client
+from src.utils import fetcher_error_handler
+
 from ...utils import setup_logging
+from ..types import S3Client
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_s3_resources(
     s3_client: S3Client, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:

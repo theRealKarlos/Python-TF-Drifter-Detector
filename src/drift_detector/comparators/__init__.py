@@ -5,7 +5,7 @@ This package contains service-specific modules for comparing Terraform state res
 with live AWS resources. Each module handles resources for a specific AWS service.
 """
 
-from .base import compare_resources, compare_attributes
+from .base import compare_attributes, compare_resources
 
 __all__ = [
     "compare_resources",

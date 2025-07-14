@@ -6,12 +6,13 @@ This module contains functions for fetching Terraform data source information.
 
 from typing import Dict, cast
 
-from ..types import STSClient, ResourceAttributes, LiveResourceData, ResourceValue
-from ...utils import setup_logging
+from ...utils import fetcher_error_handler, setup_logging
+from ..types import LiveResourceData, ResourceAttributes, ResourceValue, STSClient
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_data_source_resources(
     sts_client: STSClient,
     region_name: str,

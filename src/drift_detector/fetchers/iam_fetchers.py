@@ -6,12 +6,13 @@ This module contains functions for fetching IAM-related AWS resources.
 
 from typing import Dict
 
-from ..types import IAMClient, ResourceAttributes, LiveResourceData
-from ...utils import setup_logging
+from ...utils import fetcher_error_handler, setup_logging
+from ..types import IAMClient, LiveResourceData, ResourceAttributes
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_iam_resources(
     iam_client: IAMClient,
     resource_key: str,
@@ -92,6 +93,7 @@ def _fetch_iam_policies(
         return {}
 
 
+@fetcher_error_handler
 def _fetch_iam_role_policies(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
@@ -162,6 +164,7 @@ def _fetch_iam_role_policies(
         return {}
 
 
+@fetcher_error_handler
 def _fetch_iam_openid_connect_providers(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:

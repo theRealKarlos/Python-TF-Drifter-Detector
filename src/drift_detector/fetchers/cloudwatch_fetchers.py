@@ -5,11 +5,13 @@ This module contains functions for fetching CloudWatch-related AWS resources.
 """
 
 from typing import Any, Dict
-from ...utils import setup_logging
+
+from ...utils import fetcher_error_handler, setup_logging
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_cloudwatch_resources(
     cloudwatch_client: Any, resource_key: str, attributes: Dict, resource_type: str
 ) -> Dict[str, Any]:

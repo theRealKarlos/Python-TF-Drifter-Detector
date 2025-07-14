@@ -7,12 +7,13 @@ This module contains functions for fetching Lambda-related AWS resources.
 import json
 from typing import Any, Dict
 
+from ...utils import fetcher_error_handler, setup_logging
 from ..types import LambdaClient
-from ...utils import setup_logging
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_lambda_resources(
     lambda_client: LambdaClient,
     resource_key: str,
@@ -37,6 +38,7 @@ def fetch_lambda_resources(
         return _fetch_lambda_functions(lambda_client, resource_key, attributes)
 
 
+@fetcher_error_handler
 def _fetch_lambda_functions(
     lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
@@ -62,6 +64,7 @@ def _fetch_lambda_functions(
         return {}
 
 
+@fetcher_error_handler
 def _fetch_lambda_permissions(
     lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:

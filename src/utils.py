@@ -2,12 +2,14 @@
 Utility functions for Terraform Drift Detector Lambda.
 """
 
+import functools
 import json
 import logging
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional, TypeVar, cast
 from urllib.parse import urlparse
 
 import boto3
+from botocore.exceptions import ClientError
 
 
 def setup_logging(log_level: str = "INFO") -> logging.Logger:
@@ -33,6 +35,36 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
         logger.addHandler(handler)
 
     return logger
+
+
+F = TypeVar("F", bound=Callable[..., dict])
+
+
+def fetcher_error_handler(func: F) -> F:
+    """
+    Decorator for consistent error handling and logging in AWS resource fetchers.
+    Catches AWS ClientError (including ClusterNotFoundException) and generic Exception,
+    logs appropriately, and returns an empty dict.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args: object, **kwargs: object) -> dict:
+        logger = setup_logging()
+        try:
+            return func(*args, **kwargs)
+        except ClientError as e:
+            error = e.response.get("Error", {})
+            code = error.get("Code", "")
+            if code == "ClusterNotFoundException":
+                logger.info("ECS cluster not found; treating as drift.")
+                return {}
+            logger.error(f"AWS ClientError in {func.__name__}: {e}")
+            return {}
+        except Exception as e:
+            logger.error(f"Error in {func.__name__}: {e}")
+            return {}
+
+    return cast(F, wrapper)
 
 
 def download_s3_file(s3_path: str, logger: Optional[logging.Logger] = None) -> str:

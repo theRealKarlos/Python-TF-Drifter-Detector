@@ -12,16 +12,16 @@ Key points:
 """
 
 from typing import Dict
-from ..types import (
-    SQSClient,
-    ResourceAttributes,
-    LiveResourceData,
-)
+
+from src.utils import fetcher_error_handler
+
 from ...utils import setup_logging
+from ..types import LiveResourceData, ResourceAttributes, SQSClient
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_sqs_resources(
     sqs_client: SQSClient,
     resource_key: str,

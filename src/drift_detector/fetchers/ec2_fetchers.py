@@ -6,12 +6,13 @@ This module contains functions for fetching EC2-related AWS resources.
 
 from typing import Dict
 
-from ..types import EC2Client, ResourceAttributes, LiveResourceData
-from ...utils import setup_logging
+from ...utils import fetcher_error_handler, setup_logging
+from ..types import EC2Client, LiveResourceData, ResourceAttributes
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_ec2_resources(
     ec2_client: EC2Client,
     resource_key: str,
@@ -36,6 +37,7 @@ def fetch_ec2_resources(
         return _fetch_ec2_instances(ec2_client, resource_key, attributes)
 
 
+@fetcher_error_handler
 def _fetch_ec2_instances(
     ec2_client: EC2Client, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
@@ -63,6 +65,7 @@ def _fetch_ec2_instances(
         return {}
 
 
+@fetcher_error_handler
 def _fetch_vpcs(
     ec2_client: EC2Client, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:

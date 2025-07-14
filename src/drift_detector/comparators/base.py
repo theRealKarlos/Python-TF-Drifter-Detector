@@ -8,6 +8,7 @@ with live AWS resources to identify drift.
 from datetime import datetime
 from typing import Any, Dict, List
 
+from ...utils import setup_logging
 from .apigateway_comparators import compare_apigateway_attributes
 from .cloudwatch_comparators import compare_cloudwatch_attributes
 from .dynamodb_comparators import compare_dynamodb_attributes
@@ -21,8 +22,6 @@ from .lambda_comparators import compare_lambda_attributes
 from .rds_comparators import compare_rds_attributes
 from .s3_comparators import compare_s3_attributes
 from .sqs_comparators import compare_sqs_attributes
-
-from ...utils import setup_logging
 
 logger = setup_logging()
 

@@ -5,8 +5,6 @@ This module contains specific type definitions to replace Any types throughout
 the codebase, improving type safety and code clarity.
 """
 
-from typing import Dict, List, Union
-
 # AWS Client Types - Using Any for flexibility with boto3 clients
 #
 # boto3 does not provide static type stubs for service clients, and the methods
@@ -14,7 +12,7 @@ from typing import Dict, List, Union
 # allows us to annotate AWS client variables for clarity, while avoiding false
 # positives from static type checkers. This is a common and accepted practice in
 # Python projects that use boto3.
-from typing import Any
+from typing import Any, Dict, List, Union
 
 # Specific AWS client types
 EC2Client = Any

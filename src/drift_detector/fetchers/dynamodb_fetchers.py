@@ -6,8 +6,10 @@ This module contains functions for fetching DynamoDB-related AWS resources.
 
 from typing import Dict
 
-from ..types import DynamoDBClient, ResourceAttributes, LiveResourceData
+from src.utils import fetcher_error_handler
+
 from ...utils import setup_logging
+from ..types import DynamoDBClient, LiveResourceData, ResourceAttributes
 
 logger = setup_logging()
 
@@ -29,6 +31,7 @@ def fetch_dynamodb_resources(
     return _fetch_dynamodb_tables(dynamodb_client, resource_key, attributes)
 
 
+@fetcher_error_handler
 def _fetch_dynamodb_tables(
     dynamodb_client: DynamoDBClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:

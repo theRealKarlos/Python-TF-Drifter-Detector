@@ -5,11 +5,15 @@ This module contains functions for fetching API Gateway-related AWS resources.
 """
 
 from typing import Any, Dict
+
+from src.utils import fetcher_error_handler
+
 from ...utils import setup_logging
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_apigateway_resources(
     apigateway_client: Any, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:

@@ -6,12 +6,13 @@ This module contains functions for fetching RDS-related AWS resources.
 
 from typing import Dict
 
-from ..types import RDSClient, ResourceAttributes, LiveResourceData
-from ...utils import setup_logging
+from ...utils import fetcher_error_handler, setup_logging
+from ..types import LiveResourceData, RDSClient, ResourceAttributes
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_rds_resources(
     rds_client: RDSClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:

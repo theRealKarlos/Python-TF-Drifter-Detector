@@ -6,12 +6,13 @@ This module contains functions for fetching EventBridge-related AWS resources.
 
 from typing import Any, Dict
 
+from ...utils import fetcher_error_handler, setup_logging
 from ..types import EventsClient
-from ...utils import setup_logging
 
 logger = setup_logging()
 
 
+@fetcher_error_handler
 def fetch_events_resources(
     events_client: EventsClient, resource_key: str, attributes: Dict, resource_type: str
 ) -> Dict[str, Any]:

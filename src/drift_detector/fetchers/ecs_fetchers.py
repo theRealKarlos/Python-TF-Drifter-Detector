@@ -6,8 +6,8 @@ This module contains functions for fetching ECS-related AWS resources.
 
 from typing import Dict
 
-from ..types import ECSClient, ResourceAttributes, LiveResourceData
-from ...utils import setup_logging
+from ...utils import fetcher_error_handler, setup_logging
+from ..types import ECSClient, LiveResourceData, ResourceAttributes
 
 logger = setup_logging()
 
@@ -38,6 +38,7 @@ def fetch_ecs_resources(
         return {}
 
 
+@fetcher_error_handler
 def _fetch_ecs_clusters(
     ecs_client: ECSClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
@@ -67,6 +68,7 @@ def _fetch_ecs_clusters(
         return {}
 
 
+@fetcher_error_handler
 def _fetch_ecs_services(
     ecs_client: ECSClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
