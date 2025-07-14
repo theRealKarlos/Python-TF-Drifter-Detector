@@ -76,23 +76,27 @@ def _fetch_ecs_services(
     Fetch ECS services from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to service data.
     """
-    try:
-        response = ecs_client.list_services()
-        live_resources = {}
-        service_name = attributes.get("name") or attributes.get("id")
+    # Determine the cluster name/ARN from attributes
+    cluster = (
+        attributes.get("cluster")
+        or attributes.get("cluster_arn")
+        or attributes.get("name")
+        or attributes.get("id")
+    )
+    logger.debug(f"Listing services for cluster: {cluster}")
+    response = ecs_client.list_services(cluster=cluster)
+    live_resources = {}
+    service_name = attributes.get("name") or attributes.get("id")
 
-        for service_arn in response["serviceArns"]:
-            service_info = ecs_client.describe_services(services=[service_arn])
-            if (
-                service_name
-                and service_info["services"][0]["serviceName"] == service_name
-            ):
-                live_resources[resource_key] = service_info["services"][0]
-                return live_resources
+    for service_arn in response["serviceArns"]:
+        service_info = ecs_client.describe_services(cluster=cluster, services=[service_arn])
+        if (
+            service_name
+            and service_info["services"][0]["serviceName"] == service_name
+        ):
+            live_resources[resource_key] = service_info["services"][0]
+            return live_resources
 
-        # If no exact match, return empty dict (no fallback)
-        # This ensures we only report drift when there's a real mismatch
-        return live_resources
-    except Exception as e:
-        logger.error(f"Error fetching ECS services: {e}")
-        return {}
+    # If no exact match, return empty dict (no fallback)
+    # This ensures we only report drift when there's a real mismatch
+    return live_resources
