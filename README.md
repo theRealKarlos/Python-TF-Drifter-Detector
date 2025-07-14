@@ -221,12 +221,14 @@ The drift detector supports comparison of the following AWS resources:
 - **ECS**: Clusters and services ⚠️ **Implemented but not tested**
 - **API Gateway**: REST APIs ⚠️ **Implemented but not tested**
 - **CloudWatch**: Dashboards and alarms ⚠️ **Implemented but not tested**
-- **SQS**: Queues ✅ **Tested**
+- **SQS**: Queues and queue policies ✅ **Tested**
 
 **Legend:**
 
 - ✅ **Tested**: Resource type has been verified with real AWS resources and drift detection confirmed working
 - ⚠️ **Implemented but not tested**: Resource fetcher and comparator implemented, but not yet tested with live AWS resources
+
+**Note:** SQS queue policy drift detection is now confirmed working and included under SQS.
 
 ### Special Handling: IAM Role Policy Normalization
 
