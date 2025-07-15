@@ -82,7 +82,7 @@ def _compare_eventbridge_rule_attributes(
     Returns a list of drift details for any mismatched attributes.
     """
     drift_details = []
-    
+
     # Compare basic rule attributes
     state_rule_name = state_attrs.get("name")
     live_rule_name = live_attrs.get("Name")
@@ -94,7 +94,7 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_rule_name),
             }
         )
-    
+
     # Compare event pattern if present
     state_event_pattern = state_attrs.get("event_pattern")
     live_event_pattern = live_attrs.get("EventPattern")
@@ -106,7 +106,7 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_event_pattern),
             }
         )
-    
+
     # Compare schedule expression if present (normalised)
     state_schedule = _normalise_optional(state_attrs.get("schedule_expression"))
     live_schedule = _normalise_optional(live_attrs.get("ScheduleExpression"))
@@ -118,7 +118,7 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_attrs.get("ScheduleExpression")),
             }
         )
-    
+
     # Compare description if present (normalised)
     state_description = _normalise_optional(state_attrs.get("description"))
     live_description = _normalise_optional(live_attrs.get("Description"))
@@ -130,7 +130,7 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_attrs.get("Description")),
             }
         )
-    
+
     # Compare role ARN if present (normalised)
     state_role_arn = _normalise_optional(state_attrs.get("role_arn"))
     live_role_arn = _normalise_optional(live_attrs.get("RoleArn"))
@@ -142,7 +142,7 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_attrs.get("RoleArn")),
             }
         )
-    
+
     # Compare state if present
     state_state = state_attrs.get("state")
     live_state = live_attrs.get("State")
@@ -154,7 +154,7 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_state),
             }
         )
-    
+
     return drift_details
 
 
@@ -166,16 +166,35 @@ def _compare_eventbridge_target_attributes(
     Returns a list of drift details for any mismatched attributes.
     """
     import logging
+
     logger = logging.getLogger("drift_detector.comparators.events_comparators")
-    logger.debug(f"[EventBridge] (EXTRA) Comparing EventBridge target attributes:\n  State: {state_attrs}\n  Live: {live_attrs}")
-    print(f"[EventBridge] (EXTRA) Comparing EventBridge target attributes:\n  State: {state_attrs}\n  Live: {live_attrs}")
+    logger.debug(
+        (
+            f"[EventBridge] (EXTRA) Comparing EventBridge target attributes:\n"
+            f"  State: {state_attrs}\n"
+            f"  Live: {live_attrs}"
+        )
+    )
+    print(
+        (
+            f"[EventBridge] (EXTRA) Comparing EventBridge target attributes:\n"
+            f"  State: {state_attrs}\n"
+            f"  Live: {live_attrs}"
+        )
+    )
     drift_details = []
     # Only compare EventBridge target attributes
     for attr in ["target_id", "arn"]:
         state_val = state_attrs.get(attr)
         live_val = live_attrs.get(attr)
-        logger.debug(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' Live='{live_val}'")
-        print(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' Live='{live_val}'")
+        logger.debug(
+            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
+            f"Live='{live_val}'"
+        )
+        print(
+            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
+            f"Live='{live_val}'"
+        )
         if state_val != live_val:
             drift_details.append(
                 {
@@ -187,8 +206,14 @@ def _compare_eventbridge_target_attributes(
     for attr in ["input", "input_path", "input_transformer"]:
         state_val = _normalise_target_optional(state_attrs.get(attr))
         live_val = _normalise_target_optional(live_attrs.get(attr))
-        logger.debug(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' Live='{live_val}' (normalised)")
-        print(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' Live='{live_val}' (normalised)")
+        logger.debug(
+            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
+            f"Live='{live_val}' (normalised)"
+        )
+        print(
+            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
+            f"Live='{live_val}' (normalised)"
+        )
         if state_val != live_val:
             drift_details.append(
                 {

@@ -47,9 +47,13 @@ def _compare_lambda_function_attributes(
     Compare Lambda function attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
     """
-    print(f"DEBUG: Lambda function comparator called with state_attrs: {list(state_attrs.keys())}")
-    print(f"DEBUG: Lambda function comparator called with live_attrs: {list(live_attrs.keys())}")
-    
+    print(
+        f"DEBUG: Lambda function comparator called with state_attrs: {list(state_attrs.keys())}"
+    )
+    print(
+        f"DEBUG: Lambda function comparator called with live_attrs: {list(live_attrs.keys())}"
+    )
+
     drift_details = []
     state_function_name = state_attrs.get("function_name")
     live_function_name = live_attrs.get("FunctionName")

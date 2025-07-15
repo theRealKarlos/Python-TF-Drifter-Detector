@@ -5,7 +5,9 @@ This module contains functions for comparing EC2 instance-related AWS resources.
 """
 
 from typing import Any, Dict, List
+
 from ..types import DriftDetail
+
 
 def compare_ec2_instance_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
@@ -26,4 +28,4 @@ def compare_ec2_instance_attributes(
                 "live_value": str(live_instance_type),
             }
         )
-    return drift_details 
+    return drift_details

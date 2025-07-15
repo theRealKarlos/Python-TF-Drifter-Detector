@@ -5,7 +5,9 @@ This module contains functions for comparing VPC-related AWS resources.
 """
 
 from typing import Any, Dict, List
+
 from ..types import DriftDetail
+
 
 def compare_vpc_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
@@ -26,4 +28,4 @@ def compare_vpc_attributes(
                 "live_value": str(live_vpc_id),
             }
         )
-    return drift_details 
+    return drift_details

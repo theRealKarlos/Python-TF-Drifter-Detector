@@ -4,11 +4,10 @@ ECS Resource Fetchers Module.
 This module contains functions for fetching ECS-related AWS resources.
 """
 
-from typing import Dict, cast
+from typing import Dict
 
 from ...utils import fetcher_error_handler, setup_logging
 from ..types import ECSClient, LiveResourceData, ResourceAttributes
-from .base import extract_arn_from_attributes
 
 logger = setup_logging()
 
@@ -54,7 +53,7 @@ def _fetch_ecs_clusters(
     try:
         response = ecs_client.list_clusters()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         for cluster_arn in response.get("clusterArns", []):
             cluster_info = ecs_client.describe_clusters(clusters=[cluster_arn])
             if cluster_info.get("clusters"):
@@ -77,15 +76,15 @@ def _fetch_ecs_services(
     """
     try:
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Get all clusters first
         clusters_response = ecs_client.list_clusters()
-        
+
         for cluster_arn in clusters_response.get("clusterArns", []):
             try:
                 # Get services for this cluster
                 services_response = ecs_client.list_services(cluster=cluster_arn)
-                
+
                 for service_arn in services_response.get("serviceArns", []):
                     service_info = ecs_client.describe_services(
                         cluster=cluster_arn, services=[service_arn]
@@ -113,25 +112,33 @@ def _fetch_ecs_task_definitions(
     """
     try:
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # List all task definition families
         families_response = ecs_client.list_task_definition_families()
-        
+
         for family in families_response.get("families", []):
             try:
                 # List all revisions for this family
-                revisions_response = ecs_client.list_task_definitions(familyPrefix=family)
-                
+                revisions_response = ecs_client.list_task_definitions(
+                    familyPrefix=family
+                )
+
                 for task_def_arn in revisions_response.get("taskDefinitionArns", []):
                     try:
-                        response = ecs_client.describe_task_definition(taskDefinition=task_def_arn)
+                        response = ecs_client.describe_task_definition(
+                            taskDefinition=task_def_arn
+                        )
                         if response.get("taskDefinition"):
                             live_resources[task_def_arn] = response["taskDefinition"]
                     except Exception as e:
-                        logger.debug(f"Could not describe task definition {task_def_arn}: {e}")
+                        logger.debug(
+                            f"Could not describe task definition {task_def_arn}: {e}"
+                        )
                         continue
             except Exception as e:
-                logger.debug(f"Could not list task definitions for family {family}: {e}")
+                logger.debug(
+                    f"Could not list task definitions for family {family}: {e}"
+                )
                 continue
 
         return live_resources

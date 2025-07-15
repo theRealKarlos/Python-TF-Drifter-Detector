@@ -11,12 +11,10 @@ Key points:
 - Debug output: Prints are included to aid debugging and show matching logic in action.
 """
 
-from typing import Dict
-
 from src.utils import fetcher_error_handler
 
 from ...utils import setup_logging
-from ..types import LiveResourceData, ResourceAttributes, SQSClient
+from ..types import SQSClient
 
 logger = setup_logging()
 
@@ -32,7 +30,7 @@ def extract_hybrid_key_from_sqs(queue: dict) -> str:
         return str(queue["QueueArn"])
     if "QueueUrl" in queue and queue["QueueUrl"]:
         return str(queue["QueueUrl"])
-    return f"aws_sqs_queue.unknown"
+    return "aws_sqs_queue.unknown"
 
 
 @fetcher_error_handler
@@ -48,7 +46,9 @@ def fetch_sqs_resources(
         live_resources = {}
         queue_urls = response.get("QueueUrls", [])
         for queue_url in queue_urls:
-            attrs = sqs_client.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["All"])['Attributes']
+            attrs = sqs_client.get_queue_attributes(
+                QueueUrl=queue_url, AttributeNames=["All"]
+            )["Attributes"]
             queue = {"QueueUrl": queue_url, **attrs}
             # SQS ARNs are sometimes in the attributes
             queue["QueueArn"] = attrs.get("QueueArn")

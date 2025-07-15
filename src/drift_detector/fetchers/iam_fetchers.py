@@ -44,7 +44,9 @@ def fetch_iam_resources(
             return _fetch_iam_role_policies(iam_client, resource_key, attributes)
         elif resource_type.startswith("aws_iam_role_policy_attachment"):
             # Handle managed policy attachments
-            return _fetch_iam_role_policy_attachments(iam_client, resource_key, attributes)
+            return _fetch_iam_role_policy_attachments(
+                iam_client, resource_key, attributes
+            )
         elif resource_type.startswith("aws_iam_role"):
             for role in iam_client.list_roles()["Roles"]:
                 key = extract_hybrid_key_from_iam(role, "aws_iam_role")
@@ -61,7 +63,7 @@ def fetch_iam_resources(
                 logger.debug(f"[IAM] Using key for group: {key}")
                 live_resources[key] = group
         elif resource_type.startswith("aws_iam_policy"):
-            for policy in iam_client.list_policies(Scope='Local')["Policies"]:
+            for policy in iam_client.list_policies(Scope="Local")["Policies"]:
                 key = extract_hybrid_key_from_iam(policy, "aws_iam_policy")
                 logger.debug(f"[IAM] Using key for policy: {key}")
                 live_resources[key] = policy
@@ -81,7 +83,7 @@ def _fetch_iam_roles(
     try:
         response = iam_client.list_roles()
         live_resources = {}
-        
+
         for role in response["Roles"]:
             arn = role.get("Arn")
             if arn:
@@ -103,7 +105,7 @@ def _fetch_iam_policies(
     try:
         response = iam_client.list_policies(Scope="Local")
         live_resources = {}
-        
+
         for policy in response["Policies"]:
             arn = policy.get("Arn")
             if arn:
@@ -129,7 +131,7 @@ def _fetch_iam_role_policies(
     )
     try:
         live_resources = {}
-        
+
         # Extract role name and policy name from attributes
         role_name = attributes.get("role") or attributes.get("name")
         policy_name = attributes.get("name") or attributes.get("policy_name")
@@ -161,7 +163,7 @@ def _fetch_iam_role_policies(
                 f"DEBUG: Available policies for role {role_name}: "
                 f"{policies_response['PolicyNames']}"
             )
-            
+
             # Return all inline policies for this role, keyed by role_name:policy_name
             for policy_name in policies_response["PolicyNames"]:
                 policy_response = iam_client.get_role_policy(
@@ -175,10 +177,12 @@ def _fetch_iam_role_policies(
                     "policy_name": policy_name,
                     "policy": policy_response["PolicyDocument"],
                 }
-            
-            logger.debug(f"DEBUG: IAM role policy fetcher returning {len(live_resources)} policies")
+
+            logger.debug(
+                f"DEBUG: IAM role policy fetcher returning {len(live_resources)} policies"
+            )
             return live_resources
-            
+
         except Exception as e:
             logger.error(f"Error fetching IAM role policies: {e}")
             return live_resources
@@ -197,18 +201,18 @@ def _fetch_iam_role_policy_attachments(
     """
     try:
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Get the role name and policy ARN
         role_name = attributes.get("role")
         policy_arn = attributes.get("policy_arn")
-        
+
         if not role_name or not policy_arn:
             return live_resources
-        
+
         # Get attached policies for the role
         try:
             response = iam_client.list_attached_role_policies(RoleName=role_name)
-            
+
             # Check if the policy is attached
             for attached_policy in response.get("AttachedPolicies", []):
                 if attached_policy.get("PolicyArn") == policy_arn:
@@ -218,11 +222,11 @@ def _fetch_iam_role_policy_attachments(
                         "policy_name": attached_policy.get("PolicyName"),
                     }
                     return live_resources
-            
+
             return live_resources
         except iam_client.exceptions.NoSuchEntityException:
             return live_resources
-        
+
     except Exception as e:
         logger.error(f"Error fetching IAM role policy attachments: {e}")
         return {}
@@ -241,10 +245,10 @@ def _fetch_iam_openid_connect_providers(
     try:
         response = iam_client.list_open_id_connect_providers()
         live_resources = {}
-        
+
         # Use ARN-based matching exclusively
         arn = extract_arn_from_attributes(attributes, "aws_iam_openid_connect_provider")
-        
+
         provider_list = response.get("OpenIDConnectProviderList", [])
         for provider in provider_list:
             provider_arn_from_aws = provider.get("Arn")

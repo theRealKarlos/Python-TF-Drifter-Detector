@@ -8,7 +8,6 @@ from typing import Dict
 
 from ...utils import fetcher_error_handler, setup_logging
 from ..types import CloudWatchClient, LiveResourceData, ResourceAttributes
-from .base import extract_arn_from_attributes
 
 logger = setup_logging()
 
@@ -37,10 +36,14 @@ def fetch_cloudwatch_resources(
     if resource_type.startswith("aws_cloudwatch_dashboard"):
         return _fetch_cloudwatch_dashboards(cloudwatch_client, resource_key, attributes)
     elif resource_type.startswith("aws_cloudwatch_metric_alarm"):
-        return _fetch_cloudwatch_metric_alarms(cloudwatch_client, resource_key, attributes)
+        return _fetch_cloudwatch_metric_alarms(
+            cloudwatch_client, resource_key, attributes
+        )
     elif resource_type.startswith("aws_cloudwatch_log_group"):
         if cloudwatch_logs_client:
-            return _fetch_cloudwatch_log_groups(cloudwatch_logs_client, resource_key, attributes)
+            return _fetch_cloudwatch_log_groups(
+                cloudwatch_logs_client, resource_key, attributes
+            )
         else:
             logger.error("CloudWatch Logs client not provided for log group fetching")
             return {}
@@ -60,7 +63,7 @@ def _fetch_cloudwatch_dashboards(
     try:
         response = cloudwatch_client.list_dashboards()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         for dashboard in response.get("DashboardEntries", []):
             arn = dashboard.get("DashboardArn")
             if arn:
@@ -84,7 +87,7 @@ def _fetch_cloudwatch_metric_alarms(
     try:
         response = cloudwatch_client.describe_alarms()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         for alarm in response.get("MetricAlarms", []):
             arn = alarm.get("AlarmArn")
             if arn:
@@ -108,7 +111,7 @@ def _fetch_cloudwatch_log_groups(
     try:
         response = cloudwatch_client.describe_log_groups()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         for log_group in response.get("logGroups", []):
             arn = log_group.get("arn")
             if arn:

@@ -9,7 +9,6 @@ from typing import Any, Dict
 
 from ...utils import fetcher_error_handler, setup_logging
 from ..types import LambdaClient
-from .base import extract_arn_from_attributes
 
 logger = setup_logging()
 
@@ -25,7 +24,7 @@ def extract_hybrid_key_from_lambda(function: dict) -> str:
         return str(function["FunctionArn"])
     if "FunctionName" in function and function["FunctionName"]:
         return str(function["FunctionName"])
-    return f"aws_lambda_function.unknown"
+    return "aws_lambda_function.unknown"
 
 
 @fetcher_error_handler
@@ -64,7 +63,7 @@ def _fetch_lambda_functions(
     try:
         response = lambda_client.list_functions()
         live_resources = {}
-        
+
         # Return all Lambda functions keyed by hybrid key
         for function in response["Functions"]:
             key = extract_hybrid_key_from_lambda(function)
@@ -90,7 +89,9 @@ def _fetch_lambda_permissions(
         statement_id = attributes.get("statement_id")
 
         if not function_name or not statement_id:
-            logger.debug(f"[Lambda] No function_name or statement_id in attributes: {attributes}")
+            logger.debug(
+                f"[Lambda] No function_name or statement_id in attributes: {attributes}"
+            )
             return {}
 
         # Extract function name from ARN if it's a full ARN
@@ -106,7 +107,9 @@ def _fetch_lambda_permissions(
         for statement in policy_doc.get("Statement", []):
             sid = statement.get("Sid")
             composite_key = f"lambda_permission:{function_name}:{sid}"
-            logger.debug(f"[Lambda] Using composite key for permission: {composite_key}")
+            logger.debug(
+                f"[Lambda] Using composite key for permission: {composite_key}"
+            )
             # Store all relevant attributes for comparison
             live_resources[composite_key] = {
                 "Sid": sid,

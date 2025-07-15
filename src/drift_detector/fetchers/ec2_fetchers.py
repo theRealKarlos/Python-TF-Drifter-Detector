@@ -5,13 +5,15 @@ This module routes EC2-related resource types to their specific fetchers.
 """
 
 from typing import Dict
+
 from ...utils import setup_logging
 from ..types import EC2Client, LiveResourceData, ResourceAttributes
+from .base import extract_arn_from_attributes
 from .ec2_instances_fetcher import fetch_ec2_instance_resources
 from .vpc_fetcher import fetch_vpc_resources
-from .base import extract_arn_from_attributes
 
 logger = setup_logging()
+
 
 def fetch_ec2_resources(
     ec2_client: EC2Client,
@@ -21,13 +23,13 @@ def fetch_ec2_resources(
 ) -> Dict[str, LiveResourceData]:
     """
     Route EC2-related resource types to their specific fetchers.
-    
+
     Args:
         ec2_client: Boto3 EC2 client
         resource_key: Resource key for mapping
         attributes: Resource attributes from Terraform state
         resource_type: Type of EC2 resource (optional, for routing)
-        
+
     Returns:
         Dictionary mapping resource keys to live AWS resource data
     """
@@ -61,10 +63,10 @@ def _fetch_security_groups(
     try:
         response = ec2_client.describe_security_groups()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Use ARN-based matching exclusively
         arn = extract_arn_from_attributes(attributes, "aws_security_group")
-        
+
         for sg in response.get("SecurityGroups", []):
             sg_id = sg.get("GroupId")
             # For security groups, the ARN format is typically:
@@ -95,10 +97,10 @@ def _fetch_subnets(
     try:
         response = ec2_client.describe_subnets()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Use ARN-based matching exclusively
         arn = extract_arn_from_attributes(attributes, "aws_subnet")
-        
+
         for subnet in response.get("Subnets", []):
             subnet_id = subnet.get("SubnetId")
             # For subnets, the ARN format is typically:
@@ -129,10 +131,10 @@ def _fetch_internet_gateways(
     try:
         response = ec2_client.describe_internet_gateways()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Use ARN-based matching exclusively
         arn = extract_arn_from_attributes(attributes, "aws_internet_gateway")
-        
+
         for igw in response.get("InternetGateways", []):
             igw_id = igw.get("InternetGatewayId")
             # For internet gateways, the ARN format is typically:
@@ -162,14 +164,14 @@ def _fetch_route_tables(
     try:
         response = ec2_client.describe_route_tables()
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Route tables don't have ARNs, so we use ID-based matching
         route_table_id = attributes.get("id") or attributes.get("route_table_id")
-        
+
         if not route_table_id:
             logger.debug(f"No route table ID found for {resource_key}")
             return live_resources
-        
+
         for rt in response.get("RouteTables", []):
             if rt.get("RouteTableId") == route_table_id:
                 live_resources[resource_key] = rt
@@ -196,28 +198,28 @@ def _fetch_route_table_associations(
     """
     try:
         live_resources: Dict[str, LiveResourceData] = {}
-        
+
         # Route table associations may not have ARNs, so we use ID-based matching
         # Get the route table ID and subnet ID
         route_table_id = attributes.get("route_table_id")
         subnet_id = attributes.get("subnet_id")
-        
+
         if not route_table_id:
             logger.debug(f"No route_table_id found for {resource_key}")
             return live_resources
-        
+
         # Get route table details
         response = ec2_client.describe_route_tables(RouteTableIds=[route_table_id])
-        
+
         if response.get("RouteTables"):
             route_table = response["RouteTables"][0]
-            
+
             # Look for the specific association
             for association in route_table.get("Associations", []):
                 if subnet_id and association.get("SubnetId") == subnet_id:
                     live_resources[resource_key] = association
                     return live_resources
-                
+
                 # If no specific subnet, return the first association
                 if not subnet_id and association.get("Main") is False:
                     live_resources[resource_key] = association

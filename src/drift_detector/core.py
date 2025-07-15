@@ -59,7 +59,9 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         print(f"DEBUG: Total resource instances in state: {total_state_instances}")
 
         all_state_resources = set()
-        state_resource_key_map = {}  # Map from extracted key to (resource_type, resource_name, instance_index)
+        state_resource_key_map = (
+            {}
+        )  # Map from extracted key to (resource_type, resource_name, instance_index)
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
             resource_name = resource.get("name")
@@ -71,28 +73,50 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                 for arn_key in ("arn", "Arn", "ARN"):
                     if arn_key in attributes and attributes[arn_key]:
                         key = attributes[arn_key]
-                        print(f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: {key}")
+                        print(
+                            f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: "
+                            f"{key}"
+                        )
                         break
                 # 2. Try ID (for resources without ARNs)
                 if not key:
-                    for id_key in ("id", "Id", "ID", "instance_id", "InstanceId", "resource_id", "ResourceId"):
+                    for id_key in (
+                        "id",
+                        "Id",
+                        "ID",
+                        "instance_id",
+                        "InstanceId",
+                        "resource_id",
+                        "ResourceId",
+                    ):
                         if id_key in attributes and attributes[id_key]:
                             key = attributes[id_key]
-                            print(f"DEBUG: Using ID as key for {resource_type}.{resource_name}_{idx}: {key}")
+                            print(
+                                f"DEBUG: Using ID as key for {resource_type}."
+                                f"{resource_name}_{idx}: {key}"
+                            )
                             break
                 # 3. Fallback to resource_type.resource_name[_idx]
                 if not key:
                     key = f"{resource_type}.{resource_name}_{idx}"
-                    print(f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: {key}")
+                    print(
+                        f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: "
+                        f"{key}"
+                    )
                 all_state_resources.add(key)
                 state_resource_key_map[key] = (resource_type, resource_name, idx)
 
         all_live_resources = set(live_resources.keys())
-        drifted_resources = set(drift["resource_key"].split(" [")[0] for drift in drift_report.get("drifts", []))
+        drifted_resources = set(
+            drift["resource_key"].split(" [")[0]
+            for drift in drift_report.get("drifts", [])
+        )
 
         # Debug: Print total number of resources in state
         print(f"DEBUG: Total resources in state: {len(all_state_resources)}")
-        print(f"DEBUG: Sample state resource keys: {list(all_state_resources)[:5]}")
+        sample_keys = list(all_state_resources)[:5]
+        print(f"DEBUG: Sample state resource keys (part 1): {sample_keys[:2]}")
+        print(f"DEBUG: Sample state resource keys (part 2): {sample_keys[2:]}")
         print(f"DEBUG: Sample live resource keys: {list(all_live_resources)[:5]}")
         print(f"DEBUG: Total live resources: {len(all_live_resources)}")
 
@@ -132,7 +156,10 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                         aws_live_name = live_attributes[key_name]
                         break
             if not aws_live_name:
-                print(f"DEBUG: No live name found for {resource_type}.{resource_name}_{idx}, available keys: {list(live_attributes.keys())}")
+                print(
+                    f"DEBUG: No live name found for {resource_type}.{resource_name}_{idx}, "
+                    f"available keys: {list(live_attributes.keys())}"
+                )
 
             # Concise display name logic (British English spelling)
             # 1. If resource_name is not 'this', use it as logical name
@@ -163,17 +190,24 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
             if logical_name and aws_live_name and logical_name != aws_live_name:
                 display_name = f"{logical_name} (AWS: {aws_live_name})"
             else:
-                display_name = logical_name or aws_live_name or f"{resource_type}:{resource_key}"
+                display_name = (
+                    logical_name or aws_live_name or f"{resource_type}:{resource_key}"
+                )
 
-            matching_resources.append({
-                "resource_type": resource_type,
-                "resource_name": resource_name,
-                "aws_live_name": aws_live_name,
-                "display_name": display_name,
-            })
-        # Debug: Print number of matched and mismatched resources
-        print(f"DEBUG: Matched resources: {len(matching_resources)}")
-        print(f"DEBUG: Drifted or missing resources: {len(all_state_resources) - len(matching_resources)}")
+            matching_resources.append(
+                {
+                    "resource_type": resource_type,
+                    "resource_name": resource_name,
+                    "aws_live_name": aws_live_name,
+                    "display_name": display_name,
+                }
+            )
+        # Debug: Print number of matched and mismatched resources, each line under 100 characters
+        print("DEBUG: Matched resources:")
+        print(len(matching_resources))
+        drifted_or_missing = len(all_state_resources) - len(matching_resources)
+        print("DEBUG: Drifted or missing resources:")
+        print(drifted_or_missing)
 
         # Step 5: Return comprehensive drift report with summary
         return {

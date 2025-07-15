@@ -5,7 +5,7 @@ This module contains the main orchestration logic for fetching live AWS resource
 and initialises AWS service clients for all supported services.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import boto3
 
@@ -28,18 +28,18 @@ from ..types import (
 def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) -> str:
     """
     Extract ARN from resource attributes.
-    
+
     This function looks for ARN fields in the resource attributes and returns
     the first valid ARN found. It checks multiple possible ARN field names
     to handle different resource types and naming conventions.
-    
+
     Args:
         attributes: Resource attributes from Terraform state
         resource_type: Type of AWS resource
-        
+
     Returns:
         ARN string if found
-        
+
     Raises:
         ValueError: If no valid ARN is found for the resource type
     """
@@ -51,43 +51,55 @@ def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) 
             f"Resource type '{resource_type}' does not support ARN-based matching. "
             f"Use ID-based matching instead."
         )
-    
+
     # Check for common ARN field names
     arn_fields = ["arn", "Arn", "ARN"]
     for field in arn_fields:
         if field in attributes:
             arn_value = attributes[field]
-            if arn_value and isinstance(arn_value, str) and arn_value.startswith("arn:aws:"):
+            if (
+                arn_value
+                and isinstance(arn_value, str)
+                and arn_value.startswith("arn:aws:")
+            ):
                 return str(arn_value)
-    
+
     # Check for service-specific ARN fields
     if resource_type.startswith("aws_lambda_function"):
         function_arn = attributes.get("invoke_arn") or attributes.get("function_arn")
-        if function_arn and isinstance(function_arn, str) and function_arn.startswith("arn:aws:"):
+        if (
+            function_arn
+            and isinstance(function_arn, str)
+            and function_arn.startswith("arn:aws:")
+        ):
             return str(function_arn)
-    
+
     # Check for 'id' field that might be an ARN
     if "id" in attributes:
         id_value = attributes["id"]
         if id_value and isinstance(id_value, str) and id_value.startswith("arn:aws:"):
             return str(id_value)
-    
+
     # If we still haven't found an ARN, look for any field ending with '_arn'
     for field_name, field_value in attributes.items():
-        if (field_name.endswith("_arn") and 
-            field_value and 
-            isinstance(field_value, str) and 
-            field_value.startswith("arn:aws:")):
+        if (
+            field_name.endswith("_arn")
+            and field_value
+            and isinstance(field_value, str)
+            and field_value.startswith("arn:aws:")
+        ):
             return str(field_value)
-    
+
     # Final fallback: look for any field containing 'arn' in the name
     for field_name, field_value in attributes.items():
-        if ("arn" in field_name.lower() and 
-            field_value and 
-            isinstance(field_value, str) and 
-            field_value.startswith("arn:aws:")):
+        if (
+            "arn" in field_name.lower()
+            and field_value
+            and isinstance(field_value, str)
+            and field_value.startswith("arn:aws:")
+        ):
             return str(field_value)
-    
+
     # If no ARN is found, this indicates a problem with the state file
     # or an unsupported resource type
     available_fields = list(attributes.keys())
@@ -98,23 +110,25 @@ def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) 
     )
 
 
-def get_resource_identifier(attributes: Dict[str, Any], resource_type: str, resource_name: str) -> Dict[str, Any]:
+def get_resource_identifier(
+    attributes: Dict[str, Any], resource_type: str, resource_name: str
+) -> Dict[str, Any]:
     """
     Get the ARN-based identifier for a resource.
-    
+
     This function uses ARN-based identification exclusively, as ARNs are
     always present for AWS managed resources that support them.
-    
+
     Args:
         attributes: Resource attributes from Terraform state
         resource_type: Type of AWS resource
         resource_name: Name of the resource in Terraform
-        
+
     Returns:
         Dictionary containing ARN-based identifier information
     """
     arn = extract_arn_from_attributes(attributes, resource_type)
-    
+
     return {
         "primary_identifier": "arn",
         "arn": arn,
@@ -128,7 +142,7 @@ def get_resource_identifier(attributes: Dict[str, Any], resource_type: str, reso
             "role_name": attributes.get("role_name"),
             "policy_name": attributes.get("policy_name"),
             "queue_name": attributes.get("name"),  # For SQS queues
-        }
+        },
     }
 
 
@@ -200,7 +214,7 @@ def get_live_aws_resources(
         # Process all instances, using ARN as the primary identifier
         for idx, instance in enumerate(instances):
             attributes = instance.get("attributes", {})
-            
+
             # Try to extract ARN for unique identification
             try:
                 arn = extract_arn_from_attributes(attributes, resource_type)
@@ -225,11 +239,15 @@ def get_live_aws_resources(
                 )
             elif resource_type.startswith("aws_dynamodb_table"):
                 live_resources.update(
-                    fetch_dynamodb_resources(dynamodb_client, unique_resource_key, attributes)
+                    fetch_dynamodb_resources(
+                        dynamodb_client, unique_resource_key, attributes
+                    )
                 )
             elif resource_type.startswith("aws_lambda_function"):
                 live_resources.update(
-                    fetch_lambda_resources(lambda_client, unique_resource_key, attributes)
+                    fetch_lambda_resources(
+                        lambda_client, unique_resource_key, attributes
+                    )
                 )
             elif (
                 resource_type.startswith("aws_iam_role_policy")
@@ -239,7 +257,9 @@ def get_live_aws_resources(
                 or resource_type.startswith("aws_iam_role_policy_attachment")
             ):
                 live_resources.update(
-                    fetch_iam_resources(iam_client, unique_resource_key, attributes, resource_type)
+                    fetch_iam_resources(
+                        iam_client, unique_resource_key, attributes, resource_type
+                    )
                 )
             elif resource_type.startswith("aws_cloudwatch_event_rule"):
                 event_bus_name = attributes.get("event_bus_name", "")
@@ -255,7 +275,9 @@ def get_live_aws_resources(
                 event_bus_name = attributes.get("event_bus_name", "")
                 rule_name = attributes.get("rule", "")
                 target_arn = attributes.get("arn", "")
-                composite_key = f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
+                composite_key = (
+                    f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
+                )
                 live_resources.update(
                     fetch_events_resources(
                         events_client, composite_key, attributes, resource_type
@@ -279,11 +301,15 @@ def get_live_aws_resources(
                         lambda_client, composite_key, attributes, resource_type
                     )
                 )
-            elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
-                "aws_ecs_service"
-            ) or resource_type.startswith("aws_ecs_task_definition"):
+            elif (
+                resource_type.startswith("aws_ecs_cluster")
+                or resource_type.startswith("aws_ecs_service")
+                or resource_type.startswith("aws_ecs_task_definition")
+            ):
                 live_resources.update(
-                    fetch_ecs_resources(ecs_client, unique_resource_key, attributes, resource_type)
+                    fetch_ecs_resources(
+                        ecs_client, unique_resource_key, attributes, resource_type
+                    )
                 )
             elif (
                 resource_type.startswith("aws_vpc")
@@ -294,7 +320,9 @@ def get_live_aws_resources(
                 or resource_type.startswith("aws_route_table_association")
             ):
                 live_resources.update(
-                    fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type)
+                    fetch_ec2_resources(
+                        ec2_client, unique_resource_key, attributes, resource_type
+                    )
                 )
             elif (
                 resource_type.startswith("aws_api_gateway_rest_api")
@@ -305,7 +333,9 @@ def get_live_aws_resources(
                 or resource_type.startswith("aws_api_gateway_stage")
             ):
                 live_resources.update(
-                    fetch_apigateway_resources(apigateway_client, unique_resource_key, attributes)
+                    fetch_apigateway_resources(
+                        apigateway_client, unique_resource_key, attributes
+                    )
                 )
             elif resource_type.startswith("aws_api_gateway_rest_api"):
                 rest_api_id = attributes.get("id", "")
@@ -331,7 +361,11 @@ def get_live_aws_resources(
             ):
                 live_resources.update(
                     fetch_cloudwatch_resources(
-                        cloudwatch_client, unique_resource_key, attributes, resource_type, cloudwatch_logs_client
+                        cloudwatch_client,
+                        unique_resource_key,
+                        attributes,
+                        resource_type,
+                        cloudwatch_logs_client,
                     )
                 )
             elif resource_type.startswith("aws_region") or resource_type.startswith(
@@ -339,7 +373,11 @@ def get_live_aws_resources(
             ):
                 live_resources.update(
                     fetch_data_source_resources(
-                        sts_client, region_name, unique_resource_key, attributes, resource_type
+                        sts_client,
+                        region_name,
+                        unique_resource_key,
+                        attributes,
+                        resource_type,
                     )
                 )
             elif resource_type.startswith("aws_sqs_queue"):
@@ -356,7 +394,9 @@ def get_live_aws_resources(
                 rest_api_id = attributes.get("rest_api_id", "")
                 resource_id = attributes.get("resource_id", "")
                 http_method = attributes.get("http_method", "")
-                composite_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
+                composite_key = (
+                    f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
+                )
                 live_resources.update(
                     fetch_apigateway_resources(
                         apigateway_client, composite_key, attributes
@@ -366,7 +406,9 @@ def get_live_aws_resources(
                 rest_api_id = attributes.get("rest_api_id", "")
                 resource_id = attributes.get("resource_id", "")
                 http_method = attributes.get("http_method", "")
-                composite_key = f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
+                composite_key = (
+                    f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
+                )
                 live_resources.update(
                     fetch_apigateway_resources(
                         apigateway_client, composite_key, attributes

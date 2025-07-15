@@ -85,7 +85,14 @@ def compare_resources(
                     print(f"DEBUG: JSON parse error for queue_url={queue_url!r}: {e}")
                     canonical_state_policy = state_policy_raw
                     canonical_live_policy = live_policy_raw
-                print(f"DEBUG: SQS policy compare for {resource_type}.{resource_name} [{queue_url}]:\n  State={canonical_state_policy}\n  Live={canonical_live_policy}")
+                print(
+                    (
+                        f"DEBUG: SQS policy compare for {resource_type}.{resource_name} "
+                        f"[{queue_url}]:\n"
+                        f"  State={canonical_state_policy}\n"
+                        f"  Live={canonical_live_policy}"
+                    )
+                )
                 if canonical_state_policy != canonical_live_policy:
                     resource_identifier = f"{resource_type}.{resource_name} [{queue_url}]"
                     drifts.append({
@@ -106,7 +113,7 @@ def compare_resources(
         instances = resource.get("instances", [])
         for idx, instance in enumerate(instances):
             state_attributes = instance.get("attributes", {})
-            
+
             # Create unique resource key for this instance (same logic as fetchers)
             try:
                 from ..fetchers.base import extract_arn_from_attributes
@@ -176,7 +183,9 @@ def compare_resources(
                     {
                         "resource_key": unique_resource_key,
                         "drift_type": "missing_resource",
-                        "description": f"Resource {unique_resource_key} exists in state but not in live AWS",
+                        "description": (
+                            f"Resource {unique_resource_key} exists in state but not in live AWS"
+                        ),
                     }
                 )
                 continue
@@ -191,7 +200,9 @@ def compare_resources(
                     {
                         "resource_key": unique_resource_key,
                         "drift_type": "attribute_drift",
-                        "description": f"Attribute drift detected for {unique_resource_key}",
+                        "description": (
+                            f"Attribute drift detected for {unique_resource_key}"
+                        ),
                         "differences": differences,
                     }
                 )
@@ -203,7 +214,6 @@ def compare_resources(
     }
 
 
-# E302: Add two blank lines before function definition
 def compare_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
 ) -> List[Dict[str, Any]]:
