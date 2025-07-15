@@ -1,0 +1,11 @@
+{
+    "Targets": [
+        {
+            "Id": "dev-order-placed-handler",
+            "Arn": "arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler",
+            "DeadLetterConfig": {
+                "Arn": "arn:aws:sqs:eu-west-2:379673441375:dev-order-placed-eventbridge-dlq"
+            }
+        }
+    ]
+}

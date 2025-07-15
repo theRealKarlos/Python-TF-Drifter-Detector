@@ -251,12 +251,14 @@ def get_live_aws_resources(
                     )
                 )
             elif resource_type.startswith("aws_cloudwatch_event_target"):
+                # Use a composite key for EventBridge targets to avoid collision with Lambda ARNs
                 event_bus_name = attributes.get("event_bus_name", "")
-                if event_bus_name:
-                    unique_resource_key = f"{unique_resource_key}_{event_bus_name}"
+                rule_name = attributes.get("rule", "")
+                target_arn = attributes.get("arn", "")
+                composite_key = f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
                 live_resources.update(
                     fetch_events_resources(
-                        events_client, unique_resource_key, attributes, resource_type
+                        events_client, composite_key, attributes, resource_type
                     )
                 )
             elif resource_type.startswith("aws_cloudwatch_event_bus"):

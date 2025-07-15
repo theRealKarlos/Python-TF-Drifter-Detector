@@ -117,6 +117,13 @@ def compare_resources(
                 # If no ARN available, fall back to resource name + index
                 unique_resource_key = f"{base_resource_key}_{idx}"
 
+            # Special handling for EventBridge targets: use composite key
+            if resource_type.startswith("aws_cloudwatch_event_target"):
+                event_bus_name = state_attributes.get("event_bus_name", "")
+                rule_name = state_attributes.get("rule", "")
+                target_arn = state_attributes.get("arn", "")
+                unique_resource_key = f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
+
             # Check if resource exists in live AWS using the same key construction as fetchers
             if unique_resource_key not in live_resources:
                 drifts.append(
