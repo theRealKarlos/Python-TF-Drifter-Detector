@@ -73,42 +73,59 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                 continue  # Skip meta resources (not compared for drift)
             for idx, instance in enumerate(resource.get("instances", [])):
                 attributes = instance.get("attributes", {})
-                # Hybrid key extraction: ARN > ID > fallback
-                key = None
-                # 1. Try ARN
-                for arn_key in ("arn", "Arn", "ARN"):
-                    if arn_key in attributes and attributes[arn_key]:
-                        key = attributes[arn_key]
-                        print(
-                            f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: "
-                            f"{key}"
-                        )
-                        break
-                # 2. Try ID (for resources without ARNs)
-                if not key:
-                    for id_key in (
-                        "id",
-                        "Id",
-                        "ID",
-                        "instance_id",
-                        "InstanceId",
-                        "resource_id",
-                        "ResourceId",
-                    ):
-                        if id_key in attributes and attributes[id_key]:
-                            key = attributes[id_key]
+                # Special key extraction for aws_lambda_permission
+                if resource_type == "aws_lambda_permission":
+                    function_name = attributes.get("function_name")
+                    statement_id = attributes.get("statement_id")
+                    if function_name and statement_id:
+                        key = f"lambda_permission:{function_name}:{statement_id}"
+                    else:
+                        key = statement_id or f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_api_gateway_deployment
+                elif resource_type == "aws_api_gateway_deployment":
+                    rest_api_id = attributes.get("rest_api_id")
+                    deployment_id = attributes.get("id")
+                    if rest_api_id and deployment_id:
+                        key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
+                    else:
+                        key = deployment_id or f"{resource_type}.{resource_name}_{idx}"
+                else:
+                    # Hybrid key extraction: ARN > ID > fallback
+                    key = None
+                    # 1. Try ARN
+                    for arn_key in ("arn", "Arn", "ARN"):
+                        if arn_key in attributes and attributes[arn_key]:
+                            key = attributes[arn_key]
                             print(
-                                f"DEBUG: Using ID as key for {resource_type}."
-                                f"{resource_name}_{idx}: {key}"
+                                f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: "
+                                f"{key}"
                             )
                             break
-                # 3. Fallback to resource_type.resource_name[_idx]
-                if not key:
-                    key = f"{resource_type}.{resource_name}_{idx}"
-                    print(
-                        f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: "
-                        f"{key}"
-                    )
+                    # 2. Try ID (for resources without ARNs)
+                    if not key:
+                        for id_key in (
+                            "id",
+                            "Id",
+                            "ID",
+                            "instance_id",
+                            "InstanceId",
+                            "resource_id",
+                            "ResourceId",
+                        ):
+                            if id_key in attributes and attributes[id_key]:
+                                key = attributes[id_key]
+                                print(
+                                    f"DEBUG: Using ID as key for {resource_type}."
+                                    f"{resource_name}_{idx}: {key}"
+                                )
+                                break
+                    # 3. Fallback to resource_type.resource_name[_idx]
+                    if not key:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                        print(
+                            f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: "
+                            f"{key}"
+                        )
                 all_state_resources.add(key)
                 state_resource_key_map[key] = (resource_type, resource_name, idx)
 
