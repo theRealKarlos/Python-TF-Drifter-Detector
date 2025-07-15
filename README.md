@@ -236,7 +236,7 @@ The drift detector supports comparison of the following AWS resources:
 - IAM role policy document comparison uses normalisation to avoid false drift due to format differences.
 - For resource types marked ⚠️, see debug output and logs for details on which subtypes may need further review or fixes.
 
-### Special Handling: IAM Role Policy Normalization
+### Special Handling: IAM Role Policy Normalisation
 
 The drift detector normalises IAM role policy document comparisons. This means that differences in format (e.g. JSON string in state vs dict from AWS) do **not** cause false drift. Only real content differences are reported. This is implemented in the IAM role policy comparator in `src/drift_detector/resource_comparators.py`.
 
@@ -300,7 +300,7 @@ This lab project demonstrates core drift detection concepts. For a production-re
 - **Environment Variables**: Secure configuration management for S3 paths and AWS regions
 - **CloudWatch Logging**: Structured logging with proper log levels and filtering
 
-### React UI for Drift Visualization
+### React UI for Drift Visualisation
 
 - **Real-time Dashboard**: Web interface showing current drift status
 - **Historical Tracking**: Timeline view of drift changes over time
