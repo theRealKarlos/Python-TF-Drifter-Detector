@@ -130,7 +130,7 @@ def _fetch_iam_role_policies(
         f"resource_key={resource_key}, attributes={attributes}"
     )
     try:
-        live_resources = {}
+        live_resources: Dict[str, LiveResourceData] = {}
 
         # Extract role name and policy name from attributes
         role_name = attributes.get("role") or attributes.get("name")

@@ -79,7 +79,7 @@ def fetch_ec2_instance_resources(
     """
     try:
         response = ec2_client.describe_instances()
-        live_resources = {}
+        live_resources: Dict[str, LiveResourceData] = {}
 
         # Debug: Log all instances found in AWS
         all_instances = []
@@ -101,7 +101,7 @@ def fetch_ec2_instance_resources(
                 for instance in reservation["Instances"]:
                     if instance.get("InstanceId") == instance_id:
                         # Key by the same format as the state (instance ID)
-                        live_resources[instance_id] = instance
+                        live_resources[str(instance_id)] = instance
                         logger.info(
                             f"[EC2] Found EC2 instance {instance_id} in live AWS"
                         )

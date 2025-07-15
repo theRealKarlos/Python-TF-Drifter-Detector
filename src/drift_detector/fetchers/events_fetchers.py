@@ -47,7 +47,7 @@ def _fetch_eventbridge_buses(
     """
     try:
         response = events_client.list_event_buses()
-        live_resources = {}
+        live_resources: Dict[str, Any] = {}
 
         for bus in response["EventBuses"]:
             # EventBridge buses have ARNs
@@ -69,7 +69,7 @@ def _fetch_eventbridge_rules(
     Returns a dictionary of ARNs to rule data for all EventBridge rules.
     """
     try:
-        live_resources = {}
+        live_resources: Dict[str, Any] = {}
 
         # List all event buses and get rules from each
         buses_response = events_client.list_event_buses()
@@ -115,7 +115,7 @@ def _fetch_eventbridge_targets(
     Returns a dictionary of composite keys to target data for all EventBridge targets.
     """
     try:
-        live_resources = {}
+        live_resources: Dict[str, Any] = {}
 
         # Get the target ARN, rule name, and event bus name from the state attributes
         target_arn = attributes.get("arn")

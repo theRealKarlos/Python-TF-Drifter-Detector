@@ -206,8 +206,11 @@ def _fetch_apigateway_methods(
 
 
 def _fetch_apigw_integrations(
-    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
-) -> dict:
+    apigateway_client: APIGatewayClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = ""
+) -> Dict[str, LiveResourceData]:
     """
     Fetch API Gateway integrations from AWS and map them by composite key for drift comparison.
     Returns a dictionary of composite keys to integration data for all integrations.
@@ -235,8 +238,11 @@ def _fetch_apigw_integrations(
 
 
 def _fetch_apigw_methods(
-    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
-) -> dict:
+    apigateway_client: APIGatewayClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = ""
+) -> Dict[str, LiveResourceData]:
     """
     Fetch API Gateway methods from AWS and map them by composite key for drift comparison.
     Returns a dictionary of composite keys to method data for all methods.
@@ -267,8 +273,11 @@ def _fetch_apigw_methods(
 
 
 def _fetch_apigw_resources(
-    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
-) -> dict:
+    apigateway_client: APIGatewayClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = ""
+) -> Dict[str, LiveResourceData]:
     """
     Fetch API Gateway resources from AWS and map them by composite key for drift comparison.
     Returns a dictionary of composite keys to resource data for all resources.
@@ -295,8 +304,11 @@ def _fetch_apigw_resources(
 
 
 def _fetch_apigw_rest_apis(
-    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
-) -> dict:
+    apigateway_client: APIGatewayClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = ""
+) -> Dict[str, LiveResourceData]:
     """
     Fetch API Gateway REST APIs from AWS and map them by composite key for drift comparison.
     Returns a dictionary of composite keys to REST API data for all REST APIs.
@@ -390,8 +402,11 @@ def _fetch_apigateway_stages(
 
 
 def _fetch_apigw_stages(
-    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
-) -> dict:
+    apigateway_client: APIGatewayClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+    resource_type: str = ""
+) -> Dict[str, LiveResourceData]:
     """
     Fetch API Gateway stages from AWS and map them by composite key for drift comparison.
     Returns a dictionary of composite keys to stage data for all stages.

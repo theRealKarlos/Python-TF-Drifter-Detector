@@ -75,7 +75,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drift_report["drifts"]), 1)
         self.assertEqual(drift_report["drifts"][0]["drift_type"], "missing_resource")
 
-    def test_lambda_function_no_drift(self):
+    def test_lambda_function_no_drift(self) -> None:
         """Test Lambda function: no drift when attributes match."""
         state = {
             "resources": [
@@ -103,7 +103,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_lambda_function_attribute_drift(self):
+    def test_lambda_function_attribute_drift(self) -> None:
         """Test Lambda function: drift detected when function_name differs."""
         state = {
             "resources": [
@@ -131,7 +131,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
-    def test_sqs_queue_no_drift(self):
+    def test_sqs_queue_no_drift(self) -> None:
         """Test SQS queue: no drift when attributes match."""
         state = {
             "resources": [
@@ -158,7 +158,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_sqs_queue_attribute_drift(self):
+    def test_sqs_queue_attribute_drift(self) -> None:
         """Test SQS queue: drift detected when QueueName differs."""
         state = {
             "resources": [
@@ -186,7 +186,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
-    def test_dynamodb_table_no_drift(self):
+    def test_dynamodb_table_no_drift(self) -> None:
         """Test DynamoDB table: no drift when attributes match."""
         state = {
             "resources": [
@@ -213,7 +213,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_dynamodb_table_attribute_drift(self):
+    def test_dynamodb_table_attribute_drift(self) -> None:
         """Test DynamoDB table: drift detected when TableName differs."""
         state = {
             "resources": [
@@ -241,7 +241,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
-    def test_ecs_cluster_no_drift(self):
+    def test_ecs_cluster_no_drift(self) -> None:
         """Test ECS cluster: no drift when attributes match."""
         state = {
             "resources": [
@@ -268,7 +268,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_ecs_cluster_attribute_drift(self):
+    def test_ecs_cluster_attribute_drift(self) -> None:
         """Test ECS cluster: drift detected when clusterName differs."""
         state = {
             "resources": [
@@ -296,7 +296,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
-    def test_eventbridge_rule_no_drift(self):
+    def test_eventbridge_rule_no_drift(self) -> None:
         """Test EventBridge rule: no drift when attributes match."""
         state = {
             "resources": [
@@ -323,7 +323,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_eventbridge_rule_attribute_drift(self):
+    def test_eventbridge_rule_attribute_drift(self) -> None:
         """Test EventBridge rule: drift detected when name differs."""
         state = {
             "resources": [
@@ -351,7 +351,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
-    def test_apigateway_resource_no_drift(self):
+    def test_apigateway_resource_no_drift(self) -> None:
         """Test API Gateway resource: no drift when attributes match."""
         state = {
             "resources": [
@@ -382,7 +382,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_apigateway_resource_attribute_drift(self):
+    def test_apigateway_resource_attribute_drift(self) -> None:
         """Test API Gateway resource: drift detected when id differs."""
         state = {
             "resources": [
@@ -413,7 +413,7 @@ class TestDriftDetector(unittest.TestCase):
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
-    def test_s3_bucket_no_drift(self):
+    def test_s3_bucket_no_drift(self) -> None:
         """Test S3 bucket: no drift when attributes match."""
         state = {
             "resources": [
@@ -440,7 +440,7 @@ class TestDriftDetector(unittest.TestCase):
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
-    def test_s3_bucket_attribute_drift(self):
+    def test_s3_bucket_attribute_drift(self) -> None:
         """Test S3 bucket: drift detected when bucket name differs."""
         state = {
             "resources": [
