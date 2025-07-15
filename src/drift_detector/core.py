@@ -133,10 +133,43 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                         break
             if not aws_live_name:
                 print(f"DEBUG: No live name found for {resource_type}.{resource_name}_{idx}, available keys: {list(live_attributes.keys())}")
+
+            # Concise display name logic (British English spelling)
+            # 1. If resource_name is not 'this', use it as logical name
+            if resource_name and resource_name != "this":
+                logical_name = resource_name
+            else:
+                # 2. If resource_name is 'this', try to extract a more descriptive name
+                key_candidates = [
+                    aws_live_name,
+                    live_attributes.get("function_name"),
+                    live_attributes.get("FunctionName"),
+                    live_attributes.get("clusterName"),
+                    live_attributes.get("serviceName"),
+                    live_attributes.get("TableName"),
+                    live_attributes.get("RoleName"),
+                    live_attributes.get("policy_name"),
+                    live_attributes.get("QueueName"),
+                    live_attributes.get("id"),
+                    live_attributes.get("Id"),
+                    live_attributes.get("arn"),
+                    live_attributes.get("Arn"),
+                ]
+                logical_name = next((k for k in key_candidates if k), None)
+                if not logical_name:
+                    logical_name = f"{resource_type}:{resource_key}"
+
+            # 3. If both logical_name and aws_live_name are present and different, show both
+            if logical_name and aws_live_name and logical_name != aws_live_name:
+                display_name = f"{logical_name} (AWS: {aws_live_name})"
+            else:
+                display_name = logical_name or aws_live_name or f"{resource_type}:{resource_key}"
+
             matching_resources.append({
                 "resource_type": resource_type,
                 "resource_name": resource_name,
                 "aws_live_name": aws_live_name,
+                "display_name": display_name,
             })
         # Debug: Print number of matched and mismatched resources
         print(f"DEBUG: Matched resources: {len(matching_resources)}")

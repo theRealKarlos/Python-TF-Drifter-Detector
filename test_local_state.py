@@ -65,12 +65,10 @@ def main():
         matching_resources = summary.get("matching_resources", [])
         if matching_resources:
             print(f"\n=== Matching Resources ({len(matching_resources)}) ===")
-            for res in sorted(matching_resources, key=lambda x: (x["resource_type"], x["resource_name"])):
-                aws_live_name = res.get("aws_live_name", "")
-                if aws_live_name:
-                    print(f"✅ {res['resource_type']} {res['resource_name']} - {aws_live_name}")
-                else:
-                    print(f"✅ {res['resource_type']} {res['resource_name']}")
+            for res in sorted(matching_resources, key=lambda x: (x["resource_type"], x.get("display_name") or x["resource_name"])):
+                # Prefer display_name, fall back to resource_name if not present
+                display = res.get("display_name") or res["resource_name"]
+                print(f"✅ {res['resource_type']} {display}")
         else:
             print("\n❌ No matching resources found!")
         
