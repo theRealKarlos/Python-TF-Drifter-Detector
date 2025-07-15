@@ -38,9 +38,7 @@ def load_config() -> Config:
 
     # Validate S3 path format
     if not s3_state_path.startswith("s3://"):
-        raise ValueError(
-            "STATE_FILE_S3_PATH must be a valid S3 path starting with s3://"
-        )
+        raise ValueError("STATE_FILE_S3_PATH must be a valid S3 path starting with s3://")
 
     # Optional configuration with defaults
     aws_region = os.environ.get("AWS_REGION", "eu-west-2")

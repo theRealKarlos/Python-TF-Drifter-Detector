@@ -10,9 +10,7 @@ from typing import Any, Dict, List
 from ..types import DriftDetail
 
 
-def compare_iam_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
-) -> List[DriftDetail]:
+def compare_iam_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str) -> List[DriftDetail]:
     """
     Compare IAM resource attributes between Terraform state and live AWS.
 
@@ -38,9 +36,7 @@ def compare_iam_attributes(
         return []
 
 
-def _compare_iam_role_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_iam_role_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare IAM role attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -59,9 +55,7 @@ def _compare_iam_role_attributes(
     return drift_details
 
 
-def _compare_iam_policy_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_iam_policy_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare IAM policy attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -80,9 +74,7 @@ def _compare_iam_policy_attributes(
     return drift_details
 
 
-def _compare_iam_role_policy_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_iam_role_policy_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare IAM role policy attributes between Terraform state and live AWS.
     This comparator normalises policy document format differences (e.g. JSON string vs dict),

@@ -86,9 +86,7 @@ def fetch_ec2_instance_resources(
         for reservation in response["Reservations"]:
             for instance in reservation["Instances"]:
                 all_instances.append(instance.get("InstanceId"))
-        logger.info(
-            f"[EC2] Found {len(all_instances)} instances in AWS: {all_instances}"
-        )
+        logger.info(f"[EC2] Found {len(all_instances)} instances in AWS: {all_instances}")
 
         # Extract the key used for this resource (should match state key)
         # For EC2 instances, we'll use the instance ID if available, otherwise the resource key
@@ -102,9 +100,7 @@ def fetch_ec2_instance_resources(
                     if instance.get("InstanceId") == instance_id:
                         # Key by the same format as the state (instance ID)
                         live_resources[str(instance_id)] = instance
-                        logger.info(
-                            f"[EC2] Found EC2 instance {instance_id} in live AWS"
-                        )
+                        logger.info(f"[EC2] Found EC2 instance {instance_id} in live AWS")
                         return live_resources
 
             # If we didn't find the instance, it might not exist in AWS
@@ -113,9 +109,7 @@ def fetch_ec2_instance_resources(
         else:
             # Fallback: if no instance ID, use the resource key as provided
             # This is less reliable but handles edge cases
-            logger.warning(
-                f"[EC2] No instance ID found for EC2 resource, using resource key: {resource_key}"
-            )
+            logger.warning(f"[EC2] No instance ID found for EC2 resource, using resource key: {resource_key}")
             return live_resources
 
     except Exception as e:

@@ -19,9 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 def debug_drift_details() -> None:
     """Debug the actual drift details being returned."""
     config = {
-        "s3_state_path": (
-            "local://D:/Exercise Files/TypeScript-PulseQueue/infra/bootstrap/terraform.tfstate"
-        ),
+        "s3_state_path": ("local://D:/Exercise Files/TypeScript-PulseQueue/infra/bootstrap/terraform.tfstate"),
         "log_level": "DEBUG",
         "aws_region": "eu-west-2",
     }

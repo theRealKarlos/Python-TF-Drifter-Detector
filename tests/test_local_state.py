@@ -35,9 +35,7 @@ def test_with_local_state() -> None:
         with open(state_file_path, "r") as f:
             state_content = f.read()
         state_data = parse_terraform_state(state_content)
-        print(
-            f"Parsed state file with {len(state_data.get('resources', []))} resources"
-        )
+        print(f"Parsed state file with {len(state_data.get('resources', []))} resources")
         config = {
             "s3_state_path": "local://" + state_file_path,
             "log_level": log_level,
@@ -48,18 +46,14 @@ def test_with_local_state() -> None:
         assert isinstance(result, dict)
         assert "drift_detected" in result
         assert "drifts" in result
-        print(
-            f"Drift detection completed. Drift detected: {result.get('drift_detected', False)}"
-        )
+        print(f"Drift detection completed. Drift detected: {result.get('drift_detected', False)}")
     except Exception as e:
         print(f"Error during drift detection: {e}")
         pass
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Test drift detection with a local state file"
-    )
+    parser = argparse.ArgumentParser(description="Test drift detection with a local state file")
     parser.add_argument("state_file", help="Path to the Terraform state file")
     parser.add_argument(
         "--log-level",
@@ -67,9 +61,7 @@ def main() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Logging level",
     )
-    parser.add_argument(
-        "--region", default=None, help="AWS region to use (overrides config and env)"
-    )
+    parser.add_argument("--region", default=None, help="AWS region to use (overrides config and env)")
     parser.add_argument("--output", help="Output file for results (optional)")
     args = parser.parse_args()
     if not os.path.exists(args.state_file):

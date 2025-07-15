@@ -9,9 +9,7 @@ from typing import Any, Dict, List
 from ..types import DriftDetail
 
 
-def compare_dynamodb_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def compare_dynamodb_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare DynamoDB resource attributes between Terraform state and live AWS.
 

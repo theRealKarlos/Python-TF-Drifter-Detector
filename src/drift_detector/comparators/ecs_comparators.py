@@ -9,9 +9,7 @@ from typing import Any, Dict, List
 from ..types import DriftDetail
 
 
-def compare_ecs_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
-) -> List[DriftDetail]:
+def compare_ecs_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str) -> List[DriftDetail]:
     """
     Compare ECS resource attributes between Terraform state and live AWS.
 
@@ -31,9 +29,7 @@ def compare_ecs_attributes(
         return []
 
 
-def _compare_ecs_cluster_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_ecs_cluster_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare ECS cluster attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -52,9 +48,7 @@ def _compare_ecs_cluster_attributes(
     return drift_details
 
 
-def _compare_ecs_service_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_ecs_service_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare ECS service attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.

@@ -40,10 +40,7 @@ def lambda_handler(event: dict, context: object) -> dict:
         # Perform drift detection
         drift_report = detect_drift(config_dict)
 
-        logger.info(
-            f"Drift detection completed. "
-            f"Drift detected: {drift_report.get('drift_detected', False)}"
-        )
+        logger.info(f"Drift detection completed. " f"Drift detected: {drift_report.get('drift_detected', False)}")
 
         return {
             "statusCode": 200,

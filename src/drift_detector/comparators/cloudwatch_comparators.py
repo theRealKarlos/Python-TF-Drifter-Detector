@@ -31,9 +31,7 @@ def compare_cloudwatch_attributes(
         return []
 
 
-def _compare_cloudwatch_dashboard_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_cloudwatch_dashboard_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare CloudWatch dashboard attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -52,9 +50,7 @@ def _compare_cloudwatch_dashboard_attributes(
     return drift_details
 
 
-def _compare_cloudwatch_alarm_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_cloudwatch_alarm_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare CloudWatch alarm attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.

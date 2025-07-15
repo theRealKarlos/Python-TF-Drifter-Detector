@@ -36,14 +36,10 @@ def fetch_cloudwatch_resources(
     if resource_type.startswith("aws_cloudwatch_dashboard"):
         return _fetch_cloudwatch_dashboards(cloudwatch_client, resource_key, attributes)
     elif resource_type.startswith("aws_cloudwatch_metric_alarm"):
-        return _fetch_cloudwatch_metric_alarms(
-            cloudwatch_client, resource_key, attributes
-        )
+        return _fetch_cloudwatch_metric_alarms(cloudwatch_client, resource_key, attributes)
     elif resource_type.startswith("aws_cloudwatch_log_group"):
         if cloudwatch_logs_client:
-            return _fetch_cloudwatch_log_groups(
-                cloudwatch_logs_client, resource_key, attributes
-            )
+            return _fetch_cloudwatch_log_groups(cloudwatch_logs_client, resource_key, attributes)
         else:
             logger.error("CloudWatch Logs client not provided for log group fetching")
             return {}

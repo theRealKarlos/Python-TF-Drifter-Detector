@@ -53,9 +53,7 @@ def fetch_lambda_resources(
 
 
 @fetcher_error_handler
-def _fetch_lambda_functions(
-    lambda_client: LambdaClient, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+def _fetch_lambda_functions(lambda_client: LambdaClient, resource_key: str, attributes: Dict) -> Dict[str, Any]:
     """
     Fetch Lambda function resources from AWS and map them by hybrid key for drift comparison.
     Returns a dictionary of hybrid keys to function data for all Lambda functions.
@@ -77,9 +75,7 @@ def _fetch_lambda_functions(
 
 
 @fetcher_error_handler
-def _fetch_lambda_permissions(
-    lambda_client: LambdaClient, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+def _fetch_lambda_permissions(lambda_client: LambdaClient, resource_key: str, attributes: Dict) -> Dict[str, Any]:
     """
     Fetch Lambda permissions from AWS and map them by composite key for drift comparison.
     Returns a dictionary of composite keys to permission data for all Lambda permissions.
@@ -89,9 +85,7 @@ def _fetch_lambda_permissions(
         statement_id = attributes.get("statement_id")
 
         if not function_name or not statement_id:
-            logger.debug(
-                f"[Lambda] No function_name or statement_id in attributes: {attributes}"
-            )
+            logger.debug(f"[Lambda] No function_name or statement_id in attributes: {attributes}")
             return {}
 
         # Extract function name from ARN if it's a full ARN
@@ -107,9 +101,7 @@ def _fetch_lambda_permissions(
         for statement in policy_doc.get("Statement", []):
             sid = statement.get("Sid")
             composite_key = f"lambda_permission:{function_name}:{sid}"
-            logger.debug(
-                f"[Lambda] Using composite key for permission: {composite_key}"
-            )
+            logger.debug(f"[Lambda] Using composite key for permission: {composite_key}")
             # Store all relevant attributes for comparison
             live_resources[composite_key] = {
                 "Sid": sid,

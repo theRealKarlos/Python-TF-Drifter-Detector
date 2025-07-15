@@ -15,9 +15,7 @@ logger = setup_logging()
 
 
 @fetcher_error_handler
-def fetch_s3_resources(
-    s3_client: S3Client, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+def fetch_s3_resources(s3_client: S3Client, resource_key: str, attributes: Dict) -> Dict[str, Any]:
     """
     Fetch S3 resources from AWS.
 
@@ -32,9 +30,7 @@ def fetch_s3_resources(
     return _fetch_s3_buckets(s3_client, resource_key, attributes)
 
 
-def _fetch_s3_buckets(
-    s3_client: S3Client, resource_key: str, attributes: Dict
-) -> Dict[str, Any]:
+def _fetch_s3_buckets(s3_client: S3Client, resource_key: str, attributes: Dict) -> Dict[str, Any]:
     """
     Fetch S3 buckets from AWS and map them by resource key for drift comparison.
     Returns a dictionary of resource keys to bucket data.

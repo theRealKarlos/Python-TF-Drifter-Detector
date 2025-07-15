@@ -25,8 +25,7 @@ def test_policy_comparison() -> None:
         "role": "github-actions-role",
         "name": "github-actions-policy",
         "policy": (
-            '{"Version":"2012-10-17","Statement":[{"Action":["lambda:CreateFunction"],'
-            '"Effect":"Allow","Resource":"*"}]}'
+            '{"Version":"2012-10-17","Statement":[{"Action":["lambda:CreateFunction"],' '"Effect":"Allow","Resource":"*"}]}'
         ),
     }
     live_attrs = {
@@ -53,12 +52,8 @@ def test_policy_comparison() -> None:
     print(f"Live policy type: {type(live_attrs['policy'])}")
     print(f"Drift details found: {len(drift_details)}")
     for detail in drift_details:
-        print(
-            f"  - {detail['attribute']}: {detail['state_value']} -> {detail['live_value']}"
-        )
-    assert (
-        len(drift_details) == 0
-    ), f"Expected no drift details, but found {len(drift_details)}"
+        print(f"  - {detail['attribute']}: {detail['state_value']} -> {detail['live_value']}")
+    assert len(drift_details) == 0, f"Expected no drift details, but found {len(drift_details)}"
     print("✅ SUCCESS: No drift detected - format differences handled correctly!")
 
 

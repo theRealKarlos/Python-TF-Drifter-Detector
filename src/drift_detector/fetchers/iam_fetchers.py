@@ -30,14 +30,15 @@ def extract_hybrid_key_from_iam(entity: dict, entity_type: str) -> str:
 
 
 @fetcher_error_handler
-def fetch_iam_resources(
-    iam_client: IAMClient, resource_key: str, attributes: dict, resource_type: str = ""
-) -> dict:
+def fetch_iam_resources(iam_client: IAMClient, resource_key: str, attributes: dict, resource_type: str = "") -> dict:
     """
     Fetch IAM resources from AWS and map them by hybrid key for drift comparison.
     Returns a dictionary of hybrid keys to IAM entity data for all IAM entities.
     """
-    print(f"DEBUG: [IAM] fetch_iam_resources called with resource_type={resource_type}, resource_key={resource_key}, attributes={attributes}")
+    print(
+        f"DEBUG: [IAM] fetch_iam_resources called with resource_type={resource_type}, "
+        f"resource_key={resource_key}, attributes={attributes}"
+    )
     try:
         live_resources = {}
         # IMPORTANT: Check aws_iam_role_policy_attachment before aws_iam_role_policy to avoid prefix matching bugs.
@@ -48,9 +49,7 @@ def fetch_iam_resources(
                 role_from_key = resource_key.split("/")[0]
                 attributes = dict(attributes)  # Copy to avoid mutating input
                 attributes["role"] = role_from_key
-            result = _fetch_iam_role_policy_attachments(
-                iam_client, resource_key, attributes
-            )
+            result = _fetch_iam_role_policy_attachments(iam_client, resource_key, attributes)
             print(f"DEBUG: [IAM] _fetch_iam_role_policy_attachments returned keys: {list(result.keys())}")
             return result
         elif resource_type.startswith("aws_iam_role_policy"):
@@ -134,10 +133,7 @@ def _fetch_iam_role_policies(
     Fetch IAM role policies from AWS and map them by hybrid key for drift comparison.
     Returns a dictionary of hybrid keys to role policy data.
     """
-    logger.debug(
-        f"DEBUG: Entered _fetch_iam_role_policies with "
-        f"resource_key={resource_key}, attributes={attributes}"
-    )
+    logger.debug(f"DEBUG: Entered _fetch_iam_role_policies with " f"resource_key={resource_key}, attributes={attributes}")
     try:
         live_resources: Dict[str, LiveResourceData] = {}
 
@@ -145,15 +141,10 @@ def _fetch_iam_role_policies(
         role_name = attributes.get("role") or attributes.get("name")
         policy_name = attributes.get("name") or attributes.get("policy_name")
 
-        logger.debug(
-            f"DEBUG: IAM role policy fetcher - looking for role: {role_name}, "
-            f"policy: {policy_name}"
-        )
+        logger.debug(f"DEBUG: IAM role policy fetcher - looking for role: {role_name}, " f"policy: {policy_name}")
 
         if not role_name or not policy_name:
-            logger.debug(
-                f"DEBUG: No role or policy name found in attributes: {attributes}"
-            )
+            logger.debug(f"DEBUG: No role or policy name found in attributes: {attributes}")
             return live_resources
 
         # Get the role first
@@ -168,16 +159,11 @@ def _fetch_iam_role_policies(
         # Get inline policies for the role
         try:
             policies_response = iam_client.list_role_policies(RoleName=role_name)
-            logger.debug(
-                f"DEBUG: Available policies for role {role_name}: "
-                f"{policies_response['PolicyNames']}"
-            )
+            logger.debug(f"DEBUG: Available policies for role {role_name}: " f"{policies_response['PolicyNames']}")
 
             # Return all inline policies for this role, keyed by role_name:policy_name
             for policy_name in policies_response["PolicyNames"]:
-                policy_response = iam_client.get_role_policy(
-                    RoleName=role_name, PolicyName=policy_name
-                )
+                policy_response = iam_client.get_role_policy(RoleName=role_name, PolicyName=policy_name)
                 # Use the same key format as state file: role_name:policy_name
                 key = f"{role_name}:{policy_name}"
                 logger.debug(f"[IAM] Using key for role policy: {key}")
@@ -187,9 +173,7 @@ def _fetch_iam_role_policies(
                     "policy": policy_response["PolicyDocument"],
                 }
 
-            logger.debug(
-                f"DEBUG: IAM role policy fetcher returning {len(live_resources)} policies"
-            )
+            logger.debug(f"DEBUG: IAM role policy fetcher returning {len(live_resources)} policies")
             return live_resources
 
         except Exception as e:

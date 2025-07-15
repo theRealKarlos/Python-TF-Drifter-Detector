@@ -33,9 +33,7 @@ def compare_sqs_attributes(
     return _compare_sqs_queue_attributes(state_attrs, live_attrs)
 
 
-def _compare_sqs_queue_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_sqs_queue_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare SQS queue attributes between Terraform state and live AWS.
     Only report drift if the values are actually different (after string conversion).
@@ -45,11 +43,7 @@ def _compare_sqs_queue_attributes(
 
     # Compare queue name
     state_name = state_attrs.get("name")
-    live_name = (
-        live_attrs.get("QueueArn", "").split(":")[-1]
-        if live_attrs.get("QueueArn")
-        else ""
-    )
+    live_name = live_attrs.get("QueueArn", "").split(":")[-1] if live_attrs.get("QueueArn") else ""
     # Convert both to string for strict comparison
     if str(state_name) != str(live_name):
         drift_details.append(

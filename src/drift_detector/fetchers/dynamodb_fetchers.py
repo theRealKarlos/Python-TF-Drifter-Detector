@@ -46,9 +46,7 @@ def _fetch_dynamodb_tables(
 
         for table_name_from_aws in response["TableNames"]:
             if table_name and table_name_from_aws == table_name:
-                table_info = dynamodb_client.describe_table(
-                    TableName=table_name_from_aws
-                )
+                table_info = dynamodb_client.describe_table(TableName=table_name_from_aws)
                 live_resources[resource_key] = table_info["Table"]
                 return live_resources
 

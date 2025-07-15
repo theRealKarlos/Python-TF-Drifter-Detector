@@ -9,9 +9,7 @@ from typing import Any, Dict, List
 from ..types import DriftDetail
 
 
-def compare_ec2_instance_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def compare_ec2_instance_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare EC2 instance attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.

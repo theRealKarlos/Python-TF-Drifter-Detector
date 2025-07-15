@@ -53,9 +53,7 @@ def _normalise_target_optional(val: Any) -> Any:
     return val
 
 
-def _compare_eventbridge_bus_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_eventbridge_bus_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare EventBridge bus attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -74,9 +72,7 @@ def _compare_eventbridge_bus_attributes(
     return drift_details
 
 
-def _compare_eventbridge_rule_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_eventbridge_rule_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare EventBridge rule attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -158,9 +154,7 @@ def _compare_eventbridge_rule_attributes(
     return drift_details
 
 
-def _compare_eventbridge_target_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
-) -> List[DriftDetail]:
+def _compare_eventbridge_target_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare EventBridge target attributes between Terraform state and live AWS.
     Returns a list of drift details for any mismatched attributes.
@@ -187,14 +181,8 @@ def _compare_eventbridge_target_attributes(
     for attr in ["target_id", "arn"]:
         state_val = state_attrs.get(attr)
         live_val = live_attrs.get(attr)
-        logger.debug(
-            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
-            f"Live='{live_val}'"
-        )
-        print(
-            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
-            f"Live='{live_val}'"
-        )
+        logger.debug(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' " f"Live='{live_val}'")
+        print(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' " f"Live='{live_val}'")
         if state_val != live_val:
             drift_details.append(
                 {
@@ -207,13 +195,9 @@ def _compare_eventbridge_target_attributes(
         state_val = _normalise_target_optional(state_attrs.get(attr))
         live_val = _normalise_target_optional(live_attrs.get(attr))
         logger.debug(
-            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
-            f"Live='{live_val}' (normalised)"
+            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' " f"Live='{live_val}' (normalised)"
         )
-        print(
-            f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' "
-            f"Live='{live_val}' (normalised)"
-        )
+        print(f"[EventBridge] (EXTRA) Comparing attribute '{attr}': State='{state_val}' " f"Live='{live_val}' (normalised)")
         if state_val != live_val:
             drift_details.append(
                 {

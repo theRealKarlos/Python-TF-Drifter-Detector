@@ -48,8 +48,7 @@ def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) 
         # Route tables don't have ARNs in the same way as other resources
         # This will be handled by the specific fetcher using ID-based matching
         raise ValueError(
-            f"Resource type '{resource_type}' does not support ARN-based matching. "
-            f"Use ID-based matching instead."
+            f"Resource type '{resource_type}' does not support ARN-based matching. " f"Use ID-based matching instead."
         )
 
     # Check for common ARN field names
@@ -57,21 +56,13 @@ def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) 
     for field in arn_fields:
         if field in attributes:
             arn_value = attributes[field]
-            if (
-                arn_value
-                and isinstance(arn_value, str)
-                and arn_value.startswith("arn:aws:")
-            ):
+            if arn_value and isinstance(arn_value, str) and arn_value.startswith("arn:aws:"):
                 return str(arn_value)
 
     # Check for service-specific ARN fields
     if resource_type.startswith("aws_lambda_function"):
         function_arn = attributes.get("invoke_arn") or attributes.get("function_arn")
-        if (
-            function_arn
-            and isinstance(function_arn, str)
-            and function_arn.startswith("arn:aws:")
-        ):
+        if function_arn and isinstance(function_arn, str) and function_arn.startswith("arn:aws:"):
             return str(function_arn)
 
     # Check for 'id' field that might be an ARN
@@ -110,9 +101,7 @@ def extract_arn_from_attributes(attributes: Dict[str, Any], resource_type: str) 
     )
 
 
-def get_resource_identifier(
-    attributes: Dict[str, Any], resource_type: str, resource_name: str
-) -> Dict[str, Any]:
+def get_resource_identifier(attributes: Dict[str, Any], resource_type: str, resource_name: str) -> Dict[str, Any]:
     """
     Get the ARN-based identifier for a resource.
 
@@ -146,9 +135,7 @@ def get_resource_identifier(
     }
 
 
-def get_live_aws_resources(
-    state_data: Dict, region_name: str = "eu-west-2"
-) -> Dict[str, Any]:
+def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> Dict[str, Any]:
     """
     Fetches live AWS resources based on what's found in the Terraform state.
 
@@ -176,15 +163,9 @@ def get_live_aws_resources(
     sts_client: STSClient = boto3.client("sts", region_name=region_name)
     events_client: EventsClient = boto3.client("events", region_name=region_name)
     ecs_client: ECSClient = boto3.client("ecs", region_name=region_name)
-    apigateway_client: APIGatewayClient = boto3.client(
-        "apigateway", region_name=region_name
-    )
-    cloudwatch_client: CloudWatchClient = boto3.client(
-        "cloudwatch", region_name=region_name
-    )
-    cloudwatch_logs_client: CloudWatchClient = boto3.client(
-        "logs", region_name=region_name
-    )
+    apigateway_client: APIGatewayClient = boto3.client("apigateway", region_name=region_name)
+    cloudwatch_client: CloudWatchClient = boto3.client("cloudwatch", region_name=region_name)
+    cloudwatch_logs_client: CloudWatchClient = boto3.client("logs", region_name=region_name)
     sqs_client: SQSClient = boto3.client("sqs", region_name=region_name)
 
     # Import service-specific fetchers
@@ -233,29 +214,15 @@ def get_live_aws_resources(
 
             # Route to appropriate service-specific fetcher
             if resource_type.startswith("aws_instance"):
-                live_resources.update(
-                    fetch_ec2_resources(ec2_client, unique_resource_key, attributes)
-                )
+                live_resources.update(fetch_ec2_resources(ec2_client, unique_resource_key, attributes))
             elif resource_type.startswith("aws_s3_bucket"):
-                live_resources.update(
-                    fetch_s3_resources(s3_client, unique_resource_key, attributes)
-                )
+                live_resources.update(fetch_s3_resources(s3_client, unique_resource_key, attributes))
             elif resource_type.startswith("aws_db_instance"):
-                live_resources.update(
-                    fetch_rds_resources(rds_client, unique_resource_key, attributes)
-                )
+                live_resources.update(fetch_rds_resources(rds_client, unique_resource_key, attributes))
             elif resource_type.startswith("aws_dynamodb_table"):
-                live_resources.update(
-                    fetch_dynamodb_resources(
-                        dynamodb_client, unique_resource_key, attributes
-                    )
-                )
+                live_resources.update(fetch_dynamodb_resources(dynamodb_client, unique_resource_key, attributes))
             elif resource_type.startswith("aws_lambda_function"):
-                live_resources.update(
-                    fetch_lambda_resources(
-                        lambda_client, unique_resource_key, attributes
-                    )
-                )
+                live_resources.update(fetch_lambda_resources(lambda_client, unique_resource_key, attributes))
             elif (
                 resource_type.startswith("aws_iam_role_policy")
                 or resource_type.startswith("aws_iam_role")
@@ -263,39 +230,21 @@ def get_live_aws_resources(
                 or resource_type.startswith("aws_iam_openid_connect_provider")
                 or resource_type.startswith("aws_iam_role_policy_attachment")
             ):
-                live_resources.update(
-                    fetch_iam_resources(
-                        iam_client, unique_resource_key, attributes, resource_type
-                    )
-                )
+                live_resources.update(fetch_iam_resources(iam_client, unique_resource_key, attributes, resource_type))
             elif resource_type.startswith("aws_cloudwatch_event_rule"):
                 event_bus_name = attributes.get("event_bus_name", "")
                 if event_bus_name:
                     unique_resource_key = f"{unique_resource_key}_{event_bus_name}"
-                live_resources.update(
-                    fetch_events_resources(
-                        events_client, unique_resource_key, attributes, resource_type
-                    )
-                )
+                live_resources.update(fetch_events_resources(events_client, unique_resource_key, attributes, resource_type))
             elif resource_type.startswith("aws_cloudwatch_event_target"):
                 # Use a composite key for EventBridge targets to avoid collision with Lambda ARNs
                 event_bus_name = attributes.get("event_bus_name", "")
                 rule_name = attributes.get("rule", "")
                 target_arn = attributes.get("arn", "")
-                composite_key = (
-                    f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
-                )
-                live_resources.update(
-                    fetch_events_resources(
-                        events_client, composite_key, attributes, resource_type
-                    )
-                )
+                composite_key = f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
+                live_resources.update(fetch_events_resources(events_client, composite_key, attributes, resource_type))
             elif resource_type.startswith("aws_cloudwatch_event_bus"):
-                live_resources.update(
-                    fetch_events_resources(
-                        events_client, unique_resource_key, attributes, resource_type
-                    )
-                )
+                live_resources.update(fetch_events_resources(events_client, unique_resource_key, attributes, resource_type))
             elif resource_type.startswith("aws_lambda_permission"):
                 function_name = attributes.get("function_name", "")
                 statement_id = attributes.get("statement_id", "")
@@ -303,21 +252,13 @@ def get_live_aws_resources(
                 if function_name.startswith("arn:aws:lambda:"):
                     function_name = function_name.split(":")[-1]
                 composite_key = f"lambda_permission:{function_name}:{statement_id}"
-                live_resources.update(
-                    fetch_lambda_resources(
-                        lambda_client, composite_key, attributes, resource_type
-                    )
-                )
+                live_resources.update(fetch_lambda_resources(lambda_client, composite_key, attributes, resource_type))
             elif (
                 resource_type.startswith("aws_ecs_cluster")
                 or resource_type.startswith("aws_ecs_service")
                 or resource_type.startswith("aws_ecs_task_definition")
             ):
-                live_resources.update(
-                    fetch_ecs_resources(
-                        ecs_client, unique_resource_key, attributes, resource_type
-                    )
-                )
+                live_resources.update(fetch_ecs_resources(ecs_client, unique_resource_key, attributes, resource_type))
             elif (
                 resource_type.startswith("aws_vpc")
                 or resource_type.startswith("aws_security_group")
@@ -326,11 +267,7 @@ def get_live_aws_resources(
                 or resource_type.startswith("aws_route_table")
                 or resource_type.startswith("aws_route_table_association")
             ):
-                live_resources.update(
-                    fetch_ec2_resources(
-                        ec2_client, unique_resource_key, attributes, resource_type
-                    )
-                )
+                live_resources.update(fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type))
             elif (
                 resource_type.startswith("aws_api_gateway_rest_api")
                 or resource_type.startswith("aws_api_gateway_resource")
@@ -339,28 +276,16 @@ def get_live_aws_resources(
                 or resource_type.startswith("aws_api_gateway_deployment")
                 or resource_type.startswith("aws_api_gateway_stage")
             ):
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, unique_resource_key, attributes
-                    )
-                )
+                live_resources.update(fetch_apigateway_resources(apigateway_client, unique_resource_key, attributes))
             elif resource_type.startswith("aws_api_gateway_rest_api"):
                 rest_api_id = attributes.get("id", "")
                 composite_key = f"apigw_rest_api:{rest_api_id}"
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes
-                    )
-                )
+                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
             elif resource_type.startswith("aws_api_gateway_deployment"):
                 rest_api_id = attributes.get("rest_api_id", "")
                 deployment_id = attributes.get("id", "")
                 composite_key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes
-                    )
-                )
+                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
             elif (
                 resource_type.startswith("aws_cloudwatch_dashboard")
                 or resource_type.startswith("aws_cloudwatch_metric_alarm")
@@ -375,9 +300,7 @@ def get_live_aws_resources(
                         cloudwatch_logs_client,
                     )
                 )
-            elif resource_type.startswith("aws_region") or resource_type.startswith(
-                "aws_caller_identity"
-            ):
+            elif resource_type.startswith("aws_region") or resource_type.startswith("aws_caller_identity"):
                 live_resources.update(
                     fetch_data_source_resources(
                         sts_client,
@@ -394,50 +317,28 @@ def get_live_aws_resources(
                     if queue_name.startswith("https://"):
                         queue_name = queue_name.split("/")[-1]
                     unique_resource_key = f"{unique_resource_key}_{queue_name}"
-                live_resources.update(
-                    fetch_sqs_resources(sqs_client, unique_resource_key, attributes)
-                )
+                live_resources.update(fetch_sqs_resources(sqs_client, unique_resource_key, attributes))
             elif resource_type.startswith("aws_api_gateway_integration"):
                 rest_api_id = attributes.get("rest_api_id", "")
                 resource_id = attributes.get("resource_id", "")
                 http_method = attributes.get("http_method", "")
-                composite_key = (
-                    f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
-                )
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes
-                    )
-                )
+                composite_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
+                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
             elif resource_type.startswith("aws_api_gateway_method"):
                 rest_api_id = attributes.get("rest_api_id", "")
                 resource_id = attributes.get("resource_id", "")
                 http_method = attributes.get("http_method", "")
-                composite_key = (
-                    f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
-                )
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes
-                    )
-                )
+                composite_key = f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
+                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
             elif resource_type.startswith("aws_api_gateway_resource"):
                 rest_api_id = attributes.get("rest_api_id", "")
                 resource_id = attributes.get("resource_id", "")
                 composite_key = f"apigw_resource:{rest_api_id}:{resource_id}"
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes
-                    )
-                )
+                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
             elif resource_type.startswith("aws_api_gateway_stage"):
                 rest_api_id = attributes.get("rest_api_id", "")
                 stage_name = attributes.get("stage_name", "")
                 composite_key = f"apigw_stage:{rest_api_id}:{stage_name}"
-                live_resources.update(
-                    fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes
-                    )
-                )
+                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
 
     return live_resources

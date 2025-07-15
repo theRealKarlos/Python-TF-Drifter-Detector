@@ -26,9 +26,7 @@ from .sqs_comparators import compare_sqs_attributes
 logger = setup_logging()
 
 
-def compare_resources(
-    state_data: Dict[str, Any], live_resources: Dict[str, Any]
-) -> Dict[str, Any]:
+def compare_resources(state_data: Dict[str, Any], live_resources: Dict[str, Any]) -> Dict[str, Any]:
     """
     Compares Terraform state resources with live AWS resources to identify drift.
 
@@ -54,6 +52,7 @@ def compare_resources(
         # Special handling for SQS queue policy (already loops over all instances)
         if resource_type.startswith("aws_sqs_queue_policy"):
             import json
+
             for instance in resource.get("instances", []):
                 state_attributes = instance.get("attributes", {})
                 queue_url = state_attributes.get("queue_url")
@@ -74,12 +73,10 @@ def compare_resources(
                     state_policy_obj = json.loads(state_policy_raw) if state_policy_raw else None
                     live_policy_obj = json.loads(live_policy_raw) if live_policy_raw else None
                     canonical_state_policy = (
-                        json.dumps(state_policy_obj, sort_keys=True, separators=(",", ":"))
-                        if state_policy_obj else None
+                        json.dumps(state_policy_obj, sort_keys=True, separators=(",", ":")) if state_policy_obj else None
                     )
                     canonical_live_policy = (
-                        json.dumps(live_policy_obj, sort_keys=True, separators=(",", ":"))
-                        if live_policy_obj else None
+                        json.dumps(live_policy_obj, sort_keys=True, separators=(",", ":")) if live_policy_obj else None
                     )
                 except Exception as e:
                     print(f"DEBUG: JSON parse error for queue_url={queue_url!r}: {e}")
@@ -95,18 +92,20 @@ def compare_resources(
                 )
                 if canonical_state_policy != canonical_live_policy:
                     resource_identifier = f"{resource_type}.{resource_name} [{queue_url}]"
-                    drifts.append({
-                        "resource_key": resource_identifier,
-                        "drift_type": "attribute_drift",
-                        "description": f"Policy drift detected for {resource_identifier}",
-                        "differences": [
-                            {
-                                "name": "policy",
-                                "state": canonical_state_policy,
-                                "live": canonical_live_policy,
-                            }
-                        ],
-                    })
+                    drifts.append(
+                        {
+                            "resource_key": resource_identifier,
+                            "drift_type": "attribute_drift",
+                            "description": f"Policy drift detected for {resource_identifier}",
+                            "differences": [
+                                {
+                                    "name": "policy",
+                                    "state": canonical_state_policy,
+                                    "live": canonical_live_policy,
+                                }
+                            ],
+                        }
+                    )
             continue  # Skip generic block for SQS queue policy resources
 
         # For all other resource types, process all instances with ARN-based keys
@@ -117,6 +116,7 @@ def compare_resources(
             # Create unique resource key for this instance (same logic as fetchers)
             try:
                 from ..fetchers.base import extract_arn_from_attributes
+
                 arn = extract_arn_from_attributes(state_attributes, resource_type)
                 # Use ARN as the primary key for matching
                 unique_resource_key = arn
@@ -183,26 +183,20 @@ def compare_resources(
                     {
                         "resource_key": unique_resource_key,
                         "drift_type": "missing_resource",
-                        "description": (
-                            f"Resource {unique_resource_key} exists in state but not in live AWS"
-                        ),
+                        "description": (f"Resource {unique_resource_key} exists in state but not in live AWS"),
                     }
                 )
                 continue
 
             # Compare attributes for existing resources
             live_attributes = live_resources[unique_resource_key]
-            differences = compare_attributes(
-                state_attributes, live_attributes, resource_type
-            )
+            differences = compare_attributes(state_attributes, live_attributes, resource_type)
             if differences:
                 drifts.append(
                     {
                         "resource_key": unique_resource_key,
                         "drift_type": "attribute_drift",
-                        "description": (
-                            f"Attribute drift detected for {unique_resource_key}"
-                        ),
+                        "description": (f"Attribute drift detected for {unique_resource_key}"),
                         "differences": differences,
                     }
                 )
@@ -214,9 +208,7 @@ def compare_resources(
     }
 
 
-def compare_attributes(
-    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str
-) -> List[Dict[str, Any]]:
+def compare_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any], resource_type: str) -> List[Dict[str, Any]]:
     """
     Compares specific attributes between Terraform state and live AWS resources.
 
@@ -249,50 +241,32 @@ def compare_attributes(
     elif resource_type.startswith("aws_lambda_function"):
         drift_details.extend(compare_lambda_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_iam_role_policy_attachment"):
-        drift_details.extend(
-            compare_iam_attributes(state_attrs, live_attrs, resource_type)
-        )
+        drift_details.extend(compare_iam_attributes(state_attrs, live_attrs, resource_type))
     elif resource_type.startswith("aws_iam_role_policy"):
         # Must come before aws_iam_role!
-        drift_details.extend(
-            compare_iam_attributes(state_attrs, live_attrs, resource_type)
-        )
+        drift_details.extend(compare_iam_attributes(state_attrs, live_attrs, resource_type))
     elif (
         resource_type.startswith("aws_iam_role")
         or resource_type.startswith("aws_iam_policy")
         or resource_type.startswith("aws_iam_openid_connect_provider")
     ):
-        drift_details.extend(
-            compare_iam_attributes(state_attrs, live_attrs, resource_type)
-        )
+        drift_details.extend(compare_iam_attributes(state_attrs, live_attrs, resource_type))
     elif (
         resource_type.startswith("aws_cloudwatch_event_bus")
         or resource_type.startswith("aws_cloudwatch_event_rule")
         or resource_type.startswith("aws_cloudwatch_event_target")
     ):
-        drift_details.extend(
-            compare_events_attributes(state_attrs, live_attrs, resource_type)
-        )
+        drift_details.extend(compare_events_attributes(state_attrs, live_attrs, resource_type))
     elif resource_type.startswith("aws_lambda_permission"):
-        drift_details.extend(
-            compare_lambda_attributes(state_attrs, live_attrs, resource_type)
-        )
-    elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
-        "aws_ecs_service"
-    ):
-        drift_details.extend(
-            compare_ecs_attributes(state_attrs, live_attrs, resource_type)
-        )
+        drift_details.extend(compare_lambda_attributes(state_attrs, live_attrs, resource_type))
+    elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith("aws_ecs_service"):
+        drift_details.extend(compare_ecs_attributes(state_attrs, live_attrs, resource_type))
     elif resource_type.startswith("aws_vpc"):
         drift_details.extend(compare_ec2_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_api_gateway_rest_api"):
         drift_details.extend(compare_apigateway_attributes(state_attrs, live_attrs))
-    elif resource_type.startswith(
-        "aws_cloudwatch_dashboard"
-    ) or resource_type.startswith("aws_cloudwatch_metric_alarm"):
-        drift_details.extend(
-            compare_cloudwatch_attributes(state_attrs, live_attrs, resource_type)
-        )
+    elif resource_type.startswith("aws_cloudwatch_dashboard") or resource_type.startswith("aws_cloudwatch_metric_alarm"):
+        drift_details.extend(compare_cloudwatch_attributes(state_attrs, live_attrs, resource_type))
     elif resource_type.startswith("aws_db_instance"):
         drift_details.extend(compare_rds_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_sqs_queue"):

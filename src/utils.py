@@ -28,9 +28,7 @@ def setup_logging(log_level: str = "INFO") -> logging.Logger:
     # Prevent duplicate handlers
     if not logger.handlers:
         handler = logging.StreamHandler()
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
@@ -97,11 +95,7 @@ def download_s3_file(s3_path: str, logger: Optional[logging.Logger] = None) -> s
         s3_client = boto3.client("s3")
         response = s3_client.get_object(Bucket=bucket, Key=key)
         content_bytes = response["Body"].read()
-        content = (
-            content_bytes.decode("utf-8")
-            if isinstance(content_bytes, bytes)
-            else str(content_bytes)
-        )
+        content = content_bytes.decode("utf-8") if isinstance(content_bytes, bytes) else str(content_bytes)
         logger.info(f"Successfully downloaded {len(content)} bytes from S3")
         return content
 
@@ -110,9 +104,7 @@ def download_s3_file(s3_path: str, logger: Optional[logging.Logger] = None) -> s
         raise
 
 
-def parse_terraform_state(
-    state_content: str, logger: Optional[logging.Logger] = None
-) -> Dict:
+def parse_terraform_state(state_content: str, logger: Optional[logging.Logger] = None) -> Dict:
     """
     Parses Terraform state file content into a Python dict.
 
@@ -135,10 +127,7 @@ def parse_terraform_state(
         state_data = json.loads(state_content)
         if not isinstance(state_data, dict):
             raise ValueError("State file did not parse to a dictionary.")
-        logger.info(
-            f"Successfully parsed state file with "
-            f"{len(state_data.get('resources', []))} resources"
-        )
+        logger.info(f"Successfully parsed state file with " f"{len(state_data.get('resources', []))} resources")
         return state_data
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in state file: {e}")

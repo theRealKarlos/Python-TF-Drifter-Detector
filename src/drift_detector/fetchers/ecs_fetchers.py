@@ -86,9 +86,7 @@ def _fetch_ecs_services(
                 services_response = ecs_client.list_services(cluster=cluster_arn)
 
                 for service_arn in services_response.get("serviceArns", []):
-                    service_info = ecs_client.describe_services(
-                        cluster=cluster_arn, services=[service_arn]
-                    )
+                    service_info = ecs_client.describe_services(cluster=cluster_arn, services=[service_arn])
                     if service_info.get("services"):
                         live_resources[service_arn] = service_info["services"][0]
             except Exception as e:
@@ -119,26 +117,18 @@ def _fetch_ecs_task_definitions(
         for family in families_response.get("families", []):
             try:
                 # List all revisions for this family
-                revisions_response = ecs_client.list_task_definitions(
-                    familyPrefix=family
-                )
+                revisions_response = ecs_client.list_task_definitions(familyPrefix=family)
 
                 for task_def_arn in revisions_response.get("taskDefinitionArns", []):
                     try:
-                        response = ecs_client.describe_task_definition(
-                            taskDefinition=task_def_arn
-                        )
+                        response = ecs_client.describe_task_definition(taskDefinition=task_def_arn)
                         if response.get("taskDefinition"):
                             live_resources[task_def_arn] = response["taskDefinition"]
                     except Exception as e:
-                        logger.debug(
-                            f"Could not describe task definition {task_def_arn}: {e}"
-                        )
+                        logger.debug(f"Could not describe task definition {task_def_arn}: {e}")
                         continue
             except Exception as e:
-                logger.debug(
-                    f"Could not list task definitions for family {family}: {e}"
-                )
+                logger.debug(f"Could not list task definitions for family {family}: {e}")
                 continue
 
         return live_resources

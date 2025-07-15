@@ -63,10 +63,10 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         print(f"DEBUG: Total resource instances (including meta): {total_instance_count}")
 
         all_state_resources = set()
-        state_resource_key_map = (
-            {}
-        )  # Map from extracted key to (resource_type, resource_name, instance_index)
-        monitoring_attachment_key = "dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        state_resource_key_map = {}  # Map from extracted key to (resource_type, resource_name, instance_index)
+        monitoring_attachment_key = (
+            "dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+        )
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
             resource_name = resource.get("name")
@@ -121,7 +121,11 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                             if res.get("type") == "aws_sqs_queue":
                                 for inst in res.get("instances", []):
                                     attrs = inst.get("attributes", {})
-                                    if attrs.get("url") == queue_url or attrs.get("queue_url") == queue_url or attrs.get("id") == queue_url:
+                                    if (
+                                        attrs.get("url") == queue_url
+                                        or attrs.get("queue_url") == queue_url
+                                        or attrs.get("id") == queue_url
+                                    ):
                                         queue_arn = attrs.get("arn") or attrs.get("queue_arn") or attrs.get("QueueArn")
                                         if queue_arn:
                                             break
@@ -201,10 +205,7 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                     for arn_key in ("arn", "Arn", "ARN"):
                         if arn_key in attributes and attributes[arn_key]:
                             key = attributes[arn_key]
-                            print(
-                                f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: "
-                                f"{key}"
-                            )
+                            print(f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: " f"{key}")
                             break
                     # 2. Try ID (for resources without ARNs)
                     if not key:
@@ -219,31 +220,23 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                         ):
                             if id_key in attributes and attributes[id_key]:
                                 key = attributes[id_key]
-                                print(
-                                    f"DEBUG: Using ID as key for {resource_type}."
-                                    f"{resource_name}_{idx}: {key}"
-                                )
+                                print(f"DEBUG: Using ID as key for {resource_type}." f"{resource_name}_{idx}: {key}")
                                 break
                     # 3. Fallback to resource_type.resource_name[_idx]
                     if not key:
                         key = f"{resource_type}.{resource_name}_{idx}"
-                        print(
-                            f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: "
-                            f"{key}"
-                        )
+                        print(f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: " f"{key}")
                 all_state_resources.add(key)
                 state_resource_key_map[key] = (resource_type, resource_name, idx)
                 if resource_type == "aws_iam_role_policy_attachment":
                     print(f"DEBUG: [STATE] aws_iam_role_policy_attachment resource key: {key}, attributes: {attributes}")
                     if not attributes.get("role") and key:
                         role_from_key = key.split("/")[0]
-                        print(f"DEBUG: [STATE] Extracted role from resource_key: {role_from_key}")
+                        # Fix F541: f-string is missing placeholders
+                        print("DEBUG: [STATE] Extracted role from resource_key: {}".format(role_from_key))
 
         all_live_resources = set(live_resources.keys())
-        drifted_resources = set(
-            drift["resource_key"].split(" [")[0]
-            for drift in drift_report.get("drifts", [])
-        )
+        drifted_resources = set(drift["resource_key"].split(" [")[0] for drift in drift_report.get("drifts", []))
 
         # Debug: Print total number of resources in state
         print(f"DEBUG: Total resources in state: {len(all_state_resources)}")
@@ -256,11 +249,11 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         # DEBUG: Print all keys for aws_iam_role_policy_attachment
         print("DEBUG: All state resource keys for aws_iam_role_policy_attachment:")
         for k in all_state_resources:
-            if k.startswith("dev-pulsequeue-monitoring-execution-role/"):
+            if k is not None and k.startswith("dev-pulsequeue-monitoring-execution-role/"):
                 print(f"  STATE: {k}")
         print("DEBUG: All live resource keys for aws_iam_role_policy_attachment:")
         for k in all_live_resources:
-            if k.startswith("dev-pulsequeue-monitoring-execution-role/"):
+            if k is not None and k.startswith("dev-pulsequeue-monitoring-execution-role/"):
                 print(f"  LIVE: {k}")
         # DEBUG: Check if monitoring_execution key is present in both
         print(f"DEBUG: monitoring_execution key in state: {monitoring_attachment_key in all_state_resources}")
@@ -268,6 +261,8 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
 
         matching_resources = []
         for resource_key in all_state_resources & all_live_resources:
+            if not isinstance(resource_key, str):
+                continue
             if resource_key in drifted_resources:
                 continue
             resource_type, resource_name, idx = state_resource_key_map[resource_key]
@@ -336,9 +331,7 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
             if logical_name and aws_live_name and logical_name != aws_live_name:
                 display_name = f"{logical_name} (AWS: {aws_live_name})"
             else:
-                display_name = (
-                    logical_name or aws_live_name or f"{resource_type}:{resource_key}"
-                )
+                display_name = logical_name or aws_live_name or f"{resource_type}:{resource_key}"
 
             matching_resources.append(
                 {
@@ -383,20 +376,28 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                             break
                     if not value:
                         for id_key in (
-                            "id", "Id", "ID", "instance_id", "InstanceId", "resource_id", "ResourceId",
+                            "id",
+                            "Id",
+                            "ID",
+                            "instance_id",
+                            "InstanceId",
+                            "resource_id",
+                            "ResourceId",
                         ):
                             if id_key in attributes and attributes[id_key]:
                                 value = attributes[id_key]
                                 key = attributes[id_key]
                                 break
                     if not value:
-                        value = f"(no id/arn)"
+                        value = "(no id/arn)"
                         key = f"{resource_type}.{resource_name}_{idx}"
-                    meta_resources.append({
-                        "resource_type": resource_type,
-                        "resource_name": resource_name,
-                        "value": value
-                    })
+                    meta_resources.append(
+                        {
+                            "resource_type": resource_type,
+                            "resource_name": resource_name,
+                            "value": value,
+                        }
+                    )
                     meta_resource_keys.add(key)
 
         # Unmatched and undetected drift resources: present in state, not matched, not drifted, not meta
@@ -404,18 +405,23 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         print("DEBUG: Meta resources:", meta_resources)
         print("DEBUG: Count of meta resources:", len(meta_resources))
         print("DEBUG: Unmatched and undetected drift resources:", unmatched_undetected)
-        print("DEBUG: Count of unmatched and undetected drift resources:", len(unmatched_undetected))
+        print(
+            "DEBUG: Count of unmatched and undetected drift resources:",
+            len(unmatched_undetected),
+        )
 
         # Build unmatched_resources in the same format as matching_resources
         unmatched_resources = []
         for resource_key in unmatched_undetected:
-            if resource_key in state_resource_key_map:
+            if isinstance(resource_key, str) and resource_key in state_resource_key_map:
                 resource_type, resource_name, idx = state_resource_key_map[resource_key]
-                unmatched_resources.append({
-                    "resource_type": resource_type,
-                    "resource_name": resource_name,
-                    "key": resource_key
-                })
+                unmatched_resources.append(
+                    {
+                        "resource_type": resource_type,
+                        "resource_name": resource_name,
+                        "key": resource_key,
+                    }
+                )
 
         # Step 6: Return comprehensive drift report with summary
         return {

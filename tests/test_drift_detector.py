@@ -29,9 +29,7 @@ class TestDriftDetector(unittest.TestCase):
     # This ensures the correct mock objects are injected into the test method.
     @patch("src.drift_detector.fetchers.base.boto3.client")
     @patch("src.drift_detector.core.download_s3_file")
-    def test_detect_drift_success(
-        self, mock_download: MagicMock, mock_boto3_client: MagicMock
-    ) -> None:
+    def test_detect_drift_success(self, mock_download: MagicMock, mock_boto3_client: MagicMock) -> None:
         """
         Test that drift detection completes successfully and returns the expected keys.
         All AWS clients and state file operations are mocked.
@@ -97,10 +95,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:lambda:region:acct:function:my-func"
         live = {state_key: {"function_name": "my-func", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (Lambda): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (Lambda): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 0)
 
     def test_lambda_function_attribute_drift(self) -> None:
@@ -124,10 +119,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:lambda:region:acct:function:my-func"
         live = {state_key: {"function_name": "other-func", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (Lambda): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (Lambda): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
@@ -152,10 +144,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:sqs:region:acct:my-queue"
         live = {state_key: {"QueueName": "my-queue", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (SQS): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (SQS): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 0)
 
     def test_sqs_queue_attribute_drift(self) -> None:
@@ -179,10 +168,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:sqs:region:acct:my-queue"
         live = {state_key: {"QueueName": "other-queue", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (SQS): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (SQS): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
@@ -207,10 +193,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:dynamodb:region:acct:table/my-table"
         live = {state_key: {"TableName": "my-table", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (DynamoDB): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (DynamoDB): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 0)
 
     def test_dynamodb_table_attribute_drift(self) -> None:
@@ -234,10 +217,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:dynamodb:region:acct:table/my-table"
         live = {state_key: {"TableName": "other-table", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (DynamoDB): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (DynamoDB): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
@@ -262,10 +242,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:ecs:region:acct:cluster/my-cluster"
         live = {state_key: {"clusterName": "my-cluster", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (ECS): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (ECS): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 0)
 
     def test_ecs_cluster_attribute_drift(self) -> None:
@@ -289,10 +266,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:ecs:region:acct:cluster/my-cluster"
         live = {state_key: {"clusterName": "other-cluster", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (ECS): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (ECS): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
@@ -318,8 +292,7 @@ class TestDriftDetector(unittest.TestCase):
         live = {state_key: {"name": "my-rule", "arn": state_key}}
         drifts = compare_resources(state, live)
         print(
-            f"DEBUG (EventBridge): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
+            f"DEBUG (EventBridge): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}"
         )
         self.assertEqual(len(drifts["drifts"]), 0)
 
@@ -345,8 +318,7 @@ class TestDriftDetector(unittest.TestCase):
         live = {state_key: {"name": "other-rule", "arn": state_key}}
         drifts = compare_resources(state, live)
         print(
-            f"DEBUG (EventBridge): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
+            f"DEBUG (EventBridge): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}"
         )
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
@@ -372,14 +344,9 @@ class TestDriftDetector(unittest.TestCase):
         }
         # Keying logic: composite key
         state_key = "apigw_resource:apiid:resid"
-        live = {
-            state_key: {"rest_api_id": "apiid", "resource_id": "resid", "id": "abc123"}
-        }
+        live = {state_key: {"rest_api_id": "apiid", "resource_id": "resid", "id": "abc123"}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (APIGW): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (APIGW): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 0)
 
     def test_apigateway_resource_attribute_drift(self) -> None:
@@ -402,14 +369,9 @@ class TestDriftDetector(unittest.TestCase):
             ]
         }
         state_key = "apigw_resource:apiid:resid"
-        live = {
-            state_key: {"rest_api_id": "apiid", "resource_id": "resid", "id": "otherid"}
-        }
+        live = {state_key: {"rest_api_id": "apiid", "resource_id": "resid", "id": "otherid"}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (APIGW): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (APIGW): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 
@@ -434,10 +396,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:s3:::my-bucket"
         live = {state_key: {"bucket": "my-bucket", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (S3): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (S3): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 0)
 
     def test_s3_bucket_attribute_drift(self) -> None:
@@ -461,10 +420,7 @@ class TestDriftDetector(unittest.TestCase):
         state_key = "arn:aws:s3:::my-bucket"
         live = {state_key: {"bucket": "other-bucket", "arn": state_key}}
         drifts = compare_resources(state, live)
-        print(
-            f"DEBUG (S3): state key = {state_key}, live keys = {list(live.keys())}, "
-            f"drifts = {drifts['drifts']}"
-        )
+        print(f"DEBUG (S3): state key = {state_key}, live keys = {list(live.keys())}, " f"drifts = {drifts['drifts']}")
         self.assertEqual(len(drifts["drifts"]), 1)
         self.assertEqual(drifts["drifts"][0]["drift_type"], "attribute_drift")
 

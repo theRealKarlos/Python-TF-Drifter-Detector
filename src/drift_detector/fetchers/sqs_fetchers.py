@@ -34,9 +34,7 @@ def extract_hybrid_key_from_sqs(queue: dict) -> str:
 
 
 @fetcher_error_handler
-def fetch_sqs_resources(
-    sqs_client: SQSClient, resource_key: str, attributes: dict
-) -> dict:
+def fetch_sqs_resources(sqs_client: SQSClient, resource_key: str, attributes: dict) -> dict:
     """
     Fetch SQS queue resources from AWS and map them by hybrid key for drift comparison.
     Returns a dictionary of hybrid keys to queue data for all SQS queues.
@@ -46,9 +44,7 @@ def fetch_sqs_resources(
         live_resources = {}
         queue_urls = response.get("QueueUrls", [])
         for queue_url in queue_urls:
-            attrs = sqs_client.get_queue_attributes(
-                QueueUrl=queue_url, AttributeNames=["All"]
-            )["Attributes"]
+            attrs = sqs_client.get_queue_attributes(QueueUrl=queue_url, AttributeNames=["All"])["Attributes"]
             queue = {"QueueUrl": queue_url, **attrs}
             # SQS ARNs are sometimes in the attributes
             queue["QueueArn"] = attrs.get("QueueArn")
