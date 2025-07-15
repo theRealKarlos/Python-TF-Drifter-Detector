@@ -78,17 +78,121 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                     function_name = attributes.get("function_name")
                     statement_id = attributes.get("statement_id")
                     if function_name and statement_id:
+                        # If function_name is an ARN, extract the last segment
+                        if function_name.startswith("arn:aws:lambda:"):
+                            function_name = function_name.split(":")[-1]
                         key = f"lambda_permission:{function_name}:{statement_id}"
                     else:
                         key = statement_id or f"{resource_type}.{resource_name}_{idx}"
-                # Special key extraction for aws_api_gateway_deployment
-                elif resource_type == "aws_api_gateway_deployment":
+                # Special key extraction for aws_api_gateway_stage
+                elif resource_type == "aws_api_gateway_stage":
+                    arn = attributes.get("arn")
+                    region = attributes.get("region")
                     rest_api_id = attributes.get("rest_api_id")
-                    deployment_id = attributes.get("id")
-                    if rest_api_id and deployment_id:
-                        key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
+                    stage_name = attributes.get("stage_name")
+                    if arn:
+                        key = arn
+                    elif region and rest_api_id and stage_name:
+                        key = f"arn:aws:apigateway:{region}::/restapis/{rest_api_id}/stages/{stage_name}"
                     else:
-                        key = deployment_id or f"{resource_type}.{resource_name}_{idx}"
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_api_gateway_integration
+                elif resource_type == "aws_api_gateway_integration":
+                    rest_api_id = attributes.get("rest_api_id")
+                    resource_id = attributes.get("resource_id")
+                    http_method = attributes.get("http_method")
+                    if rest_api_id and resource_id and http_method:
+                        key = f"agi-{rest_api_id}-{resource_id}-{http_method}"
+                    else:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_sqs_queue_policy
+                elif resource_type == "aws_sqs_queue_policy":
+                    arn = attributes.get("arn")
+                    queue_url = attributes.get("queue_url")
+                    queue_id = attributes.get("id")
+                    key = None
+                    if arn:
+                        key = arn
+                    elif queue_url:
+                        # Try to find the corresponding aws_sqs_queue resource in the state and extract its ARN
+                        queue_arn = None
+                        for res in state_data.get("resources", []):
+                            if res.get("type") == "aws_sqs_queue":
+                                for inst in res.get("instances", []):
+                                    attrs = inst.get("attributes", {})
+                                    if attrs.get("url") == queue_url or attrs.get("queue_url") == queue_url or attrs.get("id") == queue_url:
+                                        queue_arn = attrs.get("arn") or attrs.get("queue_arn") or attrs.get("QueueArn")
+                                        if queue_arn:
+                                            break
+                                if queue_arn:
+                                    break
+                        if queue_arn:
+                            key = queue_arn
+                        else:
+                            key = queue_url
+                    elif queue_id:
+                        key = queue_id
+                    else:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_api_gateway_rest_api
+                elif resource_type == "aws_api_gateway_rest_api":
+                    arn = attributes.get("arn")
+                    region = attributes.get("region")
+                    rest_api_id = attributes.get("id") or attributes.get("rest_api_id")
+                    if arn:
+                        key = arn
+                    elif region and rest_api_id:
+                        key = f"arn:aws:apigateway:{region}::/restapis/{rest_api_id}"
+                    else:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_route_table
+                elif resource_type == "aws_route_table":
+                    arn = attributes.get("arn")
+                    region = attributes.get("region")
+                    account_id = attributes.get("account_id")
+                    route_table_id = attributes.get("id")
+                    if arn:
+                        key = arn
+                    elif region and account_id and route_table_id:
+                        key = f"arn:aws:ec2:{region}:{account_id}:route-table/{route_table_id}"
+                    else:
+                        key = route_table_id or f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_route_table_association
+                elif resource_type == "aws_route_table_association":
+                    association_id = attributes.get("id")
+                    if association_id:
+                        key = association_id
+                    else:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_api_gateway_method
+                elif resource_type == "aws_api_gateway_method":
+                    rest_api_id = attributes.get("rest_api_id")
+                    resource_id = attributes.get("resource_id")
+                    http_method = attributes.get("http_method")
+                    if rest_api_id and resource_id and http_method:
+                        key = f"agm-{rest_api_id}-{resource_id}-{http_method}"
+                    else:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_iam_role_policy_attachment
+                elif resource_type == "aws_iam_role_policy_attachment":
+                    role_name = attributes.get("role") or attributes.get("role_name")
+                    policy_arn = attributes.get("policy_arn")
+                    if role_name and policy_arn:
+                        key = f"{role_name}/{policy_arn}"
+                    else:
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                # Special key extraction for aws_cloudwatch_dashboard (already fixed above)
+                elif resource_type == "aws_cloudwatch_dashboard":
+                    arn = attributes.get("arn")
+                    dashboard_name = attributes.get("dashboard_name") or attributes.get("id")
+                    region = attributes.get("region")
+                    account_id = attributes.get("account_id")
+                    if arn:
+                        key = arn
+                    elif dashboard_name and region and account_id:
+                        key = f"arn:aws:cloudwatch:{region}:{account_id}:dashboard/{dashboard_name}"
+                    else:
+                        key = dashboard_name or f"{resource_type}.{resource_name}_{idx}"
                 else:
                     # Hybrid key extraction: ARN > ID > fallback
                     key = None
