@@ -2,7 +2,7 @@
 Base AWS Resource Fetchers Module.
 
 This module contains the main orchestration logic for fetching live AWS resources
-and initializes AWS service clients for all supported services.
+and initialises AWS service clients for all supported services.
 """
 
 from typing import Any, Dict, Optional
@@ -312,7 +312,7 @@ def get_live_aws_resources(
                 composite_key = f"apigw_rest_api:{rest_api_id}"
                 live_resources.update(
                     fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes, resource_type
+                        apigateway_client, composite_key, attributes
                     )
                 )
             elif resource_type.startswith("aws_api_gateway_deployment"):
@@ -321,7 +321,7 @@ def get_live_aws_resources(
                 composite_key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
                 live_resources.update(
                     fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes, resource_type
+                        apigateway_client, composite_key, attributes
                     )
                 )
             elif (
@@ -359,7 +359,7 @@ def get_live_aws_resources(
                 composite_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
                 live_resources.update(
                     fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes, resource_type
+                        apigateway_client, composite_key, attributes
                     )
                 )
             elif resource_type.startswith("aws_api_gateway_method"):
@@ -369,7 +369,7 @@ def get_live_aws_resources(
                 composite_key = f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
                 live_resources.update(
                     fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes, resource_type
+                        apigateway_client, composite_key, attributes
                     )
                 )
             elif resource_type.startswith("aws_api_gateway_resource"):
@@ -378,7 +378,7 @@ def get_live_aws_resources(
                 composite_key = f"apigw_resource:{rest_api_id}:{resource_id}"
                 live_resources.update(
                     fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes, resource_type
+                        apigateway_client, composite_key, attributes
                     )
                 )
             elif resource_type.startswith("aws_api_gateway_stage"):
@@ -387,7 +387,7 @@ def get_live_aws_resources(
                 composite_key = f"apigw_stage:{rest_api_id}:{stage_name}"
                 live_resources.update(
                     fetch_apigateway_resources(
-                        apigateway_client, composite_key, attributes, resource_type
+                        apigateway_client, composite_key, attributes
                     )
                 )
 
