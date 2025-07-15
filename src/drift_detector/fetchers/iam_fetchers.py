@@ -37,16 +37,25 @@ def fetch_iam_resources(
     Fetch IAM resources from AWS and map them by hybrid key for drift comparison.
     Returns a dictionary of hybrid keys to IAM entity data for all IAM entities.
     """
+    print(f"DEBUG: [IAM] fetch_iam_resources called with resource_type={resource_type}, resource_key={resource_key}, attributes={attributes}")
     try:
         live_resources = {}
-        if resource_type.startswith("aws_iam_role_policy"):
-            # Handle inline role policies
-            return _fetch_iam_role_policies(iam_client, resource_key, attributes)
-        elif resource_type.startswith("aws_iam_role_policy_attachment"):
+        # IMPORTANT: Check aws_iam_role_policy_attachment before aws_iam_role_policy to avoid prefix matching bugs.
+        if resource_type.startswith("aws_iam_role_policy_attachment"):
             # Handle managed policy attachments
-            return _fetch_iam_role_policy_attachments(
+            if not attributes.get("role") and resource_key:
+                # Extract role from resource_key (format: role/policy_arn)
+                role_from_key = resource_key.split("/")[0]
+                attributes = dict(attributes)  # Copy to avoid mutating input
+                attributes["role"] = role_from_key
+            result = _fetch_iam_role_policy_attachments(
                 iam_client, resource_key, attributes
             )
+            print(f"DEBUG: [IAM] _fetch_iam_role_policy_attachments returned keys: {list(result.keys())}")
+            return result
+        elif resource_type.startswith("aws_iam_role_policy"):
+            # Handle inline role policies
+            return _fetch_iam_role_policies(iam_client, resource_key, attributes)
         elif resource_type.startswith("aws_iam_role"):
             for role in iam_client.list_roles()["Roles"]:
                 key = extract_hybrid_key_from_iam(role, "aws_iam_role")
@@ -202,27 +211,28 @@ def _fetch_iam_role_policy_attachments(
     try:
         live_resources: Dict[str, LiveResourceData] = {}
 
-        # Get the role name and policy ARN
+        # Get the role name
         role_name = attributes.get("role")
-        policy_arn = attributes.get("policy_arn")
-
-        if not role_name or not policy_arn:
+        print(f"DEBUG: [IAM] _fetch_iam_role_policy_attachments called with role_name={role_name}, attributes={attributes}")
+        if not role_name:
             return live_resources
 
         # Get attached policies for the role
         try:
             response = iam_client.list_attached_role_policies(RoleName=role_name)
+            print(f"DEBUG: [IAM] list_attached_role_policies response for role {role_name}: {response}")
 
-            # Check if the policy is attached
+            # For each attached policy, build the key as '{role_name}/{policy_arn}'
             for attached_policy in response.get("AttachedPolicies", []):
-                if attached_policy.get("PolicyArn") == policy_arn:
-                    live_resources[resource_key] = {
-                        "role_name": role_name,
-                        "policy_arn": policy_arn,
-                        "policy_name": attached_policy.get("PolicyName"),
-                    }
-                    return live_resources
-
+                policy_arn = attached_policy.get("PolicyArn")
+                key = f"{role_name}/{policy_arn}"
+                print(f"DEBUG: [IAM] Fetched live policy attachment key: {key}")
+                live_resources[key] = {
+                    "role_name": role_name,
+                    "policy_arn": policy_arn,
+                    "policy_name": attached_policy.get("PolicyName"),
+                }
+            print(f"DEBUG: [IAM] All fetched live policy attachment keys: {list(live_resources.keys())}")
             return live_resources
         except iam_client.exceptions.NoSuchEntityException:
             return live_resources

@@ -224,6 +224,13 @@ def get_live_aws_resources(
                 # If no ARN available, fall back to resource name + index
                 unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
 
+            # Special keying for aws_iam_role_policy_attachment
+            if resource_type == "aws_iam_role_policy_attachment":
+                role = attributes.get("role")
+                policy_arn = attributes.get("policy_arn")
+                if role and policy_arn:
+                    unique_resource_key = f"{role}/{policy_arn}"
+
             # Route to appropriate service-specific fetcher
             if resource_type.startswith("aws_instance"):
                 live_resources.update(

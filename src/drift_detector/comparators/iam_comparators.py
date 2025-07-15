@@ -24,6 +24,8 @@ def compare_iam_attributes(
     Returns:
         List of drift details for any mismatched attributes
     """
+    if resource_type.startswith("aws_iam_role_policy_attachment"):
+        return _compare_iam_role_policy_attachment_attributes(state_attrs, live_attrs)
     if resource_type.startswith("aws_iam_role_policy"):
         return _compare_iam_role_policy_attributes(state_attrs, live_attrs)
     elif resource_type.startswith("aws_iam_role"):
@@ -174,6 +176,37 @@ def _compare_iam_openid_connect_provider_attributes(
                 "attribute": "provider_arn",
                 "state_value": str(state_provider_arn),
                 "live_value": str(live_provider_arn),
+            }
+        )
+    return drift_details
+
+
+def _compare_iam_role_policy_attachment_attributes(
+    state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
+) -> List[DriftDetail]:
+    """
+    Compare IAM role policy attachment attributes between Terraform state and live AWS.
+    Returns a list of drift details for any mismatched attributes.
+    """
+    drift_details = []
+    state_role = state_attrs.get("role")
+    live_role = live_attrs.get("role_name")
+    if state_role != live_role:
+        drift_details.append(
+            {
+                "attribute": "role",
+                "state_value": str(state_role),
+                "live_value": str(live_role),
+            }
+        )
+    state_policy_arn = state_attrs.get("policy_arn")
+    live_policy_arn = live_attrs.get("policy_arn")
+    if state_policy_arn != live_policy_arn:
+        drift_details.append(
+            {
+                "attribute": "policy_arn",
+                "state_value": str(state_policy_arn),
+                "live_value": str(live_policy_arn),
             }
         )
     return drift_details

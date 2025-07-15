@@ -248,6 +248,10 @@ def compare_attributes(
         drift_details.extend(compare_dynamodb_attributes(state_attrs, live_attrs))
     elif resource_type.startswith("aws_lambda_function"):
         drift_details.extend(compare_lambda_attributes(state_attrs, live_attrs))
+    elif resource_type.startswith("aws_iam_role_policy_attachment"):
+        drift_details.extend(
+            compare_iam_attributes(state_attrs, live_attrs, resource_type)
+        )
     elif resource_type.startswith("aws_iam_role_policy"):
         # Must come before aws_iam_role!
         drift_details.extend(

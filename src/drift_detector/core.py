@@ -66,6 +66,7 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         state_resource_key_map = (
             {}
         )  # Map from extracted key to (resource_type, resource_name, instance_index)
+        monitoring_attachment_key = "dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
             resource_name = resource.get("name")
@@ -232,6 +233,11 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
                         )
                 all_state_resources.add(key)
                 state_resource_key_map[key] = (resource_type, resource_name, idx)
+                if resource_type == "aws_iam_role_policy_attachment":
+                    print(f"DEBUG: [STATE] aws_iam_role_policy_attachment resource key: {key}, attributes: {attributes}")
+                    if not attributes.get("role") and key:
+                        role_from_key = key.split("/")[0]
+                        print(f"DEBUG: [STATE] Extracted role from resource_key: {role_from_key}")
 
         all_live_resources = set(live_resources.keys())
         drifted_resources = set(
@@ -246,6 +252,19 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         print(f"DEBUG: Sample state resource keys (part 2): {sample_keys[2:]}")
         print(f"DEBUG: Sample live resource keys: {list(all_live_resources)[:5]}")
         print(f"DEBUG: Total live resources: {len(all_live_resources)}")
+
+        # DEBUG: Print all keys for aws_iam_role_policy_attachment
+        print("DEBUG: All state resource keys for aws_iam_role_policy_attachment:")
+        for k in all_state_resources:
+            if k.startswith("dev-pulsequeue-monitoring-execution-role/"):
+                print(f"  STATE: {k}")
+        print("DEBUG: All live resource keys for aws_iam_role_policy_attachment:")
+        for k in all_live_resources:
+            if k.startswith("dev-pulsequeue-monitoring-execution-role/"):
+                print(f"  LIVE: {k}")
+        # DEBUG: Check if monitoring_execution key is present in both
+        print(f"DEBUG: monitoring_execution key in state: {monitoring_attachment_key in all_state_resources}")
+        print(f"DEBUG: monitoring_execution key in live: {monitoring_attachment_key in all_live_resources}")
 
         matching_resources = []
         for resource_key in all_state_resources & all_live_resources:
