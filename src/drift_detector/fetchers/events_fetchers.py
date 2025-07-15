@@ -42,21 +42,19 @@ def _fetch_eventbridge_buses(
     events_client: EventsClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch EventBridge buses from AWS and map them by resource key for drift comparison.
-    Returns a dictionary of resource keys to bus data.
+    Fetch EventBridge buses from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to bus data for all EventBridge buses.
     """
     try:
         response = events_client.list_event_buses()
         live_resources = {}
-        bus_name = attributes.get("name") or attributes.get("id")
 
         for bus in response["EventBuses"]:
-            if bus_name and bus["Name"] == bus_name:
-                live_resources[resource_key] = bus
-                return live_resources
+            # EventBridge buses have ARNs
+            arn = bus.get("Arn")
+            if arn:
+                live_resources[arn] = bus
 
-        # If no exact match, return empty dict (no fallback)
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching EventBridge buses: {e}")
@@ -67,27 +65,38 @@ def _fetch_eventbridge_rules(
     events_client: EventsClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch EventBridge rules from AWS and map them by resource key for drift comparison.
-    Only searches the specific event bus given in the Terraform state. If no
-    event_bus_name is present, does not search or return any rules. This strictness
-    avoids false positives from fallback logic.
-    Returns a dictionary of resource keys to rule data.
+    Fetch EventBridge rules from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to rule data for all EventBridge rules.
     """
     try:
-        event_bus_name = attributes.get("event_bus_name")
-        if not event_bus_name:
-            # No event bus specified in state, do not search (strict, avoids false positives)
-            return {}
-        response = events_client.list_rules(EventBusName=event_bus_name)
         live_resources = {}
-        rule_name = attributes.get("name")
+        
+        # List all event buses and get rules from each
+        buses_response = events_client.list_event_buses()
+        for bus in buses_response["EventBuses"]:
+            bus_name = bus["Name"]
+            try:
+                rules_response = events_client.list_rules(EventBusName=bus_name)
+                for rule in rules_response["Rules"]:
+                    arn = rule.get("Arn")
+                    if arn:
+                        # Extract relevant attributes for comparison
+                        rule_data = {
+                            "Name": rule.get("Name"),
+                            "Arn": arn,
+                            "EventPattern": rule.get("EventPattern"),
+                            "State": rule.get("State"),
+                            "ScheduleExpression": rule.get("ScheduleExpression"),
+                            "Description": rule.get("Description"),
+                            "RoleArn": rule.get("RoleArn"),
+                            "ManagedBy": rule.get("ManagedBy"),
+                        }
+                        logger.debug(f"[EventBridge] Using key for rule: {arn}")
+                        live_resources[arn] = rule_data
+            except Exception as e:
+                logger.debug(f"Could not list rules for bus {bus_name}: {e}")
+                continue
 
-        for rule in response["Rules"]:
-            if rule_name and rule["Name"] == rule_name:
-                live_resources[resource_key] = rule
-                return live_resources
-
-        # No match found, return empty dict (no fallback)
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching EventBridge rules: {e}")
@@ -98,43 +107,51 @@ def _fetch_eventbridge_targets(
     events_client: EventsClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch EventBridge targets from AWS and map them by resource key for drift comparison.
-    Only searches the specific event bus and rule given in the Terraform state. If no
-    event_bus_name or rule name is present, does not search or return any targets.
-    This strictness avoids false positives.
-    Returns a dictionary of resource keys to target data.
+    Fetch EventBridge targets from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to target data for all EventBridge targets.
     """
     try:
-        event_bus_name = attributes.get("event_bus_name")
-        rule_name = attributes.get("rule")
-        target_id = attributes.get("target_id")
-
-        logger.debug(
-            f"Fetching EventBridge target - event_bus: {event_bus_name}, "
-            f"rule: {rule_name}, target_id: {target_id}"
-        )
-
-        if not event_bus_name or not rule_name:
-            # No event bus or rule specified in state, do not search (strict, avoids false
-            # positives)
-            logger.debug("Missing event_bus_name or rule_name, skipping")
-            return {}
-
-        response = events_client.list_targets_by_rule(
-            Rule=rule_name, EventBusName=event_bus_name
-        )
         live_resources = {}
-
-        logger.debug(f"Found {len(response['Targets'])} targets in AWS")
-        for target in response["Targets"]:
-            logger.debug(f"Checking target {target['Id']} against {target_id}")
-            if target_id and target["Id"] == target_id:
-                logger.debug("Match found! Adding to live_resources")
-                live_resources[resource_key] = target
-                return live_resources
-
-        logger.debug(f"No match found for target_id {target_id}")
-        # No match found, return empty dict (no fallback)
+        
+        # Get the target ARN and rule name from the state attributes
+        target_arn = attributes.get("arn")
+        rule_name = attributes.get("rule")
+        event_bus_name = attributes.get("event_bus_name")
+        if not target_arn or not rule_name:
+            logger.debug(f"[EventBridge] No target ARN or rule name found in attributes: {list(attributes.keys())}")
+            return live_resources
+        
+        logger.debug(f"[EventBridge] Looking for target with ARN: {target_arn} in rule: {rule_name} (bus: {event_bus_name})")
+        
+        # If event_bus_name is not provided, search all buses
+        buses_to_check = []
+        if event_bus_name:
+            buses_to_check = [event_bus_name]
+        else:
+            buses_response = events_client.list_event_buses()
+            buses_to_check = [bus["Name"] for bus in buses_response["EventBuses"]]
+        
+        for bus_name in buses_to_check:
+            try:
+                targets_response = events_client.list_targets_by_rule(Rule=rule_name, EventBusName=bus_name)
+                logger.debug(f"[EventBridge] Found {len(targets_response['Targets'])} targets in rule {rule_name} (bus: {bus_name})")
+                for target in targets_response["Targets"]:
+                    if target.get("Arn") == target_arn:
+                        logger.debug(f"[EventBridge] Found matching target with ARN: {target_arn} in rule: {rule_name} (bus: {bus_name})")
+                        # Map target data to match state attributes
+                        target_data = {
+                            "target_id": target.get("Id"),
+                            "arn": target_arn,
+                            "input": target.get("Input"),
+                            "input_path": target.get("InputPath"),
+                            "input_transformer": target.get("InputTransformer"),
+                        }
+                        live_resources[target_arn] = target_data
+                        return live_resources  # Found the target, no need to continue searching
+            except Exception as e:
+                logger.debug(f"Could not list targets for rule {rule_name} (bus: {bus_name}): {e}")
+                continue
+        logger.debug(f"[EventBridge] Target with ARN {target_arn} not found in rule {rule_name} (buses checked: {buses_to_check})")
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching EventBridge targets: {e}")

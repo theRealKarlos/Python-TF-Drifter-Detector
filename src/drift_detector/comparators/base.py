@@ -49,7 +49,7 @@ def compare_resources(
     for resource in state_data.get("resources", []):
         resource_type = resource.get("type")
         resource_name = resource.get("name")
-        resource_key = f"{resource_type}.{resource_name}"
+        base_resource_key = f"{resource_type}.{resource_name}"
 
         # Special handling for SQS queue policy (already loops over all instances)
         if resource_type.startswith("aws_sqs_queue_policy"):
@@ -102,32 +102,43 @@ def compare_resources(
                     })
             continue  # Skip generic block for SQS queue policy resources
 
-        # For all other resource types, use the simple resource key that matches fetchers
-        # Check if resource exists in live AWS using the same key construction as fetchers
-        if resource_key not in live_resources:
-            drifts.append(
-                {
-                    "resource_key": resource_key,
-                    "drift_type": "missing_resource",
-                    "description": f"Resource {resource_key} exists in state but not in live AWS",
-                }
-            )
-            continue
+        # For all other resource types, process all instances with ARN-based keys
+        instances = resource.get("instances", [])
+        for idx, instance in enumerate(instances):
+            state_attributes = instance.get("attributes", {})
+            
+            # Create unique resource key for this instance (same logic as fetchers)
+            try:
+                from ..fetchers.base import extract_arn_from_attributes
+                arn = extract_arn_from_attributes(state_attributes, resource_type)
+                # Use ARN as the primary key for matching
+                unique_resource_key = arn
+            except (ValueError, ImportError):
+                # If no ARN available, fall back to resource name + index
+                unique_resource_key = f"{base_resource_key}_{idx}"
 
-        # Compare attributes for existing resources
-        # Use the first instance for comparison (fetchers only process the first instance)
-        if resource.get("instances"):
-            state_attributes = resource["instances"][0].get("attributes", {})
-            live_attributes = live_resources[resource_key]
+            # Check if resource exists in live AWS using the same key construction as fetchers
+            if unique_resource_key not in live_resources:
+                drifts.append(
+                    {
+                        "resource_key": unique_resource_key,
+                        "drift_type": "missing_resource",
+                        "description": f"Resource {unique_resource_key} exists in state but not in live AWS",
+                    }
+                )
+                continue
+
+            # Compare attributes for existing resources
+            live_attributes = live_resources[unique_resource_key]
             differences = compare_attributes(
                 state_attributes, live_attributes, resource_type
             )
             if differences:
                 drifts.append(
                     {
-                        "resource_key": resource_key,
+                        "resource_key": unique_resource_key,
                         "drift_type": "attribute_drift",
-                        "description": f"Attribute drift detected for {resource_key}",
+                        "description": f"Attribute drift detected for {unique_resource_key}",
                         "differences": differences,
                     }
                 )

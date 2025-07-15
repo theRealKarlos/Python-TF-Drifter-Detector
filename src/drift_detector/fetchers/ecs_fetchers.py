@@ -48,27 +48,18 @@ def _fetch_ecs_clusters(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch ECS clusters from AWS and map them by resource key for drift comparison.
-    Uses ARN-based matching exclusively as ARNs are always present in Terraform
-    state files for AWS managed resources.
-    Returns a dictionary of resource keys to cluster data.
+    Fetch ECS clusters from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to cluster data for all ECS clusters.
     """
     try:
         response = ecs_client.list_clusters()
         live_resources: Dict[str, LiveResourceData] = {}
         
-        # Use ARN-based matching exclusively
-        arn = extract_arn_from_attributes(attributes, "aws_ecs_cluster")
-        
         for cluster_arn in response.get("clusterArns", []):
-            if cluster_arn == arn:
-                cluster_info = ecs_client.describe_clusters(clusters=[cluster_arn])
-                if cluster_info.get("clusters"):
-                    live_resources[resource_key] = cluster_info["clusters"][0]
-                    return live_resources
+            cluster_info = ecs_client.describe_clusters(clusters=[cluster_arn])
+            if cluster_info.get("clusters"):
+                live_resources[cluster_arn] = cluster_info["clusters"][0]
 
-        # If no exact match, return empty dict
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching ECS clusters: {e}")
@@ -81,40 +72,30 @@ def _fetch_ecs_services(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch ECS services from AWS and map them by resource key for drift comparison.
-    Uses ARN-based matching exclusively as ARNs are always present in Terraform
-    state files for AWS managed resources.
-    Returns a dictionary of resource keys to service data.
+    Fetch ECS services from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to service data for all ECS services.
     """
     try:
         live_resources: Dict[str, LiveResourceData] = {}
         
-        # Determine the cluster name/ARN from attributes
-        cluster = (
-            attributes.get("cluster")
-            or attributes.get("cluster_arn")
-        )
+        # Get all clusters first
+        clusters_response = ecs_client.list_clusters()
         
-        if not cluster:
-            return live_resources
-        
-        # Get services for the cluster
-        response = ecs_client.list_services(cluster=cluster)
-        
-        # Use ARN-based matching exclusively
-        arn = extract_arn_from_attributes(attributes, "aws_ecs_service")
-        
-        for service_arn in response.get("serviceArns", []):
-            if service_arn == arn:
-                service_info = ecs_client.describe_services(
-                    cluster=cluster, services=[service_arn]
-                )
-                if service_info.get("services"):
-                    live_resources[resource_key] = service_info["services"][0]
-                    return live_resources
+        for cluster_arn in clusters_response.get("clusterArns", []):
+            try:
+                # Get services for this cluster
+                services_response = ecs_client.list_services(cluster=cluster_arn)
+                
+                for service_arn in services_response.get("serviceArns", []):
+                    service_info = ecs_client.describe_services(
+                        cluster=cluster_arn, services=[service_arn]
+                    )
+                    if service_info.get("services"):
+                        live_resources[service_arn] = service_info["services"][0]
+            except Exception as e:
+                logger.debug(f"Could not get services for cluster {cluster_arn}: {e}")
+                continue
 
-        # If no exact match, return empty dict
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching ECS services: {e}")
@@ -127,34 +108,32 @@ def _fetch_ecs_task_definitions(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch ECS task definitions from AWS and map them by resource key for drift comparison.
-    Uses ARN-based matching exclusively as ARNs are always present in Terraform
-    state files for AWS managed resources.
-    Returns a dictionary of resource keys to task definition data.
+    Fetch ECS task definitions from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to task definition data for all ECS task definitions.
     """
     try:
         live_resources: Dict[str, LiveResourceData] = {}
         
-        # Use ARN-based matching exclusively
-        arn = extract_arn_from_attributes(attributes, "aws_ecs_task_definition")
+        # List all task definition families
+        families_response = ecs_client.list_task_definition_families()
         
-        # Extract task definition family and revision from ARN
-        # ARN format: arn:aws:ecs:region:account:task-definition/family:revision
-        if "task-definition/" in arn:
-            task_def_part = arn.split("task-definition/")[-1]
-            if ":" in task_def_part:
-                family, revision = task_def_part.split(":", 1)
-                try:
-                    response = ecs_client.describe_task_definition(
-                        taskDefinition=f"{family}:{revision}"
-                    )
-                    live_resources[resource_key] = response.get("taskDefinition", {})
-                    return live_resources
-                except ecs_client.exceptions.ClientError:
-                    pass
+        for family in families_response.get("families", []):
+            try:
+                # List all revisions for this family
+                revisions_response = ecs_client.list_task_definitions(familyPrefix=family)
+                
+                for task_def_arn in revisions_response.get("taskDefinitionArns", []):
+                    try:
+                        response = ecs_client.describe_task_definition(taskDefinition=task_def_arn)
+                        if response.get("taskDefinition"):
+                            live_resources[task_def_arn] = response["taskDefinition"]
+                    except Exception as e:
+                        logger.debug(f"Could not describe task definition {task_def_arn}: {e}")
+                        continue
+            except Exception as e:
+                logger.debug(f"Could not list task definitions for family {family}: {e}")
+                continue
 
-        # If no exact match, return empty dict
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching ECS task definitions: {e}")

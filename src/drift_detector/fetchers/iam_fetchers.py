@@ -13,36 +13,61 @@ from .base import extract_arn_from_attributes
 logger = setup_logging()
 
 
+def extract_hybrid_key_from_iam(entity: dict, entity_type: str) -> str:
+    """
+    Extract the best available key for an IAM entity using hybrid logic.
+    1. Try ARN
+    2. Try RoleName/UserName/GroupName/PolicyName (ID)
+    3. Fallback to 'entity_type.<name>'
+    """
+    for arn_key in ("Arn", "arn", "ARN"):
+        if arn_key in entity and entity[arn_key]:
+            return str(entity[arn_key])
+    for id_key in ("RoleName", "UserName", "GroupName", "PolicyName", "name", "Name"):
+        if id_key in entity and entity[id_key]:
+            return str(entity[id_key])
+    return f"{entity_type}.unknown"
+
+
 @fetcher_error_handler
 def fetch_iam_resources(
-    iam_client: IAMClient,
-    resource_key: str,
-    attributes: ResourceAttributes,
-    resource_type: str,
-) -> Dict[str, LiveResourceData]:
+    iam_client: IAMClient, resource_key: str, attributes: dict, resource_type: str = ""
+) -> dict:
     """
-    Fetch IAM resources from AWS based on resource type.
-
-    Args:
-        iam_client: Boto3 IAM client
-        resource_key: Resource key for mapping
-        attributes: Resource attributes from Terraform state
-        resource_type: Type of IAM resource
-
-    Returns:
-        Dictionary mapping resource keys to live AWS resource data
+    Fetch IAM resources from AWS and map them by hybrid key for drift comparison.
+    Returns a dictionary of hybrid keys to IAM entity data for all IAM entities.
     """
-    if resource_type.startswith("aws_iam_role_policy"):
-        return _fetch_iam_role_policies(iam_client, resource_key, attributes)
-    elif resource_type.startswith("aws_iam_role_policy_attachment"):
-        return _fetch_iam_role_policy_attachments(iam_client, resource_key, attributes)
-    elif resource_type.startswith("aws_iam_role"):
-        return _fetch_iam_roles(iam_client, resource_key, attributes)
-    elif resource_type.startswith("aws_iam_policy"):
-        return _fetch_iam_policies(iam_client, resource_key, attributes)
-    elif resource_type.startswith("aws_iam_openid_connect_provider"):
-        return _fetch_iam_openid_connect_providers(iam_client, resource_key, attributes)
-    else:
+    try:
+        live_resources = {}
+        if resource_type.startswith("aws_iam_role_policy"):
+            # Handle inline role policies
+            return _fetch_iam_role_policies(iam_client, resource_key, attributes)
+        elif resource_type.startswith("aws_iam_role_policy_attachment"):
+            # Handle managed policy attachments
+            return _fetch_iam_role_policy_attachments(iam_client, resource_key, attributes)
+        elif resource_type.startswith("aws_iam_role"):
+            for role in iam_client.list_roles()["Roles"]:
+                key = extract_hybrid_key_from_iam(role, "aws_iam_role")
+                logger.debug(f"[IAM] Using key for role: {key}")
+                live_resources[key] = role
+        elif resource_type.startswith("aws_iam_user"):
+            for user in iam_client.list_users()["Users"]:
+                key = extract_hybrid_key_from_iam(user, "aws_iam_user")
+                logger.debug(f"[IAM] Using key for user: {key}")
+                live_resources[key] = user
+        elif resource_type.startswith("aws_iam_group"):
+            for group in iam_client.list_groups()["Groups"]:
+                key = extract_hybrid_key_from_iam(group, "aws_iam_group")
+                logger.debug(f"[IAM] Using key for group: {key}")
+                live_resources[key] = group
+        elif resource_type.startswith("aws_iam_policy"):
+            for policy in iam_client.list_policies(Scope='Local')["Policies"]:
+                key = extract_hybrid_key_from_iam(policy, "aws_iam_policy")
+                logger.debug(f"[IAM] Using key for policy: {key}")
+                live_resources[key] = policy
+        return live_resources
+    except Exception as e:
+        logger.error(f"[IAM] Error fetching IAM resources: {e}")
         return {}
 
 
@@ -50,25 +75,18 @@ def _fetch_iam_roles(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch IAM roles from AWS and map them by resource key for drift comparison.
-    Uses ARN-based matching exclusively as ARNs are always present in Terraform
-    state files for AWS managed resources.
-    Returns a dictionary of resource keys to role data.
+    Fetch IAM roles from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to role data for all IAM roles.
     """
     try:
         response = iam_client.list_roles()
         live_resources = {}
         
-        # Use ARN-based matching exclusively
-        arn = extract_arn_from_attributes(attributes, "aws_iam_role")
-        
         for role in response["Roles"]:
-            if role.get("Arn") == arn:
-                live_resources[resource_key] = role
-                return live_resources
+            arn = role.get("Arn")
+            if arn:
+                live_resources[arn] = role
 
-        # If no exact match, return empty dict
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching IAM roles: {e}")
@@ -79,25 +97,18 @@ def _fetch_iam_policies(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch IAM policies from AWS and map them by resource key for drift comparison.
-    Uses ARN-based matching exclusively as ARNs are always present in Terraform
-    state files for AWS managed resources.
-    Returns a dictionary of resource keys to policy data.
+    Fetch IAM policies from AWS and map them by ARN for drift comparison.
+    Returns a dictionary of ARNs to policy data for all IAM policies.
     """
     try:
         response = iam_client.list_policies(Scope="Local")
         live_resources = {}
         
-        # Use ARN-based matching exclusively
-        arn = extract_arn_from_attributes(attributes, "aws_iam_policy")
-        
         for policy in response["Policies"]:
-            if policy.get("Arn") == arn:
-                live_resources[resource_key] = policy
-                return live_resources
+            arn = policy.get("Arn")
+            if arn:
+                live_resources[arn] = policy
 
-        # If no exact match, return empty dict
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching IAM policies: {e}")
@@ -109,16 +120,19 @@ def _fetch_iam_role_policies(
     iam_client: IAMClient, resource_key: str, attributes: ResourceAttributes
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch IAM role policies from AWS and map them by resource key for drift
-    comparison. Returns a dictionary of resource keys to role policy data.
+    Fetch IAM role policies from AWS and map them by hybrid key for drift comparison.
+    Returns a dictionary of hybrid keys to role policy data.
     """
     logger.debug(
         f"DEBUG: Entered _fetch_iam_role_policies with "
         f"resource_key={resource_key}, attributes={attributes}"
     )
     try:
+        live_resources = {}
+        
+        # Extract role name and policy name from attributes
         role_name = attributes.get("role") or attributes.get("name")
-        policy_name = attributes.get("name")
+        policy_name = attributes.get("name") or attributes.get("policy_name")
 
         logger.debug(
             f"DEBUG: IAM role policy fetcher - looking for role: {role_name}, "
@@ -129,7 +143,7 @@ def _fetch_iam_role_policies(
             logger.debug(
                 f"DEBUG: No role or policy name found in attributes: {attributes}"
             )
-            return {}
+            return live_resources
 
         # Get the role first
         try:
@@ -138,7 +152,7 @@ def _fetch_iam_role_policies(
             logger.debug(f"DEBUG: Found role: {role['RoleName']}")
         except iam_client.exceptions.NoSuchEntityException:
             logger.debug(f"DEBUG: Role {role_name} not found")
-            return {}
+            return live_resources
 
         # Get inline policies for the role
         try:
@@ -147,32 +161,30 @@ def _fetch_iam_role_policies(
                 f"DEBUG: Available policies for role {role_name}: "
                 f"{policies_response['PolicyNames']}"
             )
-            if policy_name in policies_response["PolicyNames"]:
+            
+            # Return all inline policies for this role, keyed by role_name:policy_name
+            for policy_name in policies_response["PolicyNames"]:
                 policy_response = iam_client.get_role_policy(
                     RoleName=role_name, PolicyName=policy_name
                 )
-                # Return a structure with the policy document and role name for comparison
-                result = {
-                    resource_key: {
-                        "role_name": role_name,
-                        "policy_name": policy_name,
-                        "policy": policy_response["PolicyDocument"],
-                    }
+                # Use the same key format as state file: role_name:policy_name
+                key = f"{role_name}:{policy_name}"
+                logger.debug(f"[IAM] Using key for role policy: {key}")
+                live_resources[key] = {
+                    "role_name": role_name,
+                    "policy_name": policy_name,
+                    "policy": policy_response["PolicyDocument"],
                 }
-                logger.debug(f"DEBUG: IAM role policy fetcher returning: {result}")
-                return result
-            else:
-                logger.debug(
-                    f"DEBUG: Policy {policy_name} not found for role {role_name}"
-                )
-                logger.debug("DEBUG: IAM role policy fetcher returning empty dict")
-                return {}
+            
+            logger.debug(f"DEBUG: IAM role policy fetcher returning {len(live_resources)} policies")
+            return live_resources
+            
         except Exception as e:
             logger.error(f"Error fetching IAM role policies: {e}")
-            return {}
+            return live_resources
     except Exception as e:
         logger.error(f"Error fetching IAM role policies: {e}")
-        return {}
+        return live_resources
 
 
 @fetcher_error_handler

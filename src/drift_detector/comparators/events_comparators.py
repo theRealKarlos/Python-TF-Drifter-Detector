@@ -62,6 +62,8 @@ def _compare_eventbridge_rule_attributes(
     Returns a list of drift details for any mismatched attributes.
     """
     drift_details = []
+    
+    # Compare basic rule attributes
     state_rule_name = state_attrs.get("name")
     live_rule_name = live_attrs.get("Name")
     if state_rule_name != live_rule_name:
@@ -72,6 +74,67 @@ def _compare_eventbridge_rule_attributes(
                 "live_value": str(live_rule_name),
             }
         )
+    
+    # Compare event pattern if present
+    state_event_pattern = state_attrs.get("event_pattern")
+    live_event_pattern = live_attrs.get("EventPattern")
+    if state_event_pattern != live_event_pattern:
+        drift_details.append(
+            {
+                "attribute": "event_pattern",
+                "state_value": str(state_event_pattern),
+                "live_value": str(live_event_pattern),
+            }
+        )
+    
+    # Compare schedule expression if present
+    state_schedule = state_attrs.get("schedule_expression")
+    live_schedule = live_attrs.get("ScheduleExpression")
+    if state_schedule != live_schedule:
+        drift_details.append(
+            {
+                "attribute": "schedule_expression",
+                "state_value": str(state_schedule),
+                "live_value": str(live_schedule),
+            }
+        )
+    
+    # Compare description if present
+    state_description = state_attrs.get("description")
+    live_description = live_attrs.get("Description")
+    if state_description != live_description:
+        drift_details.append(
+            {
+                "attribute": "description",
+                "state_value": str(state_description),
+                "live_value": str(live_description),
+            }
+        )
+    
+    # Compare role ARN if present
+    state_role_arn = state_attrs.get("role_arn")
+    live_role_arn = live_attrs.get("RoleArn")
+    if state_role_arn != live_role_arn:
+        drift_details.append(
+            {
+                "attribute": "role_arn",
+                "state_value": str(state_role_arn),
+                "live_value": str(live_role_arn),
+            }
+        )
+    
+    # Compare state if present
+    state_state = state_attrs.get("state")
+    live_state = live_attrs.get("State")
+    if state_state != live_state:
+        drift_details.append(
+            {
+                "attribute": "state",
+                "state_value": str(state_state),
+                "live_value": str(live_state),
+            }
+        )
+    
     return drift_details
 
 
@@ -83,25 +146,16 @@ def _compare_eventbridge_target_attributes(
     Returns a list of drift details for any mismatched attributes.
     """
     drift_details = []
-    state_target_id = state_attrs.get("target_id")
-    live_target_id = live_attrs.get("Id")
-    if state_target_id != live_target_id:
-        drift_details.append(
-            {
-                "attribute": "target_id",
-                "state_value": str(state_target_id),
-                "live_value": str(live_target_id),
-            }
-        )
-
-    state_arn = state_attrs.get("arn")
-    live_arn = live_attrs.get("Arn")
-    if state_arn != live_arn:
-        drift_details.append(
-            {
-                "attribute": "arn",
-                "state_value": str(state_arn),
-                "live_value": str(live_arn),
-            }
-        )
+    # Only compare EventBridge target attributes
+    for attr in ["target_id", "arn", "input", "input_path", "input_transformer"]:
+        state_val = state_attrs.get(attr)
+        live_val = live_attrs.get(attr)
+        if state_val != live_val:
+            drift_details.append(
+                {
+                    "attribute": attr,
+                    "state_value": str(state_val),
+                    "live_value": str(live_val),
+                }
+            )
     return drift_details

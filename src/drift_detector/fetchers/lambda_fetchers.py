@@ -14,6 +14,20 @@ from .base import extract_arn_from_attributes
 logger = setup_logging()
 
 
+def extract_hybrid_key_from_lambda(function: dict) -> str:
+    """
+    Extract the best available key for a Lambda function using hybrid logic.
+    1. Try ARN
+    2. Try function name (ID)
+    3. Fallback to 'aws_lambda_function.<name>'
+    """
+    if "FunctionArn" in function and function["FunctionArn"]:
+        return str(function["FunctionArn"])
+    if "FunctionName" in function and function["FunctionName"]:
+        return str(function["FunctionName"])
+    return f"aws_lambda_function.unknown"
+
+
 @fetcher_error_handler
 def fetch_lambda_resources(
     lambda_client: LambdaClient,
@@ -44,25 +58,19 @@ def _fetch_lambda_functions(
     lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch Lambda function resources from AWS and map them by resource key for drift
-    comparison. Uses ARN-based matching exclusively as ARNs are always present
-    in Terraform state files for AWS managed resources.
-    Returns a dictionary of resource keys to function data.
+    Fetch Lambda function resources from AWS and map them by hybrid key for drift comparison.
+    Returns a dictionary of hybrid keys to function data for all Lambda functions.
     """
     try:
         response = lambda_client.list_functions()
         live_resources = {}
         
-        # Use ARN-based matching exclusively
-        arn = extract_arn_from_attributes(attributes, "aws_lambda_function")
-        
+        # Return all Lambda functions keyed by hybrid key
         for function in response["Functions"]:
-            if function.get("FunctionArn") == arn:
-                live_resources[resource_key] = function
-                return live_resources
+            key = extract_hybrid_key_from_lambda(function)
+            logger.debug(f"[Lambda] Using key for function: {key}")
+            live_resources[key] = function
 
-        # If no exact match, return empty dict
-        # This ensures we only report drift when there's a real mismatch
         return live_resources
     except Exception as e:
         logger.error(f"[Lambda] Error fetching Lambda functions: {e}")
@@ -74,22 +82,20 @@ def _fetch_lambda_permissions(
     lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch Lambda permissions from AWS and map them by resource key for drift comparison.
-    Only searches the specific function given in the Terraform state. If no function_name is
-    present, does not search or return any permissions. This strictness avoids false positives.
-    Returns a dictionary of resource keys to permission data.
+    Fetch Lambda permissions from AWS and map them by hybrid key for drift comparison.
+    Returns a dictionary of hybrid keys to permission data for all Lambda permissions.
     """
     try:
         function_name = attributes.get("function_name")
         statement_id = attributes.get("statement_id")
 
-        if not function_name:
-            # No function name specified in state, do not search (strict, avoids false positives)
+        if not function_name or not statement_id:
+            # No function name or statement ID specified in state, do not search
+            logger.debug(f"[Lambda] No function_name or statement_id in attributes: {attributes}")
             return {}
 
         # Extract function name from ARN if it's a full ARN
         if function_name.startswith("arn:aws:lambda:"):
-            # Extract function name from ARN: arn:aws:lambda:region:account:function:name
             function_name = function_name.split(":")[-1]
 
         response = lambda_client.get_policy(FunctionName=function_name)
@@ -99,11 +105,18 @@ def _fetch_lambda_permissions(
         policy_doc = json.loads(response["Policy"])
 
         for statement in policy_doc.get("Statement", []):
-            if statement_id and statement.get("Sid") == statement_id:
-                live_resources[resource_key] = statement
-                return live_resources
-
-        # No match found, return empty dict (no fallback)
+            sid = statement.get("Sid")
+            key = f"{function_name}:{sid}"
+            logger.debug(f"[Lambda] Using key for permission: {key}")
+            # Store all relevant attributes for comparison
+            live_resources[key] = {
+                "Sid": sid,
+                "Action": statement.get("Action"),
+                "Effect": statement.get("Effect"),
+                "Principal": statement.get("Principal"),
+                "Resource": statement.get("Resource"),
+                "Condition": statement.get("Condition"),
+            }
         return live_resources
     except Exception as e:
         logger.error(f"[Lambda] Error fetching Lambda permissions: {e}")

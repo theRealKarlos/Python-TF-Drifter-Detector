@@ -191,148 +191,151 @@ def get_live_aws_resources(
     for resource in state_data.get("resources", []):
         resource_type = resource.get("type", "")
         resource_name = resource.get("name", "")
-        resource_key = f"{resource_type}.{resource_name}"
 
-        # Get the resource instance data for better matching
+        # Get all resource instances
         instances = resource.get("instances", [])
         if not instances:
             continue
 
-        instance = instances[0]
-        attributes = instance.get("attributes", {})
+        # Process all instances, using ARN as the primary identifier
+        for idx, instance in enumerate(instances):
+            attributes = instance.get("attributes", {})
+            
+            # Try to extract ARN for unique identification
+            try:
+                arn = extract_arn_from_attributes(attributes, resource_type)
+                # Use ARN as the primary key for matching
+                unique_resource_key = arn
+            except ValueError:
+                # If no ARN available, fall back to resource name + index
+                unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
 
-        # Route to appropriate service-specific fetcher
-        if resource_type.startswith("aws_instance"):
-            live_resources.update(
-                fetch_ec2_resources(ec2_client, resource_key, attributes)
-            )
-        elif resource_type.startswith("aws_s3_bucket"):
-            live_resources.update(
-                fetch_s3_resources(s3_client, resource_key, attributes)
-            )
-        elif resource_type.startswith("aws_db_instance"):
-            live_resources.update(
-                fetch_rds_resources(rds_client, resource_key, attributes)
-            )
-        elif resource_type.startswith("aws_dynamodb_table"):
-            live_resources.update(
-                fetch_dynamodb_resources(dynamodb_client, resource_key, attributes)
-            )
-        elif resource_type.startswith("aws_lambda_function"):
-            live_resources.update(
-                fetch_lambda_resources(lambda_client, resource_key, attributes)
-            )
-        elif (
-            resource_type.startswith("aws_iam_role_policy")
-            or resource_type.startswith("aws_iam_role")
-            or resource_type.startswith("aws_iam_policy")
-            or resource_type.startswith("aws_iam_openid_connect_provider")
-            or resource_type.startswith("aws_iam_role_policy_attachment")
-        ):
-            live_resources.update(
-                fetch_iam_resources(iam_client, resource_key, attributes, resource_type)
-            )
-        elif resource_type.startswith("aws_cloudwatch_event_rule"):
-            event_bus_name = attributes.get("event_bus_name", "")
-            unique_resource_key = (
-                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
-            )
-            live_resources.update(
-                fetch_events_resources(
-                    events_client, unique_resource_key, attributes, resource_type
+            # Route to appropriate service-specific fetcher
+            if resource_type.startswith("aws_instance"):
+                live_resources.update(
+                    fetch_ec2_resources(ec2_client, unique_resource_key, attributes)
                 )
-            )
-        elif resource_type.startswith("aws_cloudwatch_event_target"):
-            event_bus_name = attributes.get("event_bus_name", "")
-            unique_resource_key = (
-                f"{resource_key}_{event_bus_name}" if event_bus_name else resource_key
-            )
-            live_resources.update(
-                fetch_events_resources(
-                    events_client, unique_resource_key, attributes, resource_type
+            elif resource_type.startswith("aws_s3_bucket"):
+                live_resources.update(
+                    fetch_s3_resources(s3_client, unique_resource_key, attributes)
                 )
-            )
-        elif resource_type.startswith("aws_cloudwatch_event_bus"):
-            live_resources.update(
-                fetch_events_resources(
-                    events_client, resource_key, attributes, resource_type
+            elif resource_type.startswith("aws_db_instance"):
+                live_resources.update(
+                    fetch_rds_resources(rds_client, unique_resource_key, attributes)
                 )
-            )
-        elif resource_type.startswith("aws_lambda_permission"):
-            function_name = attributes.get("function_name", "")
-            statement_id = attributes.get("statement_id", "")
-            unique_resource_key = resource_key
-            if function_name or statement_id:
-                # Use underscores to separate, but only add if present
-                unique_resource_key = resource_key
-                if function_name:
-                    # Extract function name from ARN if needed
-                    if function_name.startswith("arn:aws:lambda:"):
-                        function_name = function_name.split(":")[-1]
-                    unique_resource_key += f"_{function_name}"
-                if statement_id:
-                    unique_resource_key += f"_{statement_id}"
-            live_resources.update(
-                fetch_lambda_resources(
-                    lambda_client, unique_resource_key, attributes, resource_type
+            elif resource_type.startswith("aws_dynamodb_table"):
+                live_resources.update(
+                    fetch_dynamodb_resources(dynamodb_client, unique_resource_key, attributes)
                 )
-            )
-        elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
-            "aws_ecs_service"
-        ) or resource_type.startswith("aws_ecs_task_definition"):
-            live_resources.update(
-                fetch_ecs_resources(ecs_client, resource_key, attributes, resource_type)
-            )
-        elif (
-            resource_type.startswith("aws_vpc")
-            or resource_type.startswith("aws_security_group")
-            or resource_type.startswith("aws_subnet")
-            or resource_type.startswith("aws_internet_gateway")
-            or resource_type.startswith("aws_route_table")
-            or resource_type.startswith("aws_route_table_association")
-        ):
-            live_resources.update(
-                fetch_ec2_resources(ec2_client, resource_key, attributes, resource_type)
-            )
-        elif (
-            resource_type.startswith("aws_api_gateway_rest_api")
-            or resource_type.startswith("aws_api_gateway_resource")
-            or resource_type.startswith("aws_api_gateway_method")
-            or resource_type.startswith("aws_api_gateway_integration")
-            or resource_type.startswith("aws_api_gateway_deployment")
-            or resource_type.startswith("aws_api_gateway_stage")
-        ):
-            live_resources.update(
-                fetch_apigateway_resources(apigateway_client, resource_key, attributes)
-            )
-        elif (
-            resource_type.startswith("aws_cloudwatch_dashboard")
-            or resource_type.startswith("aws_cloudwatch_metric_alarm")
-            or resource_type.startswith("aws_cloudwatch_log_group")
-        ):
-            live_resources.update(
-                fetch_cloudwatch_resources(
-                    cloudwatch_client, resource_key, attributes, resource_type, cloudwatch_logs_client
+            elif resource_type.startswith("aws_lambda_function"):
+                live_resources.update(
+                    fetch_lambda_resources(lambda_client, unique_resource_key, attributes)
                 )
-            )
-        elif resource_type.startswith("aws_region") or resource_type.startswith(
-            "aws_caller_identity"
-        ):
-            live_resources.update(
-                fetch_data_source_resources(
-                    sts_client, region_name, resource_key, attributes, resource_type
+            elif (
+                resource_type.startswith("aws_iam_role_policy")
+                or resource_type.startswith("aws_iam_role")
+                or resource_type.startswith("aws_iam_policy")
+                or resource_type.startswith("aws_iam_openid_connect_provider")
+                or resource_type.startswith("aws_iam_role_policy_attachment")
+            ):
+                live_resources.update(
+                    fetch_iam_resources(iam_client, unique_resource_key, attributes, resource_type)
                 )
-            )
-        elif resource_type.startswith("aws_sqs_queue"):
-            queue_name = attributes.get("name", "")
-            unique_resource_key = resource_key
-            if queue_name:
-                # Normalise queue name if it's a URL
-                if queue_name.startswith("https://"):
-                    queue_name = queue_name.split("/")[-1]
-                unique_resource_key = f"{resource_key}_{queue_name}"
-            live_resources.update(
-                fetch_sqs_resources(sqs_client, unique_resource_key, attributes)
-            )
+            elif resource_type.startswith("aws_cloudwatch_event_rule"):
+                event_bus_name = attributes.get("event_bus_name", "")
+                if event_bus_name:
+                    unique_resource_key = f"{unique_resource_key}_{event_bus_name}"
+                live_resources.update(
+                    fetch_events_resources(
+                        events_client, unique_resource_key, attributes, resource_type
+                    )
+                )
+            elif resource_type.startswith("aws_cloudwatch_event_target"):
+                event_bus_name = attributes.get("event_bus_name", "")
+                if event_bus_name:
+                    unique_resource_key = f"{unique_resource_key}_{event_bus_name}"
+                live_resources.update(
+                    fetch_events_resources(
+                        events_client, unique_resource_key, attributes, resource_type
+                    )
+                )
+            elif resource_type.startswith("aws_cloudwatch_event_bus"):
+                live_resources.update(
+                    fetch_events_resources(
+                        events_client, unique_resource_key, attributes, resource_type
+                    )
+                )
+            elif resource_type.startswith("aws_lambda_permission"):
+                function_name = attributes.get("function_name", "")
+                statement_id = attributes.get("statement_id", "")
+                if function_name or statement_id:
+                    if function_name:
+                        # Extract function name from ARN if needed
+                        if function_name.startswith("arn:aws:lambda:"):
+                            function_name = function_name.split(":")[-1]
+                        unique_resource_key += f"_{function_name}"
+                    if statement_id:
+                        unique_resource_key += f"_{statement_id}"
+                live_resources.update(
+                    fetch_lambda_resources(
+                        lambda_client, unique_resource_key, attributes, resource_type
+                    )
+                )
+            elif resource_type.startswith("aws_ecs_cluster") or resource_type.startswith(
+                "aws_ecs_service"
+            ) or resource_type.startswith("aws_ecs_task_definition"):
+                live_resources.update(
+                    fetch_ecs_resources(ecs_client, unique_resource_key, attributes, resource_type)
+                )
+            elif (
+                resource_type.startswith("aws_vpc")
+                or resource_type.startswith("aws_security_group")
+                or resource_type.startswith("aws_subnet")
+                or resource_type.startswith("aws_internet_gateway")
+                or resource_type.startswith("aws_route_table")
+                or resource_type.startswith("aws_route_table_association")
+            ):
+                live_resources.update(
+                    fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type)
+                )
+            elif (
+                resource_type.startswith("aws_api_gateway_rest_api")
+                or resource_type.startswith("aws_api_gateway_resource")
+                or resource_type.startswith("aws_api_gateway_method")
+                or resource_type.startswith("aws_api_gateway_integration")
+                or resource_type.startswith("aws_api_gateway_deployment")
+                or resource_type.startswith("aws_api_gateway_stage")
+            ):
+                live_resources.update(
+                    fetch_apigateway_resources(apigateway_client, unique_resource_key, attributes)
+                )
+            elif (
+                resource_type.startswith("aws_cloudwatch_dashboard")
+                or resource_type.startswith("aws_cloudwatch_metric_alarm")
+                or resource_type.startswith("aws_cloudwatch_log_group")
+            ):
+                live_resources.update(
+                    fetch_cloudwatch_resources(
+                        cloudwatch_client, unique_resource_key, attributes, resource_type, cloudwatch_logs_client
+                    )
+                )
+            elif resource_type.startswith("aws_region") or resource_type.startswith(
+                "aws_caller_identity"
+            ):
+                live_resources.update(
+                    fetch_data_source_resources(
+                        sts_client, region_name, unique_resource_key, attributes, resource_type
+                    )
+                )
+            elif resource_type.startswith("aws_sqs_queue"):
+                queue_name = attributes.get("name", "")
+                if queue_name:
+                    # Normalise queue name if it's a URL
+                    if queue_name.startswith("https://"):
+                        queue_name = queue_name.split("/")[-1]
+                    unique_resource_key = f"{unique_resource_key}_{queue_name}"
+                live_resources.update(
+                    fetch_sqs_resources(sqs_client, unique_resource_key, attributes)
+                )
 
     return live_resources

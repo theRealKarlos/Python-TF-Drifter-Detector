@@ -1,0 +1,46 @@
+{
+  "version": 4,
+  "resources": [
+    {
+      "type": "aws_s3_bucket",
+      "name": "test_bucket",
+      "instances": [
+        {
+          "attributes": {
+            "id": "awsbackups3stack-testbucketdf4d7d1a-kp7ulcb56cen",
+            "bucket": "awsbackups3stack-testbucketdf4d7d1a-kp7ulcb56cen",
+            "arn": "arn:aws:s3:::awsbackups3stack-testbucketdf4d7d1a-kp7ulcb56cen"
+          }
+        }
+      ]
+    },
+    {
+      "type": "aws_lambda_function",
+      "name": "test_function",
+      "instances": [
+        {
+          "attributes": {
+            "id": "dev-metrics-service-handler",
+            "function_name": "dev-metrics-service-handler",
+            "arn": "arn:aws:lambda:eu-west-2:379673441375:function:dev-metrics-service-handler",
+            "invoke_arn": "arn:aws:lambda:eu-west-2:379673441375:function:dev-metrics-service-handler"
+          }
+        }
+      ]
+    },
+    {
+      "type": "aws_lambda_function",
+      "name": "another_function",
+      "instances": [
+        {
+          "attributes": {
+            "id": "GoTest",
+            "function_name": "GoTest",
+            "arn": "arn:aws:lambda:eu-west-2:379673441375:function:GoTest",
+            "invoke_arn": "arn:aws:lambda:eu-west-2:379673441375:function:GoTest"
+          }
+        }
+      ]
+    }
+  ]
+} 

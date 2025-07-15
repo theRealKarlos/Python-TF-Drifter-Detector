@@ -59,25 +59,48 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         print(f"DEBUG: Total resource instances in state: {total_state_instances}")
 
         all_state_resources = set()
+        state_resource_key_map = {}  # Map from extracted key to (resource_type, resource_name, instance_index)
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
             resource_name = resource.get("name")
-            for instance in resource.get("instances", []):
+            for idx, instance in enumerate(resource.get("instances", [])):
                 attributes = instance.get("attributes", {})
-                unique_key = f"{resource_type}.{resource_name}"
-                all_state_resources.add(unique_key)
+                # Hybrid key extraction: ARN > ID > fallback
+                key = None
+                # 1. Try ARN
+                for arn_key in ("arn", "Arn", "ARN"):
+                    if arn_key in attributes and attributes[arn_key]:
+                        key = attributes[arn_key]
+                        print(f"DEBUG: Using ARN as key for {resource_type}.{resource_name}_{idx}: {key}")
+                        break
+                # 2. Try ID (for resources without ARNs)
+                if not key:
+                    for id_key in ("id", "Id", "ID", "instance_id", "InstanceId", "resource_id", "ResourceId"):
+                        if id_key in attributes and attributes[id_key]:
+                            key = attributes[id_key]
+                            print(f"DEBUG: Using ID as key for {resource_type}.{resource_name}_{idx}: {key}")
+                            break
+                # 3. Fallback to resource_type.resource_name[_idx]
+                if not key:
+                    key = f"{resource_type}.{resource_name}_{idx}"
+                    print(f"DEBUG: Using fallback key for {resource_type}.{resource_name}_{idx}: {key}")
+                all_state_resources.add(key)
+                state_resource_key_map[key] = (resource_type, resource_name, idx)
 
         all_live_resources = set(live_resources.keys())
         drifted_resources = set(drift["resource_key"].split(" [")[0] for drift in drift_report.get("drifts", []))
 
         # Debug: Print total number of resources in state
         print(f"DEBUG: Total resources in state: {len(all_state_resources)}")
+        print(f"DEBUG: Sample state resource keys: {list(all_state_resources)[:5]}")
+        print(f"DEBUG: Sample live resource keys: {list(all_live_resources)[:5]}")
+        print(f"DEBUG: Total live resources: {len(all_live_resources)}")
 
         matching_resources = []
         for resource_key in all_state_resources & all_live_resources:
             if resource_key in drifted_resources:
                 continue
-            resource_type, resource_name = resource_key.split(".", 1)
+            resource_type, resource_name, idx = state_resource_key_map[resource_key]
             live_attributes = live_resources[resource_key]
             # Resource-type-specific extraction of AWS live name
             aws_live_name = None
@@ -94,26 +117,22 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
             elif resource_type == "aws_iam_role":
                 aws_live_name = live_attributes.get("RoleName")
             elif resource_type == "aws_iam_role_policy":
-                # Fix: Use 'policy_name' (lowercase) as seen in debug output
                 aws_live_name = live_attributes.get("policy_name")
             elif resource_type == "aws_region":
                 aws_live_name = live_attributes.get("RegionName")
             elif resource_type == "aws_sqs_queue":
                 aws_live_name = live_attributes.get("QueueName")
             elif resource_type == "aws_sqs_queue_policy":
-                # Fix: Use 'QueueUrl' as the live name for SQS queue policies
                 aws_live_name = live_attributes.get("QueueUrl")
             elif resource_type == "aws_vpc":
                 aws_live_name = live_attributes.get("VpcId")
             else:
-                # Fallback to common keys
-                for key in ("name", "Name", "id", "Id"):
-                    if key in live_attributes:
-                        aws_live_name = live_attributes[key]
+                for key_name in ("name", "Name", "id", "Id"):
+                    if key_name in live_attributes:
+                        aws_live_name = live_attributes[key_name]
                         break
-            # Debug print if no name is found
             if not aws_live_name:
-                print(f"DEBUG: No live name found for {resource_type}.{resource_name}, available keys: {list(live_attributes.keys())}")
+                print(f"DEBUG: No live name found for {resource_type}.{resource_name}_{idx}, available keys: {list(live_attributes.keys())}")
             matching_resources.append({
                 "resource_type": resource_type,
                 "resource_name": resource_name,
