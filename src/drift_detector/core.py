@@ -51,12 +51,16 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         # Step 3: Compare state resources with live AWS resources
         drift_report = compare_resources(state_data, live_resources)
 
-        # Step 4: Collect matching resources (present in both state and live, and with no drift)
-        # Fix: Count all resource instances in the state file
-        total_state_instances = 0
+        # Exclude meta resources from drift detection and reporting
+        META_RESOURCE_TYPES = {"aws_region", "aws_caller_identity"}
+
+        # Step 4: Collect resource counts
+        resource_block_count = len(state_data.get("resources", []))
+        total_instance_count = 0
         for resource in state_data.get("resources", []):
-            total_state_instances += len(resource.get("instances", []))
-        print(f"DEBUG: Total resource instances in state: {total_state_instances}")
+            total_instance_count += len(resource.get("instances", []))
+        print(f"DEBUG: Resource block count (top-level resources): {resource_block_count}")
+        print(f"DEBUG: Total resource instances (including meta): {total_instance_count}")
 
         all_state_resources = set()
         state_resource_key_map = (
@@ -65,6 +69,8 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
             resource_name = resource.get("name")
+            if resource_type in META_RESOURCE_TYPES:
+                continue  # Skip meta resources (not compared for drift)
             for idx, instance in enumerate(resource.get("instances", [])):
                 attributes = instance.get("attributes", {})
                 # Hybrid key extraction: ARN > ID > fallback
@@ -208,16 +214,84 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         drifted_or_missing = len(all_state_resources) - len(matching_resources)
         print("DEBUG: Drifted or missing resources:")
         print(drifted_or_missing)
+        # Debug: Print unique drifted resource keys and total drift entries
+        print("DEBUG: Unique drifted resource keys:", len(drifted_resources))
+        print("DEBUG: Total drift entries:", len(drift_report["drifts"]))
 
-        # Step 5: Return comprehensive drift report with summary
+        # Step 5: Identify unmatched/unreported resources (in state, not matched, not drifted)
+        matched_keys = set([k for k in all_state_resources & all_live_resources if k not in drifted_resources])
+        unmatched = all_state_resources - matched_keys - drifted_resources
+        print("DEBUG: Unmatched/unreported resources:", unmatched)
+        print("DEBUG: Count of unmatched/unreported resources:", len(unmatched))
+
+        # Identify meta resources (excluded from drift detection)
+        meta_resources = []  # For reporting: list of dicts
+        meta_resource_keys = set()  # For set operations
+        for resource in state_data.get("resources", []):
+            resource_type = resource.get("type")
+            resource_name = resource.get("name")
+            if resource_type in META_RESOURCE_TYPES:
+                for idx, instance in enumerate(resource.get("instances", [])):
+                    attributes = instance.get("attributes", {})
+                    # Hybrid key extraction: ARN > ID > fallback
+                    value = None
+                    key = None
+                    for arn_key in ("arn", "Arn", "ARN"):
+                        if arn_key in attributes and attributes[arn_key]:
+                            value = attributes[arn_key]
+                            key = attributes[arn_key]
+                            break
+                    if not value:
+                        for id_key in (
+                            "id", "Id", "ID", "instance_id", "InstanceId", "resource_id", "ResourceId",
+                        ):
+                            if id_key in attributes and attributes[id_key]:
+                                value = attributes[id_key]
+                                key = attributes[id_key]
+                                break
+                    if not value:
+                        value = f"(no id/arn)"
+                        key = f"{resource_type}.{resource_name}_{idx}"
+                    meta_resources.append({
+                        "resource_type": resource_type,
+                        "resource_name": resource_name,
+                        "value": value
+                    })
+                    meta_resource_keys.add(key)
+
+        # Unmatched and undetected drift resources: present in state, not matched, not drifted, not meta
+        unmatched_undetected = all_state_resources - matched_keys - drifted_resources - meta_resource_keys
+        print("DEBUG: Meta resources:", meta_resources)
+        print("DEBUG: Count of meta resources:", len(meta_resources))
+        print("DEBUG: Unmatched and undetected drift resources:", unmatched_undetected)
+        print("DEBUG: Count of unmatched and undetected drift resources:", len(unmatched_undetected))
+
+        # Build unmatched_resources in the same format as matching_resources
+        unmatched_resources = []
+        for resource_key in unmatched_undetected:
+            if resource_key in state_resource_key_map:
+                resource_type, resource_name, idx = state_resource_key_map[resource_key]
+                unmatched_resources.append({
+                    "resource_type": resource_type,
+                    "resource_name": resource_name,
+                    "key": resource_key
+                })
+
+        # Step 6: Return comprehensive drift report with summary
         return {
             "drift_detected": len(drift_report["drifts"]) > 0,
             "drifts": drift_report["drifts"],
             "summary": {
-                "total_resources": len(state_data.get("resources", [])),
-                "drift_count": len(drift_report["drifts"]),
+                "resource_block_count": resource_block_count,
+                "total_instance_count": total_instance_count,
+                "total_resources": len(all_state_resources),
+                "drift_count": len(drifted_resources),
                 "timestamp": drift_report["timestamp"],
                 "matching_resources": matching_resources,
+                "skipped_resources": list(unmatched),
+                "meta_resources": meta_resources,
+                "unmatched_undetected_resources": unmatched_resources,
+                "unmatched_resources": unmatched_resources,
             },
         }
 

@@ -130,48 +130,62 @@ def print_drift_report(drift_report: Dict[str, Any]) -> None:
     print("="*60)
     
     drift_detected = drift_report.get("drift_detected", False)
-    drifts = drift_report.get("drifts", [])
     summary = drift_report.get("summary", {})
     timestamp = drift_report.get("timestamp", "Unknown")
-    # Print matching resources in alphabetical order
+
+    # 1. Print total count of all resources in the state file
+    total_resources = summary.get("total_resources", "Unknown")
+    resource_block_count = summary.get("resource_block_count", "Unknown")
+    total_instance_count = summary.get("total_instance_count", "Unknown")
+    print(f"\nResource block count (top-level resources): {resource_block_count}")
+    print(f"Total resource instances (including meta): {total_instance_count}")
+    print(f"Total unique resource keys (excluding meta): {total_resources}")
+
+    # 2. Print meta resources
+    meta_resources = summary.get("meta_resources", [])
+    print(f"\n=== Meta Resources ({len(meta_resources)}) ===")
+    if meta_resources:
+        for res in meta_resources:
+            print(f"⚙️  {res['resource_type']} {res['resource_name']}: {res['value']}")
+        print("\nNote: Meta resources are present in the state file but are not subject to drift detection (e.g., aws_region, aws_caller_identity).")
+    else:
+        print("No meta resources detected.")
+
+    # 3. Print matched resources
     matching_resources = summary.get("matching_resources", [])
-    
-    print(f"Timestamp: {timestamp}")
-    print(f"Drift Detected: {'YES' if drift_detected else 'NO'}")
-    print(f"Total Drifts: {len(drifts)}")
-    
-    if summary:
-        print(f"\nSummary:")
-        for key, value in summary.items():
-            if key != "matching_resources":
-                print(f"  {key}: {value}")
-    
+    print(f"\n=== Matching Resources ({len(matching_resources)}) ===")
+    if matching_resources:
+        for res in sorted(matching_resources, key=lambda x: (x["resource_type"], x.get("display_name") or x["resource_name"])):
+            display = res.get("display_name") or res["resource_name"]
+            print(f"✅ {res['resource_type']} {display}")
+    else:
+        print("No matching resources detected.")
+
+    # 4. Print drifted resources
+    drifts = drift_report.get("drifts", [])
+    print(f"\n=== Drifted Resources ({len(drifts)}) ===")
     if drifts:
-        print(f"\nDetailed Drift Information:")
-        print("-" * 40)
-        
         for i, drift in enumerate(drifts, 1):
-            print(f"\n{i}. Resource: {drift.get('resource_key', 'Unknown')}")
+            print(f"{i}. Resource: {drift.get('resource_key', 'Unknown')}")
             print(f"   Type: {drift.get('drift_type', 'Unknown')}")
             print(f"   Description: {drift.get('description', 'No description')}")
-            
             differences = drift.get('differences', [])
             if differences:
                 print(f"   Differences:")
                 for diff in differences:
-                    print(f"     - {diff.get('attribute', 'Unknown')}: "
-                          f"State='{diff.get('state_value', 'N/A')}' "
-                          f"Live='{diff.get('live_value', 'N/A')}'")
+                    print(f"     - {diff.get('attribute', 'Unknown')}: State='{diff.get('state_value', 'N/A')}' Live='{diff.get('live_value', 'N/A')}'")
     else:
-        print("\n✅ No drift detected - your infrastructure is in sync!")
-    
-    # Print matching resources with a green tick
-    if matching_resources:
-        print(f"\n=== Matching Resources ({len(matching_resources)}) ===")
-        for res in sorted(matching_resources, key=lambda x: (x["resource_type"], x.get("display_name") or x["resource_name"])):
-            # Prefer display_name, fall back to resource_name if not present
-            display = res.get("display_name") or res["resource_name"]
-            print(f"✅ {res['resource_type']} {display}")
+        print("No drifted resources detected.")
+
+    # 5. Print unaccounted resources (resources in state file not in matched, drift, or meta lists)
+    unaccounted_resources = summary.get("unmatched_undetected_resources", [])
+    print(f"\n=== Unaccounted Resources ({len(unaccounted_resources)}) ===")
+    if unaccounted_resources:
+        for res in unaccounted_resources:
+            print(f"❓ {res['resource_type']} {res['resource_name']}: {res['key']}")
+        print("\nNote: Unaccounted resources are present in the state file but not classified as matched, drifted, or meta. This may indicate a bug or a resource type not yet supported by the drift detector.")
+    else:
+        print("No unaccounted resources detected.")
     
     print("\n" + "="*60)
 
