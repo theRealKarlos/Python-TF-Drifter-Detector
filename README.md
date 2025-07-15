@@ -211,24 +211,30 @@ Optional environment variables:
 
 The drift detector supports comparison of the following AWS resources:
 
-- **EC2**: Instances, VPCs ⚠️ **Implemented but not tested**
-- **S3**: Buckets ✅ **Tested**
-- **RDS**: Database instances ⚠️ **Implemented but not tested**
-- **DynamoDB**: Tables ✅ **Tested**
-- **Lambda**: Functions and permissions ✅ **Tested**
-- **IAM**: Roles and policies (with special handling for IAM role policy document format differences; see below) ✅ **Tested**
-- **EventBridge**: Buses, rules, and targets ✅ **Tested**
-- **ECS**: Clusters and services ⚠️ **Implemented but not tested**
-- **API Gateway**: REST APIs ⚠️ **Implemented but not tested**
-- **CloudWatch**: Dashboards and alarms ⚠️ **Implemented but not tested**
-- **SQS**: Queues and queue policies ✅ **Tested**
+| Resource Type   | Subtypes/Notes                              | Status | Notes/Comments                                                              |
+| --------------- | ------------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| **EC2**         | Instances, VPCs, subnets, route tables      | ⚠️     | Implemented, some subtypes confirmed, some “No live name found” need review |
+| **S3**          | Buckets                                     | ✅     | Confirmed working                                                           |
+| **RDS**         | Database instances                          | ⚠️     | Implemented, not yet tested                                                 |
+| **DynamoDB**    | Tables                                      | ✅     | Confirmed working                                                           |
+| **Lambda**      | Functions, permissions                      | ✅     | Confirmed working                                                           |
+| **IAM**         | Roles, policies                             | ✅     | Confirmed working, policy normalisation robust                              |
+| **EventBridge** | Buses, rules, targets                       | ✅     | Confirmed working, composite keying robust                                  |
+| **ECS**         | Clusters, services, task definitions        | ⚠️     | Implemented, some subtypes confirmed, task definitions need review          |
+| **API Gateway** | REST APIs, resources, methods, stages, etc. | ⚠️     | Implemented, some subtypes confirmed, some “missing_resource”/empty keys    |
+| **CloudWatch**  | Dashboards, alarms, log groups, event rules | ⚠️     | Implemented, some subtypes confirmed, log groups need review                |
+| **SQS**         | Queues, queue policies                      | ✅     | Confirmed working                                                           |
 
 **Legend:**
 
 - ✅ **Tested**: Resource type has been verified with real AWS resources and drift detection confirmed working
-- ⚠️ **Implemented but not tested**: Resource fetcher and comparator implemented, but not yet tested with live AWS resources
+- ⚠️ **Implemented but not fully confirmed**: Resource fetcher and comparator implemented, but not all subtypes or edge cases have been tested with live AWS resources. Some subtypes may have issues (see Notes/Comments).
 
-**Note:** SQS queue policy drift detection is now confirmed working and included under SQS.
+**Note:**
+
+- SQS queue policy drift detection is now confirmed working and included under SQS.
+- IAM role policy document comparison uses normalisation to avoid false drift due to format differences.
+- For resource types marked ⚠️, see debug output and logs for details on which subtypes may need further review or fixes.
 
 ### Special Handling: IAM Role Policy Normalization
 

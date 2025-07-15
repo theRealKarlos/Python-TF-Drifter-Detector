@@ -82,15 +82,14 @@ def _fetch_lambda_permissions(
     lambda_client: LambdaClient, resource_key: str, attributes: Dict
 ) -> Dict[str, Any]:
     """
-    Fetch Lambda permissions from AWS and map them by hybrid key for drift comparison.
-    Returns a dictionary of hybrid keys to permission data for all Lambda permissions.
+    Fetch Lambda permissions from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to permission data for all Lambda permissions.
     """
     try:
         function_name = attributes.get("function_name")
         statement_id = attributes.get("statement_id")
 
         if not function_name or not statement_id:
-            # No function name or statement ID specified in state, do not search
             logger.debug(f"[Lambda] No function_name or statement_id in attributes: {attributes}")
             return {}
 
@@ -106,10 +105,10 @@ def _fetch_lambda_permissions(
 
         for statement in policy_doc.get("Statement", []):
             sid = statement.get("Sid")
-            key = f"{function_name}:{sid}"
-            logger.debug(f"[Lambda] Using key for permission: {key}")
+            composite_key = f"lambda_permission:{function_name}:{sid}"
+            logger.debug(f"[Lambda] Using composite key for permission: {composite_key}")
             # Store all relevant attributes for comparison
-            live_resources[key] = {
+            live_resources[composite_key] = {
                 "Sid": sid,
                 "Action": statement.get("Action"),
                 "Effect": statement.get("Effect"),

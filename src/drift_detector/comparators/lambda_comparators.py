@@ -29,6 +29,17 @@ def compare_lambda_attributes(
         return _compare_lambda_function_attributes(state_attrs, live_attrs)
 
 
+def _normalise_optional(val: Any) -> Any:
+    """
+    Normalise optional fields so that None, '' and empty dicts are treated as None.
+    """
+    if val in (None, ""):
+        return None
+    if isinstance(val, dict) and not val:
+        return None
+    return val
+
+
 def _compare_lambda_function_attributes(
     state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]
 ) -> List[DriftDetail]:
@@ -72,8 +83,8 @@ def _compare_lambda_permission_attributes(
             }
         )
 
-    state_action = state_attrs.get("action")
-    live_action = live_attrs.get("Action")
+    state_action = _normalise_optional(state_attrs.get("action"))
+    live_action = _normalise_optional(live_attrs.get("Action"))
     if state_action != live_action:
         drift_details.append(
             {
@@ -83,8 +94,8 @@ def _compare_lambda_permission_attributes(
             }
         )
 
-    state_principal = state_attrs.get("principal")
-    live_principal = live_attrs.get("Principal")
+    state_principal = _normalise_optional(state_attrs.get("principal"))
+    live_principal = _normalise_optional(live_attrs.get("Principal"))
 
     # Handle different principal formats
     # State might have "events.amazonaws.com" while AWS returns {"Service": "events.amazonaws.com"}

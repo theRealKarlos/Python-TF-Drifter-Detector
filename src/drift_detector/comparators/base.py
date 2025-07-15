@@ -124,6 +124,52 @@ def compare_resources(
                 target_arn = state_attributes.get("arn", "")
                 unique_resource_key = f"event_target:{event_bus_name}:{rule_name}:{target_arn}"
 
+            # Special handling for Lambda permissions: use composite key
+            if resource_type.startswith("aws_lambda_permission"):
+                function_name = state_attributes.get("function_name", "")
+                statement_id = state_attributes.get("statement_id", "")
+                # Normalise function_name: extract name from ARN if needed
+                if function_name.startswith("arn:aws:lambda:"):
+                    function_name = function_name.split(":")[-1]
+                unique_resource_key = f"lambda_permission:{function_name}:{statement_id}"
+
+            # Special handling for API Gateway deployments: use composite key
+            if resource_type.startswith("aws_api_gateway_deployment"):
+                rest_api_id = state_attributes.get("rest_api_id", "")
+                deployment_id = state_attributes.get("id", "")
+                unique_resource_key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
+
+            # Special handling for API Gateway integrations: use composite key
+            if resource_type.startswith("aws_api_gateway_integration"):
+                rest_api_id = state_attributes.get("rest_api_id", "")
+                resource_id = state_attributes.get("resource_id", "")
+                http_method = state_attributes.get("http_method", "")
+                unique_resource_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
+
+            # Special handling for API Gateway methods: use composite key
+            if resource_type.startswith("aws_api_gateway_method"):
+                rest_api_id = state_attributes.get("rest_api_id", "")
+                resource_id = state_attributes.get("resource_id", "")
+                http_method = state_attributes.get("http_method", "")
+                unique_resource_key = f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
+
+            # Special handling for API Gateway resources: use composite key
+            if resource_type.startswith("aws_api_gateway_resource"):
+                rest_api_id = state_attributes.get("rest_api_id", "")
+                resource_id = state_attributes.get("resource_id", "")
+                unique_resource_key = f"apigw_resource:{rest_api_id}:{resource_id}"
+
+            # Special handling for API Gateway rest APIs: use composite key
+            if resource_type.startswith("aws_api_gateway_rest_api"):
+                rest_api_id = state_attributes.get("id", "")
+                unique_resource_key = f"apigw_rest_api:{rest_api_id}"
+
+            # Special handling for API Gateway stages: use composite key
+            if resource_type.startswith("aws_api_gateway_stage"):
+                rest_api_id = state_attributes.get("rest_api_id", "")
+                stage_name = state_attributes.get("stage_name", "")
+                unique_resource_key = f"apigw_stage:{rest_api_id}:{stage_name}"
+
             # Check if resource exists in live AWS using the same key construction as fetchers
             if unique_resource_key not in live_resources:
                 drifts.append(

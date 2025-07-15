@@ -7,6 +7,7 @@ This module contains functions for fetching API Gateway-related AWS resources.
 from typing import Dict
 
 from ...utils import fetcher_error_handler, setup_logging
+from src.utils import setup_logging
 from ..types import APIGatewayClient, LiveResourceData, ResourceAttributes
 
 logger = setup_logging()
@@ -38,25 +39,16 @@ def fetch_apigateway_resources(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch API Gateway resources from AWS based on resource type.
-
-    Args:
-        apigateway_client: Boto3 API Gateway client
-        resource_key: Resource key for mapping
-        attributes: Resource attributes from Terraform state
-
-    Returns:
-        Dictionary mapping resource keys to live AWS resource data
+    Dispatch to the correct fetcher for API Gateway resources based on resource_type.
     """
-    # Extract the resource type from the resource key
-    if "aws_api_gateway_rest_api" in resource_key:
+    if "aws_api_gateway_integration" in resource_key:
+        return _fetch_apigw_integrations(apigateway_client, resource_key, attributes)
+    elif "aws_api_gateway_rest_api" in resource_key:
         return _fetch_apigateway_rest_apis(apigateway_client, resource_key, attributes)
     elif "aws_api_gateway_resource" in resource_key:
         return _fetch_apigateway_resources_internal(apigateway_client, resource_key, attributes)
     elif "aws_api_gateway_method" in resource_key:
         return _fetch_apigateway_methods(apigateway_client, resource_key, attributes)
-    elif "aws_api_gateway_integration" in resource_key:
-        return _fetch_apigateway_integrations(apigateway_client, resource_key, attributes)
     elif "aws_api_gateway_deployment" in resource_key:
         return _fetch_apigateway_deployments(apigateway_client, resource_key, attributes)
     elif "aws_api_gateway_stage" in resource_key:
@@ -189,60 +181,104 @@ def _fetch_apigateway_methods(
         return {}
 
 
-def _fetch_apigateway_integrations(
-    apigateway_client: APIGatewayClient,
-    resource_key: str,
-    attributes: ResourceAttributes,
-) -> Dict[str, LiveResourceData]:
+def _fetch_apigw_integrations(
+    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
+) -> dict:
     """
-    Fetch API Gateway integrations from AWS and map them by hybrid key for drift comparison.
-    Returns a dictionary of hybrid keys to integration data for all API Gateway integrations.
+    Fetch API Gateway integrations from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to integration data for all integrations.
     """
+    from src.utils import setup_logging
+    logger = setup_logging()
     try:
-        live_resources: Dict[str, LiveResourceData] = {}
-        
-        # Get all REST APIs first
-        apis_response = apigateway_client.get_rest_apis()
-        
-        for api in apis_response.get("items", []):
-            api_id = api.get("id")
-            if not api_id:
-                continue
-                
-            try:
-                # Get all resources for this API
-                resources_response = apigateway_client.get_resources(restApiId=api_id)
-                for resource in resources_response.get("items", []):
-                    resource_id = resource.get("id")
-                    if not resource_id:
-                        continue
-                        
-                    # Get all methods for this resource
-                    methods_response = apigateway_client.get_resource_methods(
-                        restApiId=api_id, resourceId=resource_id
-                    )
-                    for method_name in methods_response.get("methods", []):
-                        try:
-                            integration_response = apigateway_client.get_integration(
-                                restApiId=api_id,
-                                resourceId=resource_id,
-                                httpMethod=method_name
-                            )
-                            # Use the integration ID as the key (matches state file format)
-                            integration_id = f"agi-{api_id}-{resource_id}-{method_name}"
-                            key = extract_hybrid_key_from_apigateway(integration_response, "aws_api_gateway_integration", integration_id)
-                            logger.debug(f"[API Gateway] Using key for integration: {key}")
-                            live_resources[key] = integration_response
-                        except Exception as e:
-                            logger.debug(f"Could not get integration for method {method_name} resource {resource_id}: {e}")
-                            continue
-            except Exception as e:
-                logger.debug(f"Could not get resources for API {api_id}: {e}")
-                continue
-        
-        return live_resources
+        rest_api_id = attributes.get("rest_api_id")
+        resource_id = attributes.get("resource_id")
+        http_method = attributes.get("http_method")
+        if not rest_api_id or not resource_id or not http_method:
+            return {}
+        response = apigateway_client.get_integration(
+            restApiId=rest_api_id, resourceId=resource_id, httpMethod=http_method
+        )
+        composite_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
+        logger.debug(f"[APIGW] Using composite key for integration: {composite_key}")
+        return {composite_key: response}
     except Exception as e:
-        logger.error(f"Error fetching API Gateway integrations: {e}")
+        logger.error(f"[APIGW] Error fetching API Gateway integration: {e}")
+        return {}
+
+
+def _fetch_apigw_methods(
+    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
+) -> dict:
+    """
+    Fetch API Gateway methods from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to method data for all methods.
+    """
+    from src.utils import setup_logging
+    logger = setup_logging()
+    try:
+        rest_api_id = attributes.get("rest_api_id")
+        resource_id = attributes.get("resource_id")
+        http_method = attributes.get("http_method")
+        if not rest_api_id or not resource_id or not http_method:
+            return {}
+        response = apigateway_client.get_method(
+            restApiId=rest_api_id, resourceId=resource_id, httpMethod=http_method
+        )
+        composite_key = f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
+        logger.debug(f"[APIGW] Using composite key for method: {composite_key}")
+        return {composite_key: response}
+    except Exception as e:
+        logger.error(f"[APIGW] Error fetching API Gateway method: {e}")
+        return {}
+
+
+def _fetch_apigw_resources(
+    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
+) -> dict:
+    """
+    Fetch API Gateway resources from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to resource data for all resources.
+    """
+    from src.utils import setup_logging
+    logger = setup_logging()
+    try:
+        rest_api_id = attributes.get("rest_api_id")
+        resource_id = attributes.get("resource_id")
+        if not rest_api_id or not resource_id:
+            return {}
+        response = apigateway_client.get_resource(
+            restApiId=rest_api_id, resourceId=resource_id
+        )
+        composite_key = f"apigw_resource:{rest_api_id}:{resource_id}"
+        logger.debug(f"[APIGW] Using composite key for resource: {composite_key}")
+        return {composite_key: response}
+    except Exception as e:
+        logger.error(f"[APIGW] Error fetching API Gateway resource: {e}")
+        return {}
+
+
+def _fetch_apigw_rest_apis(
+    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
+) -> dict:
+    """
+    Fetch API Gateway REST APIs from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to REST API data for all REST APIs.
+    """
+    from src.utils import setup_logging
+    logger = setup_logging()
+    try:
+        rest_api_id = attributes.get("id")
+        if not rest_api_id:
+            return {}
+        response = apigateway_client.get_rest_api(
+            restApiId=rest_api_id
+        )
+        composite_key = f"apigw_rest_api:{rest_api_id}"
+        logger.debug(f"[APIGW] Using composite key for rest_api: {composite_key}")
+        return {composite_key: response}
+    except Exception as e:
+        logger.error(f"[APIGW] Error fetching API Gateway rest_api: {e}")
         return {}
 
 
@@ -252,33 +288,22 @@ def _fetch_apigateway_deployments(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch API Gateway deployments from AWS and map them by hybrid key for drift comparison.
-    Returns a dictionary of hybrid keys to deployment data.
+    Fetch API Gateway deployments from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to deployment data for all deployments.
     """
     try:
-        live_resources: Dict[str, LiveResourceData] = {}
-        
-        # Get the REST API ID
         rest_api_id = attributes.get("rest_api_id")
-        if not rest_api_id:
-            return live_resources
-        
-        # Get deployments for the API
-        response = apigateway_client.get_deployments(restApiId=rest_api_id)
-        
-        # Try to match by deployment ID
         deployment_id = attributes.get("id")
-        if deployment_id:
-            for deployment in response.get("items", []):
-                if deployment.get("id") == deployment_id:
-                    key = extract_hybrid_key_from_apigateway(deployment, "aws_api_gateway_deployment", str(deployment_id))
-                    logger.debug(f"[API Gateway] Using key for deployment: {key}")
-                    live_resources[key] = deployment
-                    return live_resources
-        
-        return live_resources
+        if not rest_api_id or not deployment_id:
+            return {}
+        response = apigateway_client.get_deployment(
+            restApiId=rest_api_id, deploymentId=deployment_id
+        )
+        composite_key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
+        logger.debug(f"[APIGW] Using composite key for deployment: {composite_key}")
+        return {composite_key: response}
     except Exception as e:
-        logger.error(f"Error fetching API Gateway deployments: {e}")
+        logger.error(f"[APIGW] Error fetching API Gateway deployment: {e}")
         return {}
 
 
@@ -317,4 +342,29 @@ def _fetch_apigateway_stages(
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching API Gateway stages: {e}")
+        return {}
+
+
+def _fetch_apigw_stages(
+    apigateway_client, resource_key: str, attributes: dict, resource_type: str = ""
+) -> dict:
+    """
+    Fetch API Gateway stages from AWS and map them by composite key for drift comparison.
+    Returns a dictionary of composite keys to stage data for all stages.
+    """
+    from src.utils import setup_logging
+    logger = setup_logging()
+    try:
+        rest_api_id = attributes.get("rest_api_id")
+        stage_name = attributes.get("stage_name")
+        if not rest_api_id or not stage_name:
+            return {}
+        response = apigateway_client.get_stage(
+            restApiId=rest_api_id, stageName=stage_name
+        )
+        composite_key = f"apigw_stage:{rest_api_id}:{stage_name}"
+        logger.debug(f"[APIGW] Using composite key for stage: {composite_key}")
+        return {composite_key: response}
+    except Exception as e:
+        logger.error(f"[APIGW] Error fetching API Gateway stage: {e}")
         return {}
