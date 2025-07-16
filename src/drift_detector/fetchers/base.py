@@ -196,14 +196,22 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
         for idx, instance in enumerate(instances):
             attributes = instance.get("attributes", {})
 
-            # Try to extract ARN for unique identification
-            try:
-                arn = extract_arn_from_attributes(attributes, resource_type)
-                # Use ARN as the primary key for matching
-                unique_resource_key = arn
-            except ValueError:
-                # If no ARN available, fall back to resource name + index
-                unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
+            # Special case for aws_route_table_association: use association ID as key
+            if resource_type == "aws_route_table_association":
+                association_id = attributes.get("id")
+                if association_id:
+                    unique_resource_key = association_id
+                else:
+                    unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
+            else:
+                # Try to extract ARN for unique identification
+                try:
+                    arn = extract_arn_from_attributes(attributes, resource_type)
+                    # Use ARN as the primary key for matching
+                    unique_resource_key = arn
+                except ValueError:
+                    # If no ARN available, fall back to resource name + index
+                    unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
 
             # Special keying for aws_iam_role_policy_attachment
             if resource_type == "aws_iam_role_policy_attachment":
@@ -267,7 +275,20 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                 or resource_type.startswith("aws_route_table")
                 or resource_type.startswith("aws_route_table_association")
             ):
-                live_resources.update(fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type))
+                if resource_type == "aws_route_table_association":
+                    print(f"DEBUG: Calling fetch_ec2_resources for {resource_type} with key {unique_resource_key}")
+                    print(f"DEBUG: fetch_ec2_resources object: {fetch_ec2_resources}")
+                    print(f"DEBUG: fetch_ec2_resources module: {getattr(fetch_ec2_resources, '__module__', 'N/A')}")
+                    print(
+                        "DEBUG: fetch_ec2_resources file: "
+                        + str(getattr(getattr(fetch_ec2_resources, "__code__", None), "co_filename", "N/A"))
+                    )
+                    result = fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type)
+                    after_keys = set(result.keys())
+                    print(f"DEBUG: fetch_ec2_resources returned keys for {resource_type}: {after_keys}")
+                    live_resources.update(result)
+                else:
+                    live_resources.update(fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type))
             elif (
                 resource_type.startswith("aws_api_gateway_rest_api")
                 or resource_type.startswith("aws_api_gateway_resource")

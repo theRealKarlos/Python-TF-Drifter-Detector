@@ -14,6 +14,8 @@ from .vpc_fetcher import fetch_vpc_resources
 
 logger = setup_logging()
 
+print("DEBUG: LOADED ec2_fetchers.py")
+
 
 def fetch_ec2_resources(
     ec2_client: EC2Client,
@@ -21,18 +23,7 @@ def fetch_ec2_resources(
     attributes: ResourceAttributes,
     resource_type: str = "",
 ) -> Dict[str, LiveResourceData]:
-    """
-    Route EC2-related resource types to their specific fetchers.
-
-    Args:
-        ec2_client: Boto3 EC2 client
-        resource_key: Resource key for mapping
-        attributes: Resource attributes from Terraform state
-        resource_type: Type of EC2 resource (optional, for routing)
-
-    Returns:
-        Dictionary mapping resource keys to live AWS resource data
-    """
+    print(f"DEBUG: Entered fetch_ec2_resources with resource_type={resource_type}, resource_key={resource_key}")
     if resource_type and resource_type.startswith("aws_vpc"):
         return fetch_vpc_resources(ec2_client, resource_key, attributes)
     elif resource_type and resource_type.startswith("aws_security_group"):
@@ -41,10 +32,13 @@ def fetch_ec2_resources(
         return _fetch_subnets(ec2_client, resource_key, attributes)
     elif resource_type and resource_type.startswith("aws_internet_gateway"):
         return _fetch_internet_gateways(ec2_client, resource_key, attributes)
+    elif resource_type and resource_type.startswith("aws_route_table_association"):
+        print(f"DEBUG: About to call _fetch_route_table_associations with key={resource_key}")
+        result = _fetch_route_table_associations(ec2_client, resource_key, attributes)
+        print(f"DEBUG: _fetch_route_table_associations returned keys: {list(result.keys())}")
+        return result
     elif resource_type and resource_type.startswith("aws_route_table"):
         return _fetch_route_tables(ec2_client, resource_key, attributes)
-    elif resource_type and resource_type.startswith("aws_route_table_association"):
-        return _fetch_route_table_associations(ec2_client, resource_key, attributes)
     else:
         return fetch_ec2_instance_resources(ec2_client, resource_key, attributes)
 
@@ -190,42 +184,70 @@ def _fetch_route_table_associations(
     resource_key: str,
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
-    """
-    Fetch route table associations from AWS and map them by resource key for drift comparison.
-    Route table associations are relationships between route tables and subnets/gateways,
-    so they may not have ARNs in the same way as other resources.
-    Returns a dictionary of resource keys to route table association data.
-    """
+    print("DEBUG: DEFINED _fetch_route_table_associations")
+    import sys
+
+    print("DEBUG: ec2_fetchers.py __file__:", __file__)
+    print("DEBUG: sys.path:", sys.path)
+    import traceback
+    import boto3
+
     try:
+        print("DEBUG: Entered _fetch_route_table_associations")
+        try:
+            logger.debug("Entered _fetch_route_table_associations")
+        except Exception:
+            pass
         live_resources: Dict[str, LiveResourceData] = {}
-
-        # Route table associations may not have ARNs, so we use ID-based matching
-        # Get the route table ID and subnet ID
-        route_table_id = attributes.get("route_table_id")
-        subnet_id = attributes.get("subnet_id")
-
-        if not route_table_id:
-            logger.debug(f"No route_table_id found for {resource_key}")
-            return live_resources
-
-        # Get route table details
-        response = ec2_client.describe_route_tables(RouteTableIds=[route_table_id])
-
-        if response.get("RouteTables"):
-            route_table = response["RouteTables"][0]
-
-            # Look for the specific association
-            for association in route_table.get("Associations", []):
-                if subnet_id and association.get("SubnetId") == subnet_id:
-                    live_resources[resource_key] = association
-                    return live_resources
-
-                # If no specific subnet, return the first association
-                if not subnet_id and association.get("Main") is False:
-                    live_resources[resource_key] = association
-                    return live_resources
-
-        return live_resources
+        region = getattr(ec2_client.meta, "region_name", "unknown")
+        try:
+            sts = boto3.client("sts", region_name=region)
+            account_id = sts.get_caller_identity().get("Account", "unknown")
+        except Exception as e:
+            account_id = f"error: {e}"
+        print(f"DEBUG: Using region: {region}, account: {account_id}")
+        try:
+            logger.debug(f"DEBUG: Using region: {region}, account: {account_id}")
+        except Exception:
+            pass
+        response = ec2_client.describe_route_tables()
+        print(f"DEBUG: Raw describe_route_tables response: {response}")
+        try:
+            logger.debug(f"DEBUG: Raw describe_route_tables response: {response}")
+        except Exception:
+            pass
+        route_tables = response.get("RouteTables", [])
+        print(f"DEBUG: Found {len(route_tables)} route tables in AWS response")
+        try:
+            logger.debug(f"DEBUG: Found {len(route_tables)} route tables in AWS response")
+        except Exception:
+            pass
+        for rt in route_tables:
+            rt_id = rt.get("RouteTableId", "unknown")
+            associations = rt.get("Associations", [])
+            print(f"DEBUG: RouteTableId: {rt_id}, Associations: {associations}")
+            try:
+                logger.debug(f"DEBUG: RouteTableId: {rt_id}, Associations: {associations}")
+            except Exception:
+                pass
+            for assoc in associations:
+                assoc_id = assoc.get("RouteTableAssociationId")
+                if assoc_id:
+                    live_resources[assoc_id] = assoc
+        print(f"DEBUG: All RouteTableAssociationIds found in AWS: {list(live_resources.keys())}")
+        try:
+            logger.debug(f"DEBUG: All RouteTableAssociationIds found in AWS: {list(live_resources.keys())}")
+        except Exception:
+            pass
+        if resource_key in live_resources:
+            return {resource_key: live_resources[resource_key]}
+        return {}
     except Exception as e:
-        logger.error(f"Error fetching route table associations: {e}")
+        print(f"ERROR: Exception in _fetch_route_table_associations: {e}")
+        traceback.print_exc()
+        try:
+            logger.error(f"ERROR: Exception in _fetch_route_table_associations: {e}")
+            logger.error(traceback.format_exc())
+        except Exception:
+            pass
         return {}

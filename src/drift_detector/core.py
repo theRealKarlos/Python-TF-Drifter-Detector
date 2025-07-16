@@ -259,6 +259,16 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         print(f"DEBUG: monitoring_execution key in state: {monitoring_attachment_key in all_state_resources}")
         print(f"DEBUG: monitoring_execution key in live: {monitoring_attachment_key in all_live_resources}")
 
+        # Debug: Print all keys for aws_route_table_association in state and live
+        print("DEBUG: All state resource keys for aws_route_table_association:")
+        for k in all_state_resources:
+            if k is not None and (isinstance(k, str) and k.startswith("rtbassoc-")):
+                print(f"  STATE: {k}")
+        print("DEBUG: All live resource keys for aws_route_table_association:")
+        for k in all_live_resources:
+            if k is not None and (isinstance(k, str) and k.startswith("rtbassoc-")):
+                print(f"  LIVE: {k}")
+
         matching_resources = []
         for resource_key in all_state_resources & all_live_resources:
             if not isinstance(resource_key, str):
@@ -409,6 +419,19 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
             "DEBUG: Count of unmatched and undetected drift resources:",
             len(unmatched_undetected),
         )
+
+        # Patch: For any unmatched_undetected resource, add a missing_resource drift entry
+        for resource_key in unmatched_undetected:
+            if isinstance(resource_key, str) and resource_key in state_resource_key_map:
+                already_reported = any(drift.get("resource_key") == resource_key for drift in drift_report["drifts"])
+                if not already_reported:
+                    drift_report["drifts"].append(
+                        {
+                            "resource_key": resource_key,
+                            "drift_type": "missing_resource",
+                            "description": f"Resource {resource_key} exists in state but not in live AWS",
+                        }
+                    )
 
         # Build unmatched_resources in the same format as matching_resources
         unmatched_resources = []
