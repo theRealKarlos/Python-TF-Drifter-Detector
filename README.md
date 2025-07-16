@@ -1,7 +1,7 @@
 # Terraform Drift Detector
 
 > **⚠️ Lab Project Disclaimer**  
-> This is a **lab project** designed to demonstrate Python and AWS Lambda best practices. It is intended for educational purposes and learning about cloud infrastructure management, not for production use. The code showcases modern Python development practices, AWS integration patterns, and infrastructure-as-code concepts.
+> This is a **lab project** (very much a work in progress) designed to demonstrate Python and AWS Lambda best practices. It is intended for educational purposes and learning about cloud infrastructure management, not for production use. The code showcases modern Python development practices, AWS integration patterns, and infrastructure-as-code concepts.
 
 A best-practice Python application for detecting drift between Terraform state and live AWS resources. Designed to run as an AWS Lambda function with comprehensive drift detection capabilities.
 
