@@ -70,10 +70,14 @@ def detect_drift(config: Dict) -> Dict[str, Any]:
         for resource in state_data.get("resources", []):
             resource_type = resource.get("type")
             resource_name = resource.get("name")
-            if resource_type in META_RESOURCE_TYPES:
-                continue  # Skip meta resources (not compared for drift)
+            # Print every resource type, name, and attributes before fetcher routing
+            print(f"DEBUG: DISPATCH resource_type={resource_type}, resource_name={resource_name}")
             for idx, instance in enumerate(resource.get("instances", [])):
                 attributes = instance.get("attributes", {})
+                print(f"DEBUG: DISPATCH instance idx={idx}, attributes={attributes}")
+                # Print the attributes for aws_api_gateway_resource.this_0 if encountered
+                if resource_type == "aws_api_gateway_resource" and resource_name == "this" and attributes.get("id") == "55xlh7":
+                    print(f"DEBUG: ATTRIBUTES for aws_api_gateway_resource.this_0: {attributes}")
                 # Special key extraction for aws_lambda_permission
                 if resource_type == "aws_lambda_permission":
                     function_name = attributes.get("function_name")

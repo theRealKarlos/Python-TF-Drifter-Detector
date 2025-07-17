@@ -63,10 +63,8 @@ def fetch_apigateway_resources(
     resource_key: str,
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
-    """
-    Dispatch to the correct fetcher for API Gateway resources based on resource_key.
-    """
-    logger.debug(f"[API Gateway] fetch_apigateway_resources called with resource_key={resource_key}")
+    # Log every call to this fetcher for traceability
+    logger.debug(f"[API Gateway] fetch_apigateway_resources CALLED: resource_key={resource_key}, attributes={attributes}")
     
     # Check for composite keys first (these contain resource type info)
     if "agi-" in resource_key:  # API Gateway Integration
@@ -152,27 +150,28 @@ def _fetch_apigateway_resources_internal(
     """
     try:
         logger.debug(f"[API Gateway] _fetch_apigateway_resources_internal called with resource_key={resource_key}, attributes={attributes}")
-        
+        # Normalise keys: always use the resource ID as the key, matching the state file
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         target_resource_id = get_attr(attributes, "id", "resource_id", "resourceId")
-        
+        logger.debug(f"[API Gateway] Normalised rest_api_id={rest_api_id}, target_resource_id={target_resource_id}")
         if not rest_api_id or not target_resource_id:
             logger.warning(f"Missing rest_api_id or resource_id in attributes for {resource_key}")
             return {}
-
         try:
             # Get all resources for this specific API
             resources_response = apigateway_client.get_resources(restApiId=rest_api_id)
             logger.debug(f"[API Gateway] get_resources AWS response: {resources_response}")
+            found = False
             for resource in resources_response.get("items", []):
                 resource_id = resource.get("id")
+                logger.debug(f"[API Gateway] Examining resource: {resource}")
                 if resource_id == target_resource_id:
-                    # Use the resource_key directly since it's already constructed in core.py
-                    # This ensures we're using the exact same key format
-                    logger.debug(f"Using resource_key for resource: {resource_key}")
-                    return {resource_key: resource}
-            
-            logger.debug(f"Resource {target_resource_id} not found in API {rest_api_id}. Available IDs: {[r.get('id') for r in resources_response.get('items', [])]}")
+                    found = True
+                    # Always key by the resource ID (as in the state file)
+                    logger.debug(f"[API Gateway] Matched resource_id={resource_id} to target_resource_id={target_resource_id}. Returning with key={resource_id}")
+                    return {resource_id: resource}
+            if not found:
+                logger.debug(f"[API Gateway] Resource {target_resource_id} not found in API {rest_api_id}. Available IDs: {[r.get('id') for r in resources_response.get('items', [])]}")
             return {}
         except Exception as e:
             logger.error(f"Could not get resources for API {rest_api_id}: {e}")
@@ -323,6 +322,50 @@ def _fetch_apigateway_stages(
     except Exception as e:
         logger.error(f"Error in _fetch_apigateway_stages: {e}")
         return {}
+
+
+def fetch_apigateway_resource(
+    apigateway_client: APIGatewayClient,
+    resource_key: str,
+    attributes: ResourceAttributes,
+) -> Dict[str, LiveResourceData]:
+    """
+    Fetch all resources for a given API Gateway REST API and return a dict keyed by resource id.
+    This approach uses the rest_api_id from the state attributes to enumerate all resources,
+    then matches by resource id (and optionally by path/path_part as a fallback).
+    """
+    from ...utils import setup_logging
+    logger = setup_logging()
+
+    # Extract the rest_api_id from the state attributes
+    rest_api_id = attributes.get("rest_api_id")
+    if not rest_api_id:
+        logger.warning(f"[API Gateway] No rest_api_id found in attributes for resource_key={resource_key}. Cannot fetch resources.")
+        return {}
+
+    logger.debug(f"[API Gateway] Fetching all resources for rest_api_id={rest_api_id} (resource_key={resource_key})")
+    try:
+        # List all resources for the given REST API
+        paginator = apigateway_client.get_paginator("get_resources")
+        page_iterator = paginator.paginate(restApiId=rest_api_id)
+        all_resources = []
+        for page in page_iterator:
+            all_resources.extend(page.get("items", []))
+        logger.debug(f"[API Gateway] Found {len(all_resources)} resources for rest_api_id={rest_api_id}")
+        # Log all resource ids and paths for debugging
+        for res in all_resources:
+            logger.debug(f"[API Gateway] Resource: id={res.get('id')}, path={res.get('path')}, pathPart={res.get('pathPart')}")
+        # Build a dict keyed by resource id
+        resource_dict = {res["id"]: res for res in all_resources if "id" in res}
+        # Optionally, also build dicts keyed by path and pathPart for fallback matching
+        path_dict = {res["path"]: res for res in all_resources if "path" in res}
+        path_part_dict = {res["pathPart"]: res for res in all_resources if "pathPart" in res}
+        # Return the main dict (by id) for drift comparison
+        return resource_dict
+    except Exception as e:
+        logger.error(f"[API Gateway] Error fetching resources for rest_api_id={rest_api_id}: {e}")
+        return {}
+
 
 
 

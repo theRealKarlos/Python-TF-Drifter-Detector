@@ -329,15 +329,20 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                     live_resources.update(result)
                 else:
                     live_resources.update(fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type))
+            elif resource_type == "aws_api_gateway_resource":
+                print(f"DEBUG: Calling fetch_apigateway_resource for resource_key={unique_resource_key}, attributes={attributes}")
+                from .apigateway_fetchers import fetch_apigateway_resource
+                result = fetch_apigateway_resource(apigateway_client, unique_resource_key, attributes)
+                print(f"DEBUG: fetch_apigateway_resource returned keys: {list(result.keys())}")
+                live_resources.update(result)
             elif (
                 resource_type.startswith("aws_api_gateway_rest_api")
-                or resource_type.startswith("aws_api_gateway_resource")
                 or resource_type.startswith("aws_api_gateway_method")
                 or resource_type.startswith("aws_api_gateway_integration")
                 or resource_type.startswith("aws_api_gateway_deployment")
                 or resource_type.startswith("aws_api_gateway_stage")
             ):
-                # All API Gateway resource types are routed here, with key preference: ARN > ID > composite > fallback
+                # All other API Gateway resource types are routed here, with key preference: ARN > ID > composite > fallback
                 live_resources.update(fetch_apigateway_resources(apigateway_client, unique_resource_key, attributes))
             elif (
                 resource_type.startswith("aws_cloudwatch_dashboard")
