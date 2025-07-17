@@ -70,3 +70,4 @@ ENV/
 
 # Development notes (not tracked by git)
 linting-notes.md 
+.kiro/*
