@@ -1,0 +1,763 @@
+2025-07-17 19:36:55,802 - drift_detector - INFO - Starting Terraform drift detection from command line
+2025-07-17 19:36:55,803 - drift_detector - INFO - Running drift detection for S3 path: s3://pulsequeue-terraform-backend-state/envs/dev/terraform.tfstate
+2025-07-17 19:36:55,803 - drift_detector - INFO - Using AWS region: eu-west-2
+2025-07-17 19:36:55,803 - drift_detector - INFO - Downloading S3 file: s3://pulsequeue-terraform-backend-state/envs/dev/terraform.tfstate
+2025-07-17 19:36:57,286 - drift_detector - INFO - Successfully downloaded 128678 bytes from S3
+2025-07-17 19:36:57,289 - drift_detector - INFO - Parsing Terraform state file
+2025-07-17 19:36:57,291 - drift_detector - INFO - Successfully parsed state file with 65 resources
+DEBUG: LOADED ec2_fetchers.py
+DEBUG: CloudWatch dashboard fetcher called with resource_key=arn:aws:cloudwatch::379673441375:dashboard/dev-pulsequeue-dashboard, attributes={'dashboard_arn': 'arn:aws:cloudwatch::379673441375:dashboard/dev-pulsequeue-dashboard', 'dashboard_body': '{"widgets":[{"type":"metric","x":0,"y":0,"width":12,"height":6,"properties":{"metrics":[["AWS/Lambda","Invocations","FunctionName","dev-order-service-handler"],[".","Errors",".","."]],"period":300,"stat":"Sum","region":"eu-west-2","title":"Order Lambda Invocations & Errors"}},{"type":"metric","x":12,"y":0,"width":12,"height":6,"properties":{"metrics":[["AWS/Events","Invocations","EventBusName","dev-order-bus","RuleName","dev-order-placed"],[".","FailedInvocations",".",".",".","."]],"period":300,"stat":"Sum","region":"eu-west-2","title":"Order Rule Invocations & Failures"}},{"type":"metric","x":0,"y":6,"width":12,"height":6,"properties":{"metrics":[["AWS/Lambda","Invocations","FunctionName","dev-payment-service-handler"],[".","Errors",".","."]],"period":300,"stat":"Sum","region":"eu-west-2","title":"Payment Lambda Invocations & Errors"}},{"type":"metric","x":12,"y":6,"width":12,"height":6,"properties":{"metrics":[["AWS/Events","Invocations","EventBusName","dev-payment-bus","RuleName","dev-payment-processed"],[".","FailedInvocations",".",".",".","."]],"period":300,"stat":"Sum","region":"eu-west-2","title":"Payment Rule Invocations & Failures"}},{"type":"metric","x":0,"y":12,"width":12,"height":6,"properties":{"metrics":[["AWS/Lambda","Invocations","FunctionName","dev-metrics-service-handler"],[".","Errors",".","."]],"period":300,"stat":"Sum","region":"eu-west-2","title":"Metrics Lambda Invocations & Errors"}},{"type":"metric","x":12,"y":12,"width":12,"height":6,"properties":{"metrics":[["AWS/DynamoDB","ConsumedReadCapacityUnits","TableName","dev-inventory-table"],[".","ConsumedWriteCapacityUnits",".","."]],"period":300,"stat":"Sum","region":"eu-west-2","title":"DynamoDB Read/Write Capacity"}}]}', 'dashboard_name': 'dev-pulsequeue-dashboard', 'id': 'dev-pulsequeue-dashboard', 'region': 'eu-west-2'}
+DEBUG: CloudWatch dashboard state_arn=None, state_account_id=None
+DEBUG: CloudWatch dashboard region=eu-west-2, dashboard_name=dev-pulsequeue-dashboard
+DEBUG: CloudWatch dashboard matched with key=dev-pulsequeue-dashboard
+[EventBridge] (EXTRA) Searching for target ARN: 'arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler' in rule: 'dev-order-placed'
+  Bus: 'dev-order-bus' with composite key: 'event_target:dev-order-bus:dev-order-placed:arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler'
+Rule:
+dev-order-placed
+Target count:
+1
+Target ARNs:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler
+[EventBridge] (EXTRA) Examining target: {'Id': 'dev-order-placed-handler', 'Arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler', 'DeadLetterConfig': {'Arn': 'arn:aws:sqs:eu-west-2:379673441375:dev-order-placed-eventbridge-dlq'}}
+[EventBridge] (EXTRA) Comparing target Arn:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler
+with expected:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler
+[EventBridge] (EXTRA) Found matching target with ARN:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler
+in rule:
+dev-order-placed (bus: dev-order-bus)
+[EventBridge] (EXTRA) Returning target_data for event_target:dev-order-bus:dev-order-placed:arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler:
+  {'target_id': 'dev-order-placed-handler', 'arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler', 'input': None, 'input_path': None, 'input_transformer': None}
+[EventBridge] (EXTRA) Searching for target ARN: 'arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler' in rule: 'dev-payment-processed'
+  Bus: 'dev-payment-bus' with composite key: 'event_target:dev-payment-bus:dev-payment-processed:arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler'
+Rule:
+dev-payment-processed
+Target count:
+1
+Target ARNs:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler
+[EventBridge] (EXTRA) Examining target: {'Id': 'dev-payment-processed-handler', 'Arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler', 'DeadLetterConfig': {'Arn': 'arn:aws:sqs:eu-west-2:379673441375:dev-payment-processed-eventbridge-dlq'}}
+[EventBridge] (EXTRA) Comparing target Arn:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler
+with expected:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler
+[EventBridge] (EXTRA) Found matching target with ARN:
+arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler
+in rule:
+dev-payment-processed (bus: dev-payment-bus)
+[EventBridge] (EXTRA) Returning target_data for event_target:dev-payment-bus:dev-payment-processed:arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler:
+  {'target_id': 'dev-payment-processed-handler', 'arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler', 'input': None, 'input_path': None, 'input_transformer': None}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role, resource_key=arn:aws:iam::379673441375:role/dev-metrics-service-handler-exec-role, attributes={'arn': 'arn:aws:iam::379673441375:role/dev-metrics-service-handler-exec-role', 'assume_role_policy': '{"Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Sid":""}],"Version":"2012-10-17"}', 'create_date': '2025-07-13T07:07:27Z', 'description': '', 'force_detach_policies': False, 'id': 'dev-metrics-service-handler-exec-role', 'inline_policy': [], 'managed_policy_arns': [], 'max_session_duration': 3600, 'name': 'dev-metrics-service-handler-exec-role', 'name_prefix': '', 'path': '/', 'permissions_boundary': '', 'tags': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'tags_all': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'unique_id': 'AROAVQZSM6RPT7I5H5I57'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_cloudwatch_metrics_0, attributes={'id': 'dev-metrics-service-handler-exec-role:dev-metrics-service-handler-cloudwatch-metrics', 'name': 'dev-metrics-service-handler-cloudwatch-metrics', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["cloudwatch:PutMetricData"],"Effect":"Allow","Resource":"*"}]}', 'role': 'dev-metrics-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_cloudwatch_read_metrics_0, attributes={'id': 'dev-metrics-service-handler-exec-role:dev-metrics-service-handler-cloudwatch-read-metrics', 'name': 'dev-metrics-service-handler-cloudwatch-read-metrics', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["cloudwatch:GetMetricStatistics","cloudwatch:ListMetrics"],"Condition":{"StringEquals":{"cloudwatch:namespace":["AWS/Lambda","PulseQueue/dev"]}},"Effect":"Allow","Resource":"*"}]}', 'role': 'dev-metrics-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_eventbridge_policy_0, attributes={'id': 'dev-metrics-service-handler-exec-role:dev-metrics-service-handler-allow-put-events', 'name': 'dev-metrics-service-handler-allow-put-events', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":"events:PutEvents","Effect":"Allow","Resource":["arn:aws:events:eu-west-2:379673441375:event-bus/dev-*-bus"]}]}', 'role': 'dev-metrics-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_logging_0, attributes={'id': 'dev-metrics-service-handler-exec-role:dev-metrics-service-handler-basic-logging', 'name': 'dev-metrics-service-handler-basic-logging', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Effect":"Allow","Resource":["arn:aws:logs:eu-west-2:379673441375:log-group:/aws/lambda/dev-metrics-service-handler:*","arn:aws:logs:eu-west-2:379673441375:log-group:/aws/lambda/dev-metrics-service-handler"]}]}', 'role': 'dev-metrics-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role, resource_key=arn:aws:iam::379673441375:role/dev-pulsequeue-monitoring-execution-role, attributes={'arn': 'arn:aws:iam::379673441375:role/dev-pulsequeue-monitoring-execution-role', 'assume_role_policy': '{"Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"ecs-tasks.amazonaws.com"}}],"Version":"2012-10-17"}', 'create_date': '2025-07-13T07:07:27Z', 'description': '', 'force_detach_policies': False, 'id': 'dev-pulsequeue-monitoring-execution-role', 'inline_policy': [], 'managed_policy_arns': [], 'max_session_duration': 3600, 'name': 'dev-pulsequeue-monitoring-execution-role', 'name_prefix': '', 'path': '/', 'permissions_boundary': '', 'tags': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'tags_all': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'unique_id': 'AROAVQZSM6RP6IZVH4J5X'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy_attachment, resource_key=dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy, attributes={'id': 'dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy', 'policy_arn': 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy', 'role': 'dev-pulsequeue-monitoring-execution-role'}
+DEBUG: [IAM] _fetch_iam_role_policy_attachments called with role_name=dev-pulsequeue-monitoring-execution-role, attributes={'id': 'dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy', 'policy_arn': 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy', 'role': 'dev-pulsequeue-monitoring-execution-role'}
+DEBUG: [IAM] list_attached_role_policies response for role dev-pulsequeue-monitoring-execution-role: {'AttachedPolicies': [{'PolicyName': 'AmazonECSTaskExecutionRolePolicy', 'PolicyArn': 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'}], 'IsTruncated': False, 'ResponseMetadata': {'RequestId': '2b1b0f19-5bfe-4ad2-a62e-53bdd4181cfa', 'HTTPStatusCode': 200, 'HTTPHeaders': {'date': 'Thu, 17 Jul 2025 18:37:07 GMT', 'x-amzn-requestid': '2b1b0f19-5bfe-4ad2-a62e-53bdd4181cfa', 'content-type': 'text/xml', 'content-length': '581'}, 'RetryAttempts': 0}}
+DEBUG: [IAM] Fetched live policy attachment key: dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+DEBUG: [IAM] All fetched live policy attachment keys: ['dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy']
+DEBUG: [IAM] _fetch_iam_role_policy_attachments returned keys: ['dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy']
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_security_group, resource_key=arn:aws:ec2:eu-west-2:379673441375:security-group/sg-0875d4407fd3dfbd4
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role, resource_key=arn:aws:iam::379673441375:role/dev-order-service-handler-exec-role, attributes={'arn': 'arn:aws:iam::379673441375:role/dev-order-service-handler-exec-role', 'assume_role_policy': '{"Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Sid":""}],"Version":"2012-10-17"}', 'create_date': '2025-07-13T07:07:27Z', 'description': '', 'force_detach_policies': False, 'id': 'dev-order-service-handler-exec-role', 'inline_policy': [], 'managed_policy_arns': [], 'max_session_duration': 3600, 'name': 'dev-order-service-handler-exec-role', 'name_prefix': '', 'path': '/', 'permissions_boundary': '', 'tags': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'tags_all': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'unique_id': 'AROAVQZSM6RPSVNHLFPON'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_cloudwatch_metrics_0, attributes={'id': 'dev-order-service-handler-exec-role:dev-order-service-handler-cloudwatch-metrics', 'name': 'dev-order-service-handler-cloudwatch-metrics', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["cloudwatch:PutMetricData"],"Effect":"Allow","Resource":"*"}]}', 'role': 'dev-order-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_eventbridge_policy_0, attributes={'id': 'dev-order-service-handler-exec-role:dev-order-service-handler-allow-put-events', 'name': 'dev-order-service-handler-allow-put-events', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":"events:PutEvents","Effect":"Allow","Resource":["arn:aws:events:eu-west-2:379673441375:event-bus/dev-*-bus"]}]}', 'role': 'dev-order-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_logging_0, attributes={'id': 'dev-order-service-handler-exec-role:dev-order-service-handler-basic-logging', 'name': 'dev-order-service-handler-basic-logging', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Effect":"Allow","Resource":["arn:aws:logs:eu-west-2:379673441375:log-group:/aws/lambda/dev-order-service-handler:*","arn:aws:logs:eu-west-2:379673441375:log-group:/aws/lambda/dev-order-service-handler"]}]}', 'role': 'dev-order-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_dynamodb_policy_0, attributes={'id': 'dev-order-service-handler-exec-role:dev-dev-order-service-handler-dynamodb-policy', 'name': 'dev-dev-order-service-handler-dynamodb-policy', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["dynamodb:UpdateItem","dynamodb:GetItem"],"Effect":"Allow","Resource":"arn:aws:dynamodb:eu-west-2:379673441375:table/dev-inventory-table"}]}', 'role': 'dev-order-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role, resource_key=arn:aws:iam::379673441375:role/dev-payment-service-handler-exec-role, attributes={'arn': 'arn:aws:iam::379673441375:role/dev-payment-service-handler-exec-role', 'assume_role_policy': '{"Statement":[{"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Sid":""}],"Version":"2012-10-17"}', 'create_date': '2025-07-13T07:07:27Z', 'description': '', 'force_detach_policies': False, 'id': 'dev-payment-service-handler-exec-role', 'inline_policy': [], 'managed_policy_arns': [], 'max_session_duration': 3600, 'name': 'dev-payment-service-handler-exec-role', 'name_prefix': '', 'path': '/', 'permissions_boundary': '', 'tags': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'tags_all': {'Environment': 'dev', 'ManagedBy': 'Terraform', 'Project': 'PulseQueue'}, 'unique_id': 'AROAVQZSM6RPUHS5THQNC'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_cloudwatch_metrics_0, attributes={'id': 'dev-payment-service-handler-exec-role:dev-payment-service-handler-cloudwatch-metrics', 'name': 'dev-payment-service-handler-cloudwatch-metrics', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["cloudwatch:PutMetricData"],"Effect":"Allow","Resource":"*"}]}', 'role': 'dev-payment-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_eventbridge_policy_0, attributes={'id': 'dev-payment-service-handler-exec-role:dev-payment-service-handler-allow-put-events', 'name': 'dev-payment-service-handler-allow-put-events', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":"events:PutEvents","Effect":"Allow","Resource":["arn:aws:events:eu-west-2:379673441375:event-bus/dev-*-bus"]}]}', 'role': 'dev-payment-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_logging_0, attributes={'id': 'dev-payment-service-handler-exec-role:dev-payment-service-handler-basic-logging', 'name': 'dev-payment-service-handler-basic-logging', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["logs:CreateLogGroup","logs:CreateLogStream","logs:PutLogEvents"],"Effect":"Allow","Resource":["arn:aws:logs:eu-west-2:379673441375:log-group:/aws/lambda/dev-payment-service-handler:*","arn:aws:logs:eu-west-2:379673441375:log-group:/aws/lambda/dev-payment-service-handler"]}]}', 'role': 'dev-payment-service-handler-exec-role'}
+DEBUG: [IAM] fetch_iam_resources called with resource_type=aws_iam_role_policy, resource_key=aws_iam_role_policy.lambda_dynamodb_policy_0, attributes={'id': 'dev-payment-service-handler-exec-role:dev-dev-payment-service-handler-dynamodb-policy', 'name': 'dev-dev-payment-service-handler-dynamodb-policy', 'name_prefix': '', 'policy': '{"Version":"2012-10-17","Statement":[{"Action":["dynamodb:UpdateItem","dynamodb:GetItem"],"Effect":"Allow","Resource":"arn:aws:dynamodb:eu-west-2:379673441375:table/dev-inventory-table"}]}', 'role': 'dev-payment-service-handler-exec-role'}
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_internet_gateway, resource_key=arn:aws:ec2:eu-west-2:379673441375:internet-gateway/igw-081ac87ce7fed18a7
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_route_table, resource_key=aws_route_table.public_0
+DEBUG: Calling fetch_ec2_resources for aws_route_table_association with key rtbassoc-01f1826569dbae2fc
+DEBUG: fetch_ec2_resources object: <function fetch_ec2_resources at 0x0000022D6E78A840>
+DEBUG: fetch_ec2_resources module: src.drift_detector.fetchers.ec2_fetchers
+DEBUG: fetch_ec2_resources file: D:\Exercise Files\Python-TF-Drifter-Detector\src\drift_detector\fetchers\ec2_fetchers.py
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_route_table_association, resource_key=rtbassoc-01f1826569dbae2fc
+DEBUG: About to call _fetch_route_table_associations with key=rtbassoc-01f1826569dbae2fc
+DEBUG: DEFINED _fetch_route_table_associations
+DEBUG: ec2_fetchers.py __file__: D:\Exercise Files\Python-TF-Drifter-Detector\src\drift_detector\fetchers\ec2_fetchers.py
+DEBUG: sys.path: ['D:\\Exercise Files\\Python-TF-Drifter-Detector\\src', 'D:\\Exercise Files\\Python-TF-Drifter-Detector', 'C:\\Python313\\python313.zip', 'C:\\Python313\\DLLs', 'C:\\Python313\\Lib', 'C:\\Python313', 'D:\\Exercise Files\\Python-TF-Drifter-Detector\\env', 'D:\\Exercise Files\\Python-TF-Drifter-Detector\\env\\Lib\\site-packages']
+DEBUG: Entered _fetch_route_table_associations
+DEBUG: Using region: eu-west-2, account: 379673441375
+DEBUG: Raw describe_route_tables response: {'RouteTables': [{'Associations': [{'Main': False, 'RouteTableAssociationId': 'rtbassoc-01f1826569dbae2fc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-054e81827b8d1825d', 'AssociationState': {'State': 'associated'}}, {'Main': False, 'RouteTableAssociationId': 'rtbassoc-0c9280771844fedbc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-0a215fe620bf37230', 'AssociationState': {'State': 'associated'}}], 'PropagatingVgws': [], 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'Routes': [{'DestinationCidrBlock': '10.0.0.0/16', 'GatewayId': 'local', 'Origin': 'CreateRouteTable', 'State': 'active'}, {'DestinationCidrBlock': '0.0.0.0/0', 'GatewayId': 'igw-081ac87ce7fed18a7', 'Origin': 'CreateRoute', 'State': 'active'}], 'Tags': [{'Key': 'Name', 'Value': 'dev-pulsequeue-vpc-public-rt'}, {'Key': 'Environment', 'Value': 'dev'}, {'Key': 'Project', 'Value': 'PulseQueue'}, {'Key': 'ManagedBy', 'Value': 'Terraform'}], 'VpcId': 'vpc-08cb345ff33342bdf', 'OwnerId': '379673441375'}, {'Associations': [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-7dbcc314', 'RouteTableId': 'rtb-f7d14a9e', 'AssociationState': {'State': 'associated'}}], 'PropagatingVgws': [], 'RouteTableId': 'rtb-f7d14a9e', 'Routes': [{'DestinationCidrBlock': '172.31.0.0/16', 'GatewayId': 'local', 'Origin': 'CreateRouteTable', 'State': 'active'}, {'DestinationCidrBlock': '0.0.0.0/0', 'GatewayId': 'igw-0dd86d64', 'Origin': 'CreateRoute', 'State': 'active'}], 'Tags': [], 'VpcId': 'vpc-ac1a8fc5', 'OwnerId': '379673441375'}, {'Associations': [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-0a22b3fd03333e7ae', 'RouteTableId': 'rtb-06cf95bf1dbf1ad06', 'AssociationState': {'State': 'associated'}}], 'PropagatingVgws': [], 'RouteTableId': 'rtb-06cf95bf1dbf1ad06', 'Routes': [{'DestinationCidrBlock': '10.0.0.0/16', 'GatewayId': 'local', 'Origin': 'CreateRouteTable', 'State': 'active'}], 'Tags': [], 'VpcId': 'vpc-08cb345ff33342bdf', 'OwnerId': '379673441375'}], 'ResponseMetadata': {'RequestId': 'f496ba3e-ff55-4ade-858c-4a924567a33b', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': 'f496ba3e-ff55-4ade-858c-4a924567a33b', 'cache-control': 'no-cache, no-store', 'strict-transport-security': 'max-age=31536000; includeSubDomains', 'vary': 'accept-encoding', 'content-type': 'text/xml;charset=UTF-8', 'content-length': '2819', 'date': 'Thu, 17 Jul 2025 18:37:16 GMT', 'server': 'AmazonEC2'}, 'RetryAttempts': 0}}
+DEBUG: Found 3 route tables in AWS response
+DEBUG: RouteTableId: rtb-03eadb0cdd5646d5c, Associations: [{'Main': False, 'RouteTableAssociationId': 'rtbassoc-01f1826569dbae2fc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-054e81827b8d1825d', 'AssociationState': {'State': 'associated'}}, {'Main': False, 'RouteTableAssociationId': 'rtbassoc-0c9280771844fedbc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-0a215fe620bf37230', 'AssociationState': {'State': 'associated'}}]
+DEBUG: RouteTableId: rtb-f7d14a9e, Associations: [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-7dbcc314', 'RouteTableId': 'rtb-f7d14a9e', 'AssociationState': {'State': 'associated'}}]
+DEBUG: RouteTableId: rtb-06cf95bf1dbf1ad06, Associations: [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-0a22b3fd03333e7ae', 'RouteTableId': 'rtb-06cf95bf1dbf1ad06', 'AssociationState': {'State': 'associated'}}]
+DEBUG: All RouteTableAssociationIds found in AWS: ['rtbassoc-01f1826569dbae2fc', 'rtbassoc-0c9280771844fedbc', 'rtbassoc-7dbcc314', 'rtbassoc-0a22b3fd03333e7ae']
+DEBUG: _fetch_route_table_associations returned keys: ['rtbassoc-01f1826569dbae2fc']
+DEBUG: fetch_ec2_resources returned keys for aws_route_table_association: {'rtbassoc-01f1826569dbae2fc'}
+DEBUG: Calling fetch_ec2_resources for aws_route_table_association with key rtbassoc-0c9280771844fedbc
+DEBUG: fetch_ec2_resources object: <function fetch_ec2_resources at 0x0000022D6E78A840>
+DEBUG: fetch_ec2_resources module: src.drift_detector.fetchers.ec2_fetchers
+DEBUG: fetch_ec2_resources file: D:\Exercise Files\Python-TF-Drifter-Detector\src\drift_detector\fetchers\ec2_fetchers.py
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_route_table_association, resource_key=rtbassoc-0c9280771844fedbc
+DEBUG: About to call _fetch_route_table_associations with key=rtbassoc-0c9280771844fedbc
+DEBUG: DEFINED _fetch_route_table_associations
+DEBUG: ec2_fetchers.py __file__: D:\Exercise Files\Python-TF-Drifter-Detector\src\drift_detector\fetchers\ec2_fetchers.py
+DEBUG: sys.path: ['D:\\Exercise Files\\Python-TF-Drifter-Detector\\src', 'D:\\Exercise Files\\Python-TF-Drifter-Detector', 'C:\\Python313\\python313.zip', 'C:\\Python313\\DLLs', 'C:\\Python313\\Lib', 'C:\\Python313', 'D:\\Exercise Files\\Python-TF-Drifter-Detector\\env', 'D:\\Exercise Files\\Python-TF-Drifter-Detector\\env\\Lib\\site-packages']
+DEBUG: Entered _fetch_route_table_associations
+DEBUG: Using region: eu-west-2, account: 379673441375
+DEBUG: Raw describe_route_tables response: {'RouteTables': [{'Associations': [{'Main': False, 'RouteTableAssociationId': 'rtbassoc-01f1826569dbae2fc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-054e81827b8d1825d', 'AssociationState': {'State': 'associated'}}, {'Main': False, 'RouteTableAssociationId': 'rtbassoc-0c9280771844fedbc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-0a215fe620bf37230', 'AssociationState': {'State': 'associated'}}], 'PropagatingVgws': [], 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'Routes': [{'DestinationCidrBlock': '10.0.0.0/16', 'GatewayId': 'local', 'Origin': 'CreateRouteTable', 'State': 'active'}, {'DestinationCidrBlock': '0.0.0.0/0', 'GatewayId': 'igw-081ac87ce7fed18a7', 'Origin': 'CreateRoute', 'State': 'active'}], 'Tags': [{'Key': 'Name', 'Value': 'dev-pulsequeue-vpc-public-rt'}, {'Key': 'Environment', 'Value': 'dev'}, {'Key': 'Project', 'Value': 'PulseQueue'}, {'Key': 'ManagedBy', 'Value': 'Terraform'}], 'VpcId': 'vpc-08cb345ff33342bdf', 'OwnerId': '379673441375'}, {'Associations': [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-7dbcc314', 'RouteTableId': 'rtb-f7d14a9e', 'AssociationState': {'State': 'associated'}}], 'PropagatingVgws': [], 'RouteTableId': 'rtb-f7d14a9e', 'Routes': [{'DestinationCidrBlock': '172.31.0.0/16', 'GatewayId': 'local', 'Origin': 'CreateRouteTable', 'State': 'active'}, {'DestinationCidrBlock': '0.0.0.0/0', 'GatewayId': 'igw-0dd86d64', 'Origin': 'CreateRoute', 'State': 'active'}], 'Tags': [], 'VpcId': 'vpc-ac1a8fc5', 'OwnerId': '379673441375'}, {'Associations': [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-0a22b3fd03333e7ae', 'RouteTableId': 'rtb-06cf95bf1dbf1ad06', 'AssociationState': {'State': 'associated'}}], 'PropagatingVgws': [], 'RouteTableId': 'rtb-06cf95bf1dbf1ad06', 'Routes': [{'DestinationCidrBlock': '10.0.0.0/16', 'GatewayId': 'local', 'Origin': 'CreateRouteTable', 'State': 'active'}], 'Tags': [], 'VpcId': 'vpc-08cb345ff33342bdf', 'OwnerId': '379673441375'}], 'ResponseMetadata': {'RequestId': 'dcc671f2-675d-476e-a6c7-2b81ea5a2040', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amzn-requestid': 'dcc671f2-675d-476e-a6c7-2b81ea5a2040', 'cache-control': 'no-cache, no-store', 'strict-transport-security': 'max-age=31536000; includeSubDomains', 'vary': 'accept-encoding', 'content-type': 'text/xml;charset=UTF-8', 'content-length': '2819', 'date': 'Thu, 17 Jul 2025 18:37:16 GMT', 'server': 'AmazonEC2'}, 'RetryAttempts': 0}}
+DEBUG: Found 3 route tables in AWS response
+DEBUG: RouteTableId: rtb-03eadb0cdd5646d5c, Associations: [{'Main': False, 'RouteTableAssociationId': 'rtbassoc-01f1826569dbae2fc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-054e81827b8d1825d', 'AssociationState': {'State': 'associated'}}, {'Main': False, 'RouteTableAssociationId': 'rtbassoc-0c9280771844fedbc', 'RouteTableId': 'rtb-03eadb0cdd5646d5c', 'SubnetId': 'subnet-0a215fe620bf37230', 'AssociationState': {'State': 'associated'}}]
+DEBUG: RouteTableId: rtb-f7d14a9e, Associations: [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-7dbcc314', 'RouteTableId': 'rtb-f7d14a9e', 'AssociationState': {'State': 'associated'}}]
+DEBUG: RouteTableId: rtb-06cf95bf1dbf1ad06, Associations: [{'Main': True, 'RouteTableAssociationId': 'rtbassoc-0a22b3fd03333e7ae', 'RouteTableId': 'rtb-06cf95bf1dbf1ad06', 'AssociationState': {'State': 'associated'}}]
+DEBUG: All RouteTableAssociationIds found in AWS: ['rtbassoc-01f1826569dbae2fc', 'rtbassoc-0c9280771844fedbc', 'rtbassoc-7dbcc314', 'rtbassoc-0a22b3fd03333e7ae']
+DEBUG: _fetch_route_table_associations returned keys: ['rtbassoc-0c9280771844fedbc']
+DEBUG: fetch_ec2_resources returned keys for aws_route_table_association: {'rtbassoc-0c9280771844fedbc'}
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_security_group, resource_key=arn:aws:ec2:eu-west-2:379673441375:security-group/sg-0762af90e49839c32
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_subnet, resource_key=arn:aws:ec2:eu-west-2:379673441375:subnet/subnet-054e81827b8d1825d
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_subnet, resource_key=arn:aws:ec2:eu-west-2:379673441375:subnet/subnet-0a215fe620bf37230
+DEBUG: Entered fetch_ec2_resources with resource_type=aws_vpc, resource_key=arn:aws:ec2:eu-west-2:379673441375:vpc/vpc-08cb345ff33342bdf
+[EventBridge] (EXTRA) Comparing EventBridge target attributes:
+  State: {'appsync_target': [], 'arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler', 'batch_target': [], 'dead_letter_config': [{'arn': 'arn:aws:sqs:eu-west-2:379673441375:dev-order-placed-eventbridge-dlq'}], 'ecs_target': [], 'event_bus_name': 'dev-order-bus', 'force_destroy': False, 'http_target': [], 'id': 'dev-order-bus-dev-order-placed-dev-order-placed-handler', 'input': '', 'input_path': '', 'input_transformer': [], 'kinesis_target': [], 'redshift_target': [], 'region': 'eu-west-2', 'retry_policy': [], 'role_arn': '', 'rule': 'dev-order-placed', 'run_command_targets': [], 'sagemaker_pipeline_target': [], 'sqs_target': [], 'target_id': 'dev-order-placed-handler'}
+  Live: {'target_id': 'dev-order-placed-handler', 'arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler', 'input': None, 'input_path': None, 'input_transformer': None}
+[EventBridge] (EXTRA) Comparing attribute 'target_id': State='dev-order-placed-handler' Live='dev-order-placed-handler'
+[EventBridge] (EXTRA) Comparing attribute 'arn': State='arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler' Live='arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler'
+[EventBridge] (EXTRA) Comparing attribute 'input': State='None' Live='None' (normalised)
+[EventBridge] (EXTRA) Comparing attribute 'input_path': State='None' Live='None' (normalised)
+[EventBridge] (EXTRA) Comparing attribute 'input_transformer': State='None' Live='None' (normalised)
+DEBUG: SQS policy compare for aws_sqs_queue_policy.eventbridge_dlq_policy [https://sqs.eu-west-2.amazonaws.com/379673441375/dev-order-placed-eventbridge-dlq]:
+  State={"Statement":[{"Action":"sqs:SendMessage","Effect":"Allow","Principal":{"Service":"events.amazonaws.com"},"Resource":"arn:aws:sqs:eu-west-2:379673441375:dev-order-placed-eventbridge-dlq"}],"Version":"2012-10-17"}
+  Live={"Statement":[{"Action":"sqs:SendMessage","Effect":"Allow","Principal":{"Service":"events.amazonaws.com"},"Resource":"arn:aws:sqs:eu-west-2:379673441375:dev-order-placed-eventbridge-dlq"}],"Version":"2012-10-17"}
+[EventBridge] (EXTRA) Comparing EventBridge target attributes:
+  State: {'appsync_target': [], 'arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler', 'batch_target': [], 'dead_letter_config': [{'arn': 'arn:aws:sqs:eu-west-2:379673441375:dev-payment-processed-eventbridge-dlq'}], 'ecs_target': [], 'event_bus_name': 'dev-payment-bus', 'force_destroy': False, 'http_target': [], 'id': 'dev-payment-bus-dev-payment-processed-dev-payment-processed-handler', 'input': '', 'input_path': '', 'input_transformer': [], 'kinesis_target': [], 'redshift_target': [], 'region': 'eu-west-2', 'retry_policy': [], 'role_arn': '', 'rule': 'dev-payment-processed', 'run_command_targets': [], 'sagemaker_pipeline_target': [], 'sqs_target': [], 'target_id': 'dev-payment-processed-handler'}
+  Live: {'target_id': 'dev-payment-processed-handler', 'arn': 'arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler', 'input': None, 'input_path': None, 'input_transformer': None}
+[EventBridge] (EXTRA) Comparing attribute 'target_id': State='dev-payment-processed-handler' Live='dev-payment-processed-handler'
+[EventBridge] (EXTRA) Comparing attribute 'arn': State='arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler' Live='arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler'
+[EventBridge] (EXTRA) Comparing attribute 'input': State='None' Live='None' (normalised)
+[EventBridge] (EXTRA) Comparing attribute 'input_path': State='None' Live='None' (normalised)
+[EventBridge] (EXTRA) Comparing attribute 'input_transformer': State='None' Live='None' (normalised)
+DEBUG: SQS policy compare for aws_sqs_queue_policy.eventbridge_dlq_policy [https://sqs.eu-west-2.amazonaws.com/379673441375/dev-payment-processed-eventbridge-dlq]:
+  State={"Statement":[{"Action":"sqs:SendMessage","Effect":"Allow","Principal":{"Service":"events.amazonaws.com"},"Resource":"arn:aws:sqs:eu-west-2:379673441375:dev-payment-processed-eventbridge-dlq"}],"Version":"2012-10-17"}
+  Live={"Statement":[{"Action":"sqs:SendMessage","Effect":"Allow","Principal":{"Service":"events.amazonaws.com"},"Resource":"arn:aws:sqs:eu-west-2:379673441375:dev-payment-processed-eventbridge-dlq"}],"Version":"2012-10-17"}
+DEBUG: Lambda function comparator called with state_attrs: ['architectures', 'arn', 'code_sha256', 'code_signing_config_arn', 'dead_letter_config', 'description', 'environment', 'ephemeral_storage', 'file_system_config', 'filename', 'function_name', 'handler', 'id', 'image_config', 'image_uri', 'invoke_arn', 'kms_key_arn', 'last_modified', 'layers', 'logging_config', 'memory_size', 'package_type', 'publish', 'qualified_arn', 'qualified_invoke_arn', 'region', 'replace_security_groups_on_destroy', 'replacement_security_group_ids', 'reserved_concurrent_executions', 'role', 'runtime', 's3_bucket', 's3_key', 's3_object_version', 'signing_job_arn', 'signing_profile_version_arn', 'skip_destroy', 'snap_start', 'source_code_hash', 'source_code_size', 'tags', 'tags_all', 'timeout', 'timeouts', 'tracing_config', 'version', 'vpc_config']
+DEBUG: Lambda function comparator called with live_attrs: ['FunctionName', 'FunctionArn', 'Runtime', 'Role', 'Handler', 'CodeSize', 'Description', 'Timeout', 'MemorySize', 'LastModified', 'CodeSha256', 'Version', 'TracingConfig', 'RevisionId', 'PackageType', 'Architectures', 'EphemeralStorage', 'SnapStart', 'LoggingConfig']
+DEBUG: Lambda function comparator called with state_attrs: ['architectures', 'arn', 'code_sha256', 'code_signing_config_arn', 'dead_letter_config', 'description', 'environment', 'ephemeral_storage', 'file_system_config', 'filename', 'function_name', 'handler', 'id', 'image_config', 'image_uri', 'invoke_arn', 'kms_key_arn', 'last_modified', 'layers', 'logging_config', 'memory_size', 'package_type', 'publish', 'qualified_arn', 'qualified_invoke_arn', 'region', 'replace_security_groups_on_destroy', 'replacement_security_group_ids', 'reserved_concurrent_executions', 'role', 'runtime', 's3_bucket', 's3_key', 's3_object_version', 'signing_job_arn', 'signing_profile_version_arn', 'skip_destroy', 'snap_start', 'source_code_hash', 'source_code_size', 'tags', 'tags_all', 'timeout', 'timeouts', 'tracing_config', 'version', 'vpc_config']
+DEBUG: Lambda function comparator called with live_attrs: ['FunctionName', 'FunctionArn', 'Runtime', 'Role', 'Handler', 'CodeSize', 'Description', 'Timeout', 'MemorySize', 'LastModified', 'CodeSha256', 'Version', 'Environment', 'TracingConfig', 'RevisionId', 'PackageType', 'Architectures', 'EphemeralStorage', 'SnapStart', 'LoggingConfig']
+DEBUG: Lambda function comparator called with state_attrs: ['architectures', 'arn', 'code_sha256', 'code_signing_config_arn', 'dead_letter_config', 'description', 'environment', 'ephemeral_storage', 'file_system_config', 'filename', 'function_name', 'handler', 'id', 'image_config', 'image_uri', 'invoke_arn', 'kms_key_arn', 'last_modified', 'layers', 'logging_config', 'memory_size', 'package_type', 'publish', 'qualified_arn', 'qualified_invoke_arn', 'region', 'replace_security_groups_on_destroy', 'replacement_security_group_ids', 'reserved_concurrent_executions', 'role', 'runtime', 's3_bucket', 's3_key', 's3_object_version', 'signing_job_arn', 'signing_profile_version_arn', 'skip_destroy', 'snap_start', 'source_code_hash', 'source_code_size', 'tags', 'tags_all', 'timeout', 'timeouts', 'tracing_config', 'version', 'vpc_config']
+DEBUG: Lambda function comparator called with live_attrs: ['FunctionName', 'FunctionArn', 'Runtime', 'Role', 'Handler', 'CodeSize', 'Description', 'Timeout', 'MemorySize', 'LastModified', 'CodeSha256', 'Version', 'Environment', 'TracingConfig', 'RevisionId', 'PackageType', 'Architectures', 'EphemeralStorage', 'SnapStart', 'LoggingConfig']
+DEBUG: Resource block count (top-level resources): 65
+DEBUG: Total resource instances (including meta): 67
+DEBUG: Using ARN as key for aws_cloudwatch_event_rule.order_placed_0: arn:aws:events:eu-west-2:379673441375:rule/dev-order-bus/dev-order-placed
+DEBUG: Using ARN as key for aws_cloudwatch_event_target.order_handler_0: arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler
+DEBUG: Using ARN as key for aws_sqs_queue.eventbridge_dlq_0: arn:aws:sqs:eu-west-2:379673441375:dev-order-placed-eventbridge-dlq
+DEBUG: Using ARN as key for aws_cloudwatch_event_rule.order_placed_0: arn:aws:events:eu-west-2:379673441375:rule/dev-payment-bus/dev-payment-processed
+DEBUG: Using ARN as key for aws_cloudwatch_event_target.order_handler_0: arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler
+DEBUG: Using ARN as key for aws_sqs_queue.eventbridge_dlq_0: arn:aws:sqs:eu-west-2:379673441375:dev-payment-processed-eventbridge-dlq
+DEBUG: Using ARN as key for aws_dynamodb_table.this_0: arn:aws:dynamodb:eu-west-2:379673441375:table/dev-inventory-table
+DEBUG: Using ID as key for aws_api_gateway_deployment.this_0: 7n7hct
+DEBUG: Using ID as key for aws_api_gateway_resource.this_0: 55xlh7
+DEBUG: Using ARN as key for aws_iam_role.lambda_exec_0: arn:aws:iam::379673441375:role/dev-metrics-service-handler-exec-role
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_cloudwatch_metrics_0: dev-metrics-service-handler-exec-role:dev-metrics-service-handler-cloudwatch-metrics
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_cloudwatch_read_metrics_0: dev-metrics-service-handler-exec-role:dev-metrics-service-handler-cloudwatch-read-metrics
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_eventbridge_policy_0: dev-metrics-service-handler-exec-role:dev-metrics-service-handler-allow-put-events
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_logging_0: dev-metrics-service-handler-exec-role:dev-metrics-service-handler-basic-logging
+DEBUG: Using ARN as key for aws_lambda_function.this_0: arn:aws:lambda:eu-west-2:379673441375:function:dev-metrics-service-handler
+DEBUG: Using ARN as key for aws_cloudwatch_log_group.grafana_0: arn:aws:logs:eu-west-2:379673441375:log-group:/ecs/dev-pulsequeue-monitoring-grafana
+DEBUG: Using ARN as key for aws_cloudwatch_log_group.prometheus_0: arn:aws:logs:eu-west-2:379673441375:log-group:/ecs/dev-pulsequeue-monitoring-prometheus
+DEBUG: Using ARN as key for aws_ecs_cluster.monitoring_0: arn:aws:ecs:eu-west-2:379673441375:cluster/dev-pulsequeue-monitoring-cluster
+DEBUG: Using ARN as key for aws_ecs_service.grafana_0: arn:aws:ecs:eu-west-2:379673441375:service/dev-pulsequeue-monitoring-cluster/dev-pulsequeue-monitoring-grafana-service
+DEBUG: Using ARN as key for aws_ecs_service.prometheus_0: arn:aws:ecs:eu-west-2:379673441375:service/dev-pulsequeue-monitoring-cluster/dev-pulsequeue-monitoring-prometheus-service
+DEBUG: Using ARN as key for aws_ecs_task_definition.grafana_0: arn:aws:ecs:eu-west-2:379673441375:task-definition/dev-pulsequeue-monitoring-grafana:11
+DEBUG: Using ARN as key for aws_ecs_task_definition.prometheus_0: arn:aws:ecs:eu-west-2:379673441375:task-definition/dev-pulsequeue-monitoring-prometheus:15
+DEBUG: Using ARN as key for aws_iam_role.monitoring_execution_0: arn:aws:iam::379673441375:role/dev-pulsequeue-monitoring-execution-role
+DEBUG: [STATE] aws_iam_role_policy_attachment resource key: dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy, attributes: {'id': 'dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy', 'policy_arn': 'arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy', 'role': 'dev-pulsequeue-monitoring-execution-role'}
+DEBUG: Using ARN as key for aws_security_group.monitoring_0: arn:aws:ec2:eu-west-2:379673441375:security-group/sg-0875d4407fd3dfbd4
+DEBUG: Using ARN as key for aws_cloudwatch_event_bus.custom_0: arn:aws:events:eu-west-2:379673441375:event-bus/dev-order-bus
+DEBUG: Using ARN as key for aws_iam_role.lambda_exec_0: arn:aws:iam::379673441375:role/dev-order-service-handler-exec-role
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_cloudwatch_metrics_0: dev-order-service-handler-exec-role:dev-order-service-handler-cloudwatch-metrics
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_eventbridge_policy_0: dev-order-service-handler-exec-role:dev-order-service-handler-allow-put-events
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_logging_0: dev-order-service-handler-exec-role:dev-order-service-handler-basic-logging
+DEBUG: Using ARN as key for aws_lambda_function.this_0: arn:aws:lambda:eu-west-2:379673441375:function:dev-order-service-handler
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_dynamodb_policy_0: dev-order-service-handler-exec-role:dev-dev-order-service-handler-dynamodb-policy
+DEBUG: Using ARN as key for aws_cloudwatch_event_bus.custom_0: arn:aws:events:eu-west-2:379673441375:event-bus/dev-payment-bus
+DEBUG: Using ARN as key for aws_iam_role.lambda_exec_0: arn:aws:iam::379673441375:role/dev-payment-service-handler-exec-role
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_cloudwatch_metrics_0: dev-payment-service-handler-exec-role:dev-payment-service-handler-cloudwatch-metrics
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_eventbridge_policy_0: dev-payment-service-handler-exec-role:dev-payment-service-handler-allow-put-events
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_logging_0: dev-payment-service-handler-exec-role:dev-payment-service-handler-basic-logging
+DEBUG: Using ARN as key for aws_lambda_function.this_0: arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler
+DEBUG: Using ID as key for aws_iam_role_policy.lambda_dynamodb_policy_0: dev-payment-service-handler-exec-role:dev-dev-payment-service-handler-dynamodb-policy
+DEBUG: Using ARN as key for aws_internet_gateway.main_0: arn:aws:ec2:eu-west-2:379673441375:internet-gateway/igw-081ac87ce7fed18a7
+DEBUG: Using ARN as key for aws_security_group.lab_access_0: arn:aws:ec2:eu-west-2:379673441375:security-group/sg-0762af90e49839c32
+DEBUG: Using ARN as key for aws_subnet.public_0: arn:aws:ec2:eu-west-2:379673441375:subnet/subnet-054e81827b8d1825d
+DEBUG: Using ARN as key for aws_subnet.public_1: arn:aws:ec2:eu-west-2:379673441375:subnet/subnet-0a215fe620bf37230
+DEBUG: Using ARN as key for aws_vpc.main_0: arn:aws:ec2:eu-west-2:379673441375:vpc/vpc-08cb345ff33342bdf
+DEBUG: Total resources in state: 53
+DEBUG: Sample state resource keys (part 1): ['arn:aws:iam::379673441375:role/dev-pulsequeue-monitoring-execution-role', 'arn:aws:iam::379673441375:role/dev-order-service-handler-exec-role']
+DEBUG: Sample state resource keys (part 2): ['arn:aws:iam::379673441375:role/dev-payment-service-handler-exec-role', 'arn:aws:dynamodb:eu-west-2:379673441375:table/dev-inventory-table', 'dev-order-service-handler-exec-role:dev-order-service-handler-allow-put-events']
+DEBUG: Sample live resource keys: ['arn:aws:iam::379673441375:role/dev-order-service-handler-exec-role', 'arn:aws:dynamodb:eu-west-2:379673441375:table/dev-inventory-table', 'arn:aws:iam::379673441375:role/aws-service-role/organizations.amazonaws.com/AWSServiceRoleForOrganizations', 'event_target:dev-payment-bus:dev-payment-processed:arn:aws:lambda:eu-west-2:379673441375:function:dev-payment-service-handler', 'lambda_permission:dev-order-service-handler:AllowExecutionFrom-dev-order-placed-Rule']
+DEBUG: Total live resources: 129
+DEBUG: All state resource keys for aws_iam_role_policy_attachment:
+  STATE: dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+DEBUG: All live resource keys for aws_iam_role_policy_attachment:
+  LIVE: dev-pulsequeue-monitoring-execution-role/arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+DEBUG: monitoring_execution key in state: True
+DEBUG: monitoring_execution key in live: True
+DEBUG: All state resource keys for aws_route_table_association:
+  STATE: rtbassoc-0c9280771844fedbc
+  STATE: rtbassoc-01f1826569dbae2fc
+DEBUG: All live resource keys for aws_route_table_association:
+  LIVE: rtbassoc-0c9280771844fedbc
+  LIVE: rtbassoc-01f1826569dbae2fc
+DEBUG: No live name found for aws_lambda_permission.allow_eventbridge_rule_0, available keys: ['Sid', 'Action', 'Effect', 'Principal', 'Resource', 'Condition']
+DEBUG: No live name found for aws_route_table_association.public_1, available keys: ['Main', 'RouteTableAssociationId', 'RouteTableId', 'SubnetId', 'AssociationState']
+DEBUG: No live name found for aws_lambda_function.this_0, available keys: ['FunctionName', 'FunctionArn', 'Runtime', 'Role', 'Handler', 'CodeSize', 'Description', 'Timeout', 'MemorySize', 'LastModified', 'CodeSha256', 'Version', 'Environment', 'TracingConfig', 'RevisionId', 'PackageType', 'Architectures', 'EphemeralStorage', 'SnapStart', 'LoggingConfig']
+DEBUG: No live name found for aws_ecs_task_definition.prometheus_0, available keys: ['taskDefinitionArn', 'containerDefinitions', 'family', 'executionRoleArn', 'networkMode', 'revision', 'volumes', 'status', 'requiresAttributes', 'placementConstraints', 'compatibilities', 'requiresCompatibilities', 'cpu', 'memory', 'registeredAt', 'registeredBy']
+DEBUG: No live name found for aws_lambda_function.this_0, available keys: ['FunctionName', 'FunctionArn', 'Runtime', 'Role', 'Handler', 'CodeSize', 'Description', 'Timeout', 'MemorySize', 'LastModified', 'CodeSha256', 'Version', 'Environment', 'TracingConfig', 'RevisionId', 'PackageType', 'Architectures', 'EphemeralStorage', 'SnapStart', 'LoggingConfig']
+DEBUG: No live name found for aws_security_group.monitoring_0, available keys: ['GroupId', 'IpPermissionsEgress', 'Tags', 'VpcId', 'SecurityGroupArn', 'OwnerId', 'GroupName', 'Description', 'IpPermissions']
+DEBUG: No live name found for aws_lambda_function.this_0, available keys: ['FunctionName', 'FunctionArn', 'Runtime', 'Role', 'Handler', 'CodeSize', 'Description', 'Timeout', 'MemorySize', 'LastModified', 'CodeSha256', 'Version', 'TracingConfig', 'RevisionId', 'PackageType', 'Architectures', 'EphemeralStorage', 'SnapStart', 'LoggingConfig']
+DEBUG: No live name found for aws_api_gateway_integration.this_0, available keys: ['ResponseMetadata', 'type', 'httpMethod', 'uri', 'passthroughBehavior', 'timeoutInMillis', 'cacheNamespace', 'cacheKeyParameters']
+DEBUG: No live name found for aws_subnet.public_0, available keys: ['AvailabilityZoneId', 'MapCustomerOwnedIpOnLaunch', 'OwnerId', 'AssignIpv6AddressOnCreation', 'Ipv6CidrBlockAssociationSet', 'Tags', 'SubnetArn', 'EnableDns64', 'Ipv6Native', 'PrivateDnsNameOptionsOnLaunch', 'BlockPublicAccessStates', 'SubnetId', 'State', 'VpcId', 'CidrBlock', 'AvailableIpAddressCount', 'AvailabilityZone', 'DefaultForAz', 'MapPublicIpOnLaunch']
+DEBUG: No live name found for aws_internet_gateway.main_0, available keys: ['Attachments', 'InternetGatewayId', 'OwnerId', 'Tags']
+DEBUG: No live name found for aws_ecs_task_definition.grafana_0, available keys: ['taskDefinitionArn', 'containerDefinitions', 'family', 'executionRoleArn', 'networkMode', 'revision', 'volumes', 'status', 'requiresAttributes', 'placementConstraints', 'compatibilities', 'requiresCompatibilities', 'cpu', 'memory', 'registeredAt', 'registeredBy']
+DEBUG: No live name found for aws_security_group.lab_access_0, available keys: ['GroupId', 'IpPermissionsEgress', 'Tags', 'VpcId', 'SecurityGroupArn', 'OwnerId', 'GroupName', 'Description', 'IpPermissions']
+DEBUG: No live name found for aws_lambda_permission.api_gateway_0, available keys: ['Sid', 'Action', 'Effect', 'Principal', 'Resource', 'Condition']
+DEBUG: No live name found for aws_iam_role_policy_attachment.monitoring_execution_0, available keys: ['role_name', 'policy_arn', 'policy_name']
+DEBUG: No live name found for aws_lambda_permission.allow_eventbridge_rule_0, available keys: ['Sid', 'Action', 'Effect', 'Principal', 'Resource', 'Condition']
+DEBUG: No live name found for aws_route_table_association.public_0, available keys: ['Main', 'RouteTableAssociationId', 'RouteTableId', 'SubnetId', 'AssociationState']
+DEBUG: No live name found for aws_subnet.public_1, available keys: ['AvailabilityZoneId', 'MapCustomerOwnedIpOnLaunch', 'OwnerId', 'AssignIpv6AddressOnCreation', 'Ipv6CidrBlockAssociationSet', 'Tags', 'SubnetArn', 'EnableDns64', 'Ipv6Native', 'PrivateDnsNameOptionsOnLaunch', 'BlockPublicAccessStates', 'SubnetId', 'State', 'VpcId', 'CidrBlock', 'AvailableIpAddressCount', 'AvailabilityZone', 'DefaultForAz', 'MapPublicIpOnLaunch']
+DEBUG: No live name found for aws_api_gateway_method.this_0, available keys: ['ResponseMetadata', 'httpMethod', 'authorizationType', 'apiKeyRequired', 'methodIntegration']
+DEBUG: No live name found for aws_route_table.public_0, available keys: ['Associations', 'PropagatingVgws', 'RouteTableId', 'Routes', 'Tags', 'VpcId', 'OwnerId']
+DEBUG: Matched resources:
+49
+DEBUG: Drifted or missing resources:
+4
+DEBUG: Unique drifted resource keys: 18
+DEBUG: Total drift entries: 25
+DEBUG: Unmatched/unreported resources: {'arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb', 'arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev'}
+DEBUG: Count of unmatched/unreported resources: 2
+DEBUG: Meta resources: [{'resource_type': 'aws_region', 'resource_name': 'current', 'value': 'eu-west-2'}, {'resource_type': 'aws_caller_identity', 'resource_name': 'current', 'value': 'arn:aws:iam::379673441375:user/theRealKarlos'}, {'resource_type': 'aws_caller_identity', 'resource_name': 'current', 'value': 'arn:aws:iam::379673441375:user/theRealKarlos'}, {'resource_type': 'aws_caller_identity', 'resource_name': 'current', 'value': 'arn:aws:iam::379673441375:user/theRealKarlos'}, {'resource_type': 'aws_region', 'resource_name': 'current', 'value': 'eu-west-2'}, {'resource_type': 'aws_region', 'resource_name': 'current', 'value': 'eu-west-2'}, {'resource_type': 'aws_caller_identity', 'resource_name': 'current', 'value': 'arn:aws:iam::379673441375:user/theRealKarlos'}, {'resource_type': 'aws_region', 'resource_name': 'current', 'value': 'eu-west-2'}, {'resource_type': 'aws_caller_identity', 'resource_name': 'current', 'value': 'arn:aws:iam::379673441375:user/theRealKarlos'}, {'resource_type': 'aws_region', 'resource_name': 'current', 'value': 'eu-west-2'}]
+DEBUG: Count of meta resources: 10
+DEBUG: Unmatched and undetected drift resources: {'arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb', 'arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev'}
+DEBUG: Count of unmatched and undetected drift resources: 2
+{
+  "drift_detected": true,
+  "drifts": [
+    {
+      "resource_key": "arn:aws:cloudwatch::379673441375:dashboard/dev-pulsequeue-dashboard",
+      "drift_type": "missing_resource",
+      "description": "Resource arn:aws:cloudwatch::379673441375:dashboard/dev-pulsequeue-dashboard exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "apigw_deployment:944jq03xeb:7n7hct",
+      "drift_type": "missing_resource",
+      "description": "Resource apigw_deployment:944jq03xeb:7n7hct exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "apigw_integration:944jq03xeb:55xlh7:GET",
+      "drift_type": "missing_resource",
+      "description": "Resource apigw_integration:944jq03xeb:55xlh7:GET exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "apigw_method:944jq03xeb:55xlh7:GET",
+      "drift_type": "missing_resource",
+      "description": "Resource apigw_method:944jq03xeb:55xlh7:GET exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "apigw_resource:944jq03xeb:",
+      "drift_type": "missing_resource",
+      "description": "Resource apigw_resource:944jq03xeb: exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "apigw_rest_api:944jq03xeb",
+      "drift_type": "missing_resource",
+      "description": "Resource apigw_rest_api:944jq03xeb exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "apigw_stage:944jq03xeb:dev",
+      "drift_type": "missing_resource",
+      "description": "Resource apigw_stage:944jq03xeb:dev exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_cloudwatch_metrics_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_cloudwatch_metrics_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_cloudwatch_read_metrics_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_cloudwatch_read_metrics_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_eventbridge_policy_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_eventbridge_policy_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_logging_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_logging_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "arn:aws:logs:eu-west-2:379673441375:log-group:/ecs/dev-pulsequeue-monitoring-grafana",
+      "drift_type": "missing_resource",
+      "description": "Resource arn:aws:logs:eu-west-2:379673441375:log-group:/ecs/dev-pulsequeue-monitoring-grafana exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "arn:aws:logs:eu-west-2:379673441375:log-group:/ecs/dev-pulsequeue-monitoring-prometheus",
+      "drift_type": "missing_resource",
+      "description": "Resource arn:aws:logs:eu-west-2:379673441375:log-group:/ecs/dev-pulsequeue-monitoring-prometheus exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+      "drift_type": "missing_resource",
+      "description": "Resource arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_cloudwatch_metrics_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_cloudwatch_metrics_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_eventbridge_policy_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_eventbridge_policy_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_logging_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_logging_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_dynamodb_policy_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_dynamodb_policy_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_cloudwatch_metrics_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_cloudwatch_metrics_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_eventbridge_policy_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_eventbridge_policy_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_logging_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_logging_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_iam_role_policy.lambda_dynamodb_policy_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_iam_role_policy.lambda_dynamodb_policy_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_route_table.public_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_route_table.public_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_route_table_association.public_0",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_route_table_association.public_0 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "aws_route_table_association.public_1",
+      "drift_type": "missing_resource",
+      "description": "Resource aws_route_table_association.public_1 exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb",
+      "drift_type": "missing_resource",
+      "description": "Resource arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb exists in state but not in live AWS"
+    },
+    {
+      "resource_key": "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev",
+      "drift_type": "missing_resource",
+      "description": "Resource arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev exists in state but not in live AWS"
+    }
+  ],
+  "summary": {
+    "resource_block_count": 65,
+    "total_instance_count": 67,
+    "total_resources": 53,
+    "drift_count": 18,
+    "timestamp": "2025-07-17T19:37:17.026953",
+    "matching_resources": [
+      {
+        "resource_type": "aws_iam_role",
+        "resource_name": "monitoring_execution",
+        "aws_live_name": "dev-pulsequeue-monitoring-execution-role",
+        "display_name": "monitoring_execution (AWS: dev-pulsequeue-monitoring-execution-role)"
+      },
+      {
+        "resource_type": "aws_iam_role",
+        "resource_name": "lambda_exec",
+        "aws_live_name": "dev-order-service-handler-exec-role",
+        "display_name": "lambda_exec (AWS: dev-order-service-handler-exec-role)"
+      },
+      {
+        "resource_type": "aws_iam_role",
+        "resource_name": "lambda_exec",
+        "aws_live_name": "dev-payment-service-handler-exec-role",
+        "display_name": "lambda_exec (AWS: dev-payment-service-handler-exec-role)"
+      },
+      {
+        "resource_type": "aws_dynamodb_table",
+        "resource_name": "this",
+        "aws_live_name": "dev-inventory-table",
+        "display_name": "dev-inventory-table"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_eventbridge_policy",
+        "aws_live_name": "dev-order-service-handler-allow-put-events",
+        "display_name": "lambda_eventbridge_policy (AWS: dev-order-service-handler-allow-put-events)"
+      },
+      {
+        "resource_type": "aws_lambda_permission",
+        "resource_name": "allow_eventbridge_rule",
+        "aws_live_name": null,
+        "display_name": "allow_eventbridge_rule"
+      },
+      {
+        "resource_type": "aws_iam_role",
+        "resource_name": "lambda_exec",
+        "aws_live_name": "dev-metrics-service-handler-exec-role",
+        "display_name": "lambda_exec (AWS: dev-metrics-service-handler-exec-role)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_cloudwatch_metrics",
+        "aws_live_name": "dev-payment-service-handler-cloudwatch-metrics",
+        "display_name": "lambda_cloudwatch_metrics (AWS: dev-payment-service-handler-cloudwatch-metrics)"
+      },
+      {
+        "resource_type": "aws_route_table_association",
+        "resource_name": "public",
+        "aws_live_name": null,
+        "display_name": "public"
+      },
+      {
+        "resource_type": "aws_cloudwatch_event_bus",
+        "resource_name": "custom",
+        "aws_live_name": "dev-payment-bus",
+        "display_name": "custom (AWS: dev-payment-bus)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_logging",
+        "aws_live_name": "dev-metrics-service-handler-basic-logging",
+        "display_name": "lambda_logging (AWS: dev-metrics-service-handler-basic-logging)"
+      },
+      {
+        "resource_type": "aws_lambda_function",
+        "resource_name": "this",
+        "aws_live_name": null,
+        "display_name": "dev-order-service-handler"
+      },
+      {
+        "resource_type": "aws_ecs_task_definition",
+        "resource_name": "prometheus",
+        "aws_live_name": null,
+        "display_name": "prometheus"
+      },
+      {
+        "resource_type": "aws_lambda_function",
+        "resource_name": "this",
+        "aws_live_name": null,
+        "display_name": "dev-payment-service-handler"
+      },
+      {
+        "resource_type": "aws_security_group",
+        "resource_name": "monitoring",
+        "aws_live_name": null,
+        "display_name": "monitoring"
+      },
+      {
+        "resource_type": "aws_lambda_function",
+        "resource_name": "this",
+        "aws_live_name": null,
+        "display_name": "dev-metrics-service-handler"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_cloudwatch_metrics",
+        "aws_live_name": "dev-order-service-handler-cloudwatch-metrics",
+        "display_name": "lambda_cloudwatch_metrics (AWS: dev-order-service-handler-cloudwatch-metrics)"
+      },
+      {
+        "resource_type": "aws_api_gateway_resource",
+        "resource_name": "this",
+        "aws_live_name": "55xlh7",
+        "display_name": "55xlh7"
+      },
+      {
+        "resource_type": "aws_api_gateway_integration",
+        "resource_name": "this",
+        "aws_live_name": null,
+        "display_name": "aws_api_gateway_integration:agi-944jq03xeb-55xlh7-GET"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_cloudwatch_metrics",
+        "aws_live_name": "dev-metrics-service-handler-cloudwatch-metrics",
+        "display_name": "lambda_cloudwatch_metrics (AWS: dev-metrics-service-handler-cloudwatch-metrics)"
+      },
+      {
+        "resource_type": "aws_subnet",
+        "resource_name": "public",
+        "aws_live_name": null,
+        "display_name": "public"
+      },
+      {
+        "resource_type": "aws_sqs_queue_policy",
+        "resource_name": "eventbridge_dlq_policy",
+        "aws_live_name": "https://sqs.eu-west-2.amazonaws.com/379673441375/dev-order-placed-eventbridge-dlq",
+        "display_name": "eventbridge_dlq_policy (AWS: https://sqs.eu-west-2.amazonaws.com/379673441375/dev-order-placed-eventbridge-dlq)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_eventbridge_policy",
+        "aws_live_name": "dev-payment-service-handler-allow-put-events",
+        "display_name": "lambda_eventbridge_policy (AWS: dev-payment-service-handler-allow-put-events)"
+      },
+      {
+        "resource_type": "aws_internet_gateway",
+        "resource_name": "main",
+        "aws_live_name": null,
+        "display_name": "main"
+      },
+      {
+        "resource_type": "aws_ecs_task_definition",
+        "resource_name": "grafana",
+        "aws_live_name": null,
+        "display_name": "grafana"
+      },
+      {
+        "resource_type": "aws_ecs_service",
+        "resource_name": "grafana",
+        "aws_live_name": "dev-pulsequeue-monitoring-grafana-service",
+        "display_name": "grafana (AWS: dev-pulsequeue-monitoring-grafana-service)"
+      },
+      {
+        "resource_type": "aws_cloudwatch_dashboard",
+        "resource_name": "this",
+        "aws_live_name": "dev-pulsequeue-dashboard",
+        "display_name": "dev-pulsequeue-dashboard"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_cloudwatch_read_metrics",
+        "aws_live_name": "dev-metrics-service-handler-cloudwatch-read-metrics",
+        "display_name": "lambda_cloudwatch_read_metrics (AWS: dev-metrics-service-handler-cloudwatch-read-metrics)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_dynamodb_policy",
+        "aws_live_name": "dev-dev-payment-service-handler-dynamodb-policy",
+        "display_name": "lambda_dynamodb_policy (AWS: dev-dev-payment-service-handler-dynamodb-policy)"
+      },
+      {
+        "resource_type": "aws_security_group",
+        "resource_name": "lab_access",
+        "aws_live_name": null,
+        "display_name": "lab_access"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_eventbridge_policy",
+        "aws_live_name": "dev-metrics-service-handler-allow-put-events",
+        "display_name": "lambda_eventbridge_policy (AWS: dev-metrics-service-handler-allow-put-events)"
+      },
+      {
+        "resource_type": "aws_cloudwatch_event_bus",
+        "resource_name": "custom",
+        "aws_live_name": "dev-order-bus",
+        "display_name": "custom (AWS: dev-order-bus)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_logging",
+        "aws_live_name": "dev-payment-service-handler-basic-logging",
+        "display_name": "lambda_logging (AWS: dev-payment-service-handler-basic-logging)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_dynamodb_policy",
+        "aws_live_name": "dev-dev-order-service-handler-dynamodb-policy",
+        "display_name": "lambda_dynamodb_policy (AWS: dev-dev-order-service-handler-dynamodb-policy)"
+      },
+      {
+        "resource_type": "aws_lambda_permission",
+        "resource_name": "api_gateway",
+        "aws_live_name": null,
+        "display_name": "api_gateway"
+      },
+      {
+        "resource_type": "aws_iam_role_policy_attachment",
+        "resource_name": "monitoring_execution",
+        "aws_live_name": null,
+        "display_name": "monitoring_execution"
+      },
+      {
+        "resource_type": "aws_lambda_permission",
+        "resource_name": "allow_eventbridge_rule",
+        "aws_live_name": null,
+        "display_name": "allow_eventbridge_rule"
+      },
+      {
+        "resource_type": "aws_ecs_cluster",
+        "resource_name": "monitoring",
+        "aws_live_name": "dev-pulsequeue-monitoring-cluster",
+        "display_name": "monitoring (AWS: dev-pulsequeue-monitoring-cluster)"
+      },
+      {
+        "resource_type": "aws_route_table_association",
+        "resource_name": "public",
+        "aws_live_name": null,
+        "display_name": "public"
+      },
+      {
+        "resource_type": "aws_cloudwatch_event_rule",
+        "resource_name": "order_placed",
+        "aws_live_name": "dev-payment-processed",
+        "display_name": "order_placed (AWS: dev-payment-processed)"
+      },
+      {
+        "resource_type": "aws_ecs_service",
+        "resource_name": "prometheus",
+        "aws_live_name": "dev-pulsequeue-monitoring-prometheus-service",
+        "display_name": "prometheus (AWS: dev-pulsequeue-monitoring-prometheus-service)"
+      },
+      {
+        "resource_type": "aws_cloudwatch_event_rule",
+        "resource_name": "order_placed",
+        "aws_live_name": "dev-order-placed",
+        "display_name": "order_placed (AWS: dev-order-placed)"
+      },
+      {
+        "resource_type": "aws_iam_role_policy",
+        "resource_name": "lambda_logging",
+        "aws_live_name": "dev-order-service-handler-basic-logging",
+        "display_name": "lambda_logging (AWS: dev-order-service-handler-basic-logging)"
+      },
+      {
+        "resource_type": "aws_subnet",
+        "resource_name": "public",
+        "aws_live_name": null,
+        "display_name": "public"
+      },
+      {
+        "resource_type": "aws_vpc",
+        "resource_name": "main",
+        "aws_live_name": "vpc-08cb345ff33342bdf",
+        "display_name": "main (AWS: vpc-08cb345ff33342bdf)"
+      },
+      {
+        "resource_type": "aws_api_gateway_deployment",
+        "resource_name": "this",
+        "aws_live_name": "7n7hct",
+        "display_name": "7n7hct"
+      },
+      {
+        "resource_type": "aws_api_gateway_method",
+        "resource_name": "this",
+        "aws_live_name": null,
+        "display_name": "aws_api_gateway_method:agm-944jq03xeb-55xlh7-GET"
+      },
+      {
+        "resource_type": "aws_route_table",
+        "resource_name": "public",
+        "aws_live_name": null,
+        "display_name": "public"
+      },
+      {
+        "resource_type": "aws_sqs_queue_policy",
+        "resource_name": "eventbridge_dlq_policy",
+        "aws_live_name": "https://sqs.eu-west-2.amazonaws.com/379673441375/dev-payment-processed-eventbridge-dlq",
+        "display_name": "eventbridge_dlq_policy (AWS: https://sqs.eu-west-2.amazonaws.com/379673441375/dev-payment-processed-eventbridge-dlq)"
+      }
+    ],
+    "skipped_resources": [
+      "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb",
+      "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev"
+    ],
+    "meta_resources": [
+      {
+        "resource_type": "aws_region",
+        "resource_name": "current",
+        "value": "eu-west-2"
+      },
+      {
+        "resource_type": "aws_caller_identity",
+        "resource_name": "current",
+        "value": "arn:aws:iam::379673441375:user/theRealKarlos"
+      },
+      {
+        "resource_type": "aws_caller_identity",
+        "resource_name": "current",
+        "value": "arn:aws:iam::379673441375:user/theRealKarlos"
+      },
+      {
+        "resource_type": "aws_caller_identity",
+        "resource_name": "current",
+        "value": "arn:aws:iam::379673441375:user/theRealKarlos"
+      },
+      {
+        "resource_type": "aws_region",
+        "resource_name": "current",
+        "value": "eu-west-2"
+      },
+      {
+        "resource_type": "aws_region",
+        "resource_name": "current",
+        "value": "eu-west-2"
+      },
+      {
+        "resource_type": "aws_caller_identity",
+        "resource_name": "current",
+        "value": "arn:aws:iam::379673441375:user/theRealKarlos"
+      },
+      {
+        "resource_type": "aws_region",
+        "resource_name": "current",
+        "value": "eu-west-2"
+      },
+      {
+        "resource_type": "aws_caller_identity",
+        "resource_name": "current",
+        "value": "arn:aws:iam::379673441375:user/theRealKarlos"
+      },
+      {
+        "resource_type": "aws_region",
+        "resource_name": "current",
+        "value": "eu-west-2"
+      }
+    ],
+    "unmatched_undetected_resources": [
+      {
+        "resource_type": "aws_api_gateway_rest_api",
+        "resource_name": "this",
+        "key": "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb"
+      },
+      {
+        "resource_type": "aws_api_gateway_stage",
+        "resource_name": "this",
+        "key": "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev"
+      }
+    ],
+    "unmatched_resources": [
+      {
+        "resource_type": "aws_api_gateway_rest_api",
+        "resource_name": "this",
+        "key": "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb"
+      },
+      {
+        "resource_type": "aws_api_gateway_stage",
+        "resource_name": "this",
+        "key": "arn:aws:apigateway:eu-west-2::/restapis/944jq03xeb/stages/dev"
+      }
+    ]
+  }
+2025-07-17 19:37:17,028 - drift_detector - WARNING - Drift detected! Exiting with code 1
+}
