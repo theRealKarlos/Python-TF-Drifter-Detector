@@ -135,6 +135,39 @@ def get_resource_identifier(attributes: Dict[str, Any], resource_type: str, reso
     }
 
 
+def extract_apigateway_key(attributes: dict, resource_type: str, resource_name: str, idx: int) -> str:
+    """
+    Extract the best key for API Gateway resources, preferring:
+    1. ARN (if available)
+    2. ID (if available)
+    3. Composite key (for methods/integrations)
+    4. Fallback to resource_type.name_idx
+    """
+    # Try ARN
+    arn = attributes.get("arn")
+    if arn:
+        return arn
+    # Try ID
+    resource_id = attributes.get("id")
+    if resource_id:
+        return resource_id
+    # Try composite key for methods/integrations
+    if resource_type == "aws_api_gateway_method":
+        rest_api_id = attributes.get("rest_api_id") or attributes.get("restApiId")
+        resource_id = attributes.get("resource_id") or attributes.get("resourceId") or attributes.get("id")
+        http_method = attributes.get("http_method") or attributes.get("httpMethod")
+        if rest_api_id and resource_id and http_method:
+            return f"agm-{rest_api_id}-{resource_id}-{http_method}"
+    if resource_type == "aws_api_gateway_integration":
+        rest_api_id = attributes.get("rest_api_id") or attributes.get("restApiId")
+        resource_id = attributes.get("resource_id") or attributes.get("resourceId") or attributes.get("id")
+        http_method = attributes.get("http_method") or attributes.get("httpMethod")
+        if rest_api_id and resource_id and http_method:
+            return f"agi-{rest_api_id}-{resource_id}-{http_method}"
+    # Fallback
+    return f"{resource_type}.{resource_name}_{idx}"
+
+
 def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> Dict[str, Any]:
     """
     Fetches live AWS resources based on what's found in the Terraform state.
@@ -203,22 +236,31 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                     unique_resource_key = association_id
                 else:
                     unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
-            else:
-                # Try to extract ARN for unique identification
-                try:
-                    arn = extract_arn_from_attributes(attributes, resource_type)
-                    # Use ARN as the primary key for matching
-                    unique_resource_key = arn
-                except ValueError:
-                    # If no ARN available, fall back to resource name + index
-                    unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
-
             # Special keying for aws_iam_role_policy_attachment
-            if resource_type == "aws_iam_role_policy_attachment":
+            elif resource_type == "aws_iam_role_policy_attachment":
                 role = attributes.get("role")
                 policy_arn = attributes.get("policy_arn")
                 if role and policy_arn:
                     unique_resource_key = f"{role}/{policy_arn}"
+                else:
+                    unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
+            # API Gateway: use explicit key extraction order
+            elif (
+                resource_type.startswith("aws_api_gateway_rest_api")
+                or resource_type.startswith("aws_api_gateway_resource")
+                or resource_type.startswith("aws_api_gateway_method")
+                or resource_type.startswith("aws_api_gateway_integration")
+                or resource_type.startswith("aws_api_gateway_deployment")
+                or resource_type.startswith("aws_api_gateway_stage")
+            ):
+                unique_resource_key = extract_apigateway_key(attributes, resource_type, resource_name, idx)
+            else:
+                # Try to extract ARN for unique identification
+                try:
+                    arn = extract_arn_from_attributes(attributes, resource_type)
+                    unique_resource_key = arn
+                except ValueError:
+                    unique_resource_key = f"{resource_type}.{resource_name}_{idx}"
 
             # Route to appropriate service-specific fetcher
             if resource_type.startswith("aws_instance"):
@@ -245,7 +287,6 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                     unique_resource_key = f"{unique_resource_key}_{event_bus_name}"
                 live_resources.update(fetch_events_resources(events_client, unique_resource_key, attributes, resource_type))
             elif resource_type.startswith("aws_cloudwatch_event_target"):
-                # Use a composite key for EventBridge targets to avoid collision with Lambda ARNs
                 event_bus_name = attributes.get("event_bus_name", "")
                 rule_name = attributes.get("rule", "")
                 target_arn = attributes.get("arn", "")
@@ -256,7 +297,6 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
             elif resource_type.startswith("aws_lambda_permission"):
                 function_name = attributes.get("function_name", "")
                 statement_id = attributes.get("statement_id", "")
-                # Normalise function_name: extract name from ARN if needed
                 if function_name.startswith("arn:aws:lambda:"):
                     function_name = function_name.split(":")[-1]
                 composite_key = f"lambda_permission:{function_name}:{statement_id}"
@@ -297,16 +337,8 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                 or resource_type.startswith("aws_api_gateway_deployment")
                 or resource_type.startswith("aws_api_gateway_stage")
             ):
+                # All API Gateway resource types are routed here, with key preference: ARN > ID > composite > fallback
                 live_resources.update(fetch_apigateway_resources(apigateway_client, unique_resource_key, attributes))
-            elif resource_type.startswith("aws_api_gateway_rest_api"):
-                rest_api_id = attributes.get("id", "")
-                composite_key = f"apigw_rest_api:{rest_api_id}"
-                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
-            elif resource_type.startswith("aws_api_gateway_deployment"):
-                rest_api_id = attributes.get("rest_api_id", "")
-                deployment_id = attributes.get("id", "")
-                composite_key = f"apigw_deployment:{rest_api_id}:{deployment_id}"
-                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
             elif (
                 resource_type.startswith("aws_cloudwatch_dashboard")
                 or resource_type.startswith("aws_cloudwatch_metric_alarm")
@@ -334,32 +366,10 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
             elif resource_type.startswith("aws_sqs_queue"):
                 queue_name = attributes.get("name", "")
                 if queue_name:
-                    # Normalise queue name if it's a URL
                     if queue_name.startswith("https://"):
                         queue_name = queue_name.split("/")[-1]
                     unique_resource_key = f"{unique_resource_key}_{queue_name}"
                 live_resources.update(fetch_sqs_resources(sqs_client, unique_resource_key, attributes))
-            elif resource_type.startswith("aws_api_gateway_integration"):
-                rest_api_id = attributes.get("rest_api_id", "")
-                resource_id = attributes.get("resource_id", "")
-                http_method = attributes.get("http_method", "")
-                composite_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
-                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
-            elif resource_type.startswith("aws_api_gateway_method"):
-                rest_api_id = attributes.get("rest_api_id", "")
-                resource_id = attributes.get("resource_id", "")
-                http_method = attributes.get("http_method", "")
-                composite_key = f"apigw_method:{rest_api_id}:{resource_id}:{http_method}"
-                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
-            elif resource_type.startswith("aws_api_gateway_resource"):
-                rest_api_id = attributes.get("rest_api_id", "")
-                resource_id = attributes.get("resource_id", "")
-                composite_key = f"apigw_resource:{rest_api_id}:{resource_id}"
-                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
-            elif resource_type.startswith("aws_api_gateway_stage"):
-                rest_api_id = attributes.get("rest_api_id", "")
-                stage_name = attributes.get("stage_name", "")
-                composite_key = f"apigw_stage:{rest_api_id}:{stage_name}"
-                live_resources.update(fetch_apigateway_resources(apigateway_client, composite_key, attributes))
+
 
     return live_resources
