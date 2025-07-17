@@ -34,19 +34,33 @@ def compare_cloudwatch_attributes(
 def _compare_cloudwatch_dashboard_attributes(state_attrs: Dict[str, Any], live_attrs: Dict[str, Any]) -> List[DriftDetail]:
     """
     Compare CloudWatch dashboard attributes between Terraform state and live AWS.
+    Only compare DashboardArn and DashboardBody, as AWS does not return dashboard_name in the live resource.
     Returns a list of drift details for any mismatched attributes.
     """
     drift_details = []
-    state_dashboard_name = state_attrs.get("dashboard_name")
-    live_dashboard_name = live_attrs.get("DashboardName")
-    if state_dashboard_name != live_dashboard_name:
+    # Compare DashboardArn if present in both
+    state_arn = state_attrs.get("dashboard_arn") or state_attrs.get("DashboardArn")
+    live_arn = live_attrs.get("DashboardArn")
+    if state_arn and live_arn and state_arn != live_arn:
         drift_details.append(
             {
-                "attribute": "dashboard_name",
-                "state_value": str(state_dashboard_name),
-                "live_value": str(live_dashboard_name),
+                "attribute": "DashboardArn",
+                "state_value": str(state_arn),
+                "live_value": str(live_arn),
             }
         )
+    # Compare DashboardBody if present in both
+    state_body = state_attrs.get("dashboard_body") or state_attrs.get("DashboardBody")
+    live_body = live_attrs.get("DashboardBody")
+    if state_body and live_body and state_body != live_body:
+        drift_details.append(
+            {
+                "attribute": "DashboardBody",
+                "state_value": str(state_body),
+                "live_value": str(live_body),
+            }
+        )
+    # Do NOT compare dashboard_name, as AWS does not return it in the live resource
     return drift_details
 
 

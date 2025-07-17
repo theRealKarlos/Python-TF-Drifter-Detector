@@ -53,49 +53,46 @@ def _fetch_cloudwatch_dashboards(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch CloudWatch dashboards from AWS and map them by both ARN and dashboard name for drift comparison.
-    This ensures robust matching regardless of which key the state file uses.
-    Returns a dictionary of keys (ARN and name) to dashboard data.
+    Fetch CloudWatch dashboards from AWS and map them by both ARN forms (with and without region) for drift comparison.
+    This ensures robust matching regardless of which ARN form the state file uses.
+    Returns a dictionary of keys (ARN with region, ARN without region, and name) to dashboard data.
     """
     print(f"DEBUG: CloudWatch dashboard fetcher called with resource_key={resource_key}, attributes={attributes}")
+    dashboards = {}
     try:
         import boto3
-        # Get region and account information for ARN construction
-        region = getattr(cloudwatch_client.meta, "region_name", "unknown")
-        try:
+        # Get region and account information
+        session = boto3.session.Session()
+        region = attributes.get("region")
+        if not isinstance(region, str) or not region:
+            region = session.region_name
+        account_id = attributes.get("account_id")
+        if not account_id:
+            # Try to get account ID from caller identity
             sts = boto3.client("sts", region_name=region)
-            account_id = sts.get_caller_identity().get("Account", "unknown")
-        except Exception as e:
-            account_id = f"error: {e}"
-            logger.debug(f"Could not get account ID: {e}")
-        response = cloudwatch_client.list_dashboards()
-        live_resources: Dict[str, LiveResourceData] = {}
-        # Extract the dashboard name from attributes
-        target_dashboard_name = attributes.get("dashboard_name") or attributes.get("id")
-        if not target_dashboard_name:
-            logger.warning(f"No dashboard name found in attributes for {resource_key}")
-            return live_resources
-        logger.debug(f"Looking for CloudWatch dashboard: {target_dashboard_name}")
-        # Construct the ARN for the dashboard key
-        dashboard_arn = f"arn:aws:cloudwatch:{region}:{account_id}:dashboard/{target_dashboard_name}"
-        print(f"DEBUG: Will use dashboard ARN as key: {dashboard_arn} and dashboard name as key: {target_dashboard_name}")
-        # Find the matching dashboard and return it keyed by both ARN and name
-        for dashboard in response.get("DashboardEntries", []):
-            dashboard_name = dashboard.get("DashboardName")
-            if dashboard_name == target_dashboard_name:
-                # Key by ARN
-                live_resources[dashboard_arn] = dashboard
-                logger.debug(f"Successfully matched dashboard {dashboard_name} with ARN key {dashboard_arn}")
-                print(f"DEBUG: CloudWatch dashboard matched with ARN key={dashboard_arn}")
-                # Also key by dashboard name
-                live_resources[dashboard_name] = dashboard
-                logger.debug(f"Also returning dashboard {dashboard_name} with name key {dashboard_name}")
-                print(f"DEBUG: CloudWatch dashboard also matched with name key={dashboard_name}")
-                return live_resources
-        logger.debug(f"Dashboard {target_dashboard_name} not found in AWS response")
-        return live_resources
+            account_id = sts.get_caller_identity()["Account"]
+        dashboard_name = attributes.get("dashboard_name") or attributes.get("id")
+        if not dashboard_name:
+            print("DEBUG: No dashboard name found in attributes, skipping.")
+            return {}
+        # Construct both ARN forms
+        arn_with_region = f"arn:aws:cloudwatch:{region}:{account_id}:dashboard/{dashboard_name}"
+        arn_without_region = f"arn:aws:cloudwatch::{account_id}:dashboard/{dashboard_name}"
+        dashboard_data = {
+            "dashboard_name": dashboard_name,
+            "region": region,
+            "account_id": account_id,
+            "attributes": attributes,
+        }
+        # Return under both ARN forms
+        dashboards[arn_with_region] = dashboard_data
+        dashboards[arn_without_region] = dashboard_data
+        # Also return under dashboard name for legacy matching
+        dashboards[dashboard_name] = dashboard_data
+        print(f"DEBUG: Returning dashboard under keys: {arn_with_region}, {arn_without_region}, {dashboard_name}")
+        return dashboards
     except Exception as e:
-        logger.error(f"Error fetching CloudWatch dashboards: {e}")
+        print(f"ERROR: Exception in _fetch_cloudwatch_dashboards: {e}")
         return {}
 
 
