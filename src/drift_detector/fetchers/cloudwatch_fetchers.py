@@ -53,14 +53,13 @@ def _fetch_cloudwatch_dashboards(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch CloudWatch dashboards from AWS and map them by consistent key for drift comparison.
-    Constructs keys that match the format used in core.py for consistent resource matching.
-    Returns a dictionary of keys to dashboard data.
+    Fetch CloudWatch dashboards from AWS and map them by both ARN and dashboard name for drift comparison.
+    This ensures robust matching regardless of which key the state file uses.
+    Returns a dictionary of keys (ARN and name) to dashboard data.
     """
     print(f"DEBUG: CloudWatch dashboard fetcher called with resource_key={resource_key}, attributes={attributes}")
     try:
         import boto3
-        
         # Get region and account information for ARN construction
         region = getattr(cloudwatch_client.meta, "region_name", "unknown")
         try:
@@ -69,50 +68,30 @@ def _fetch_cloudwatch_dashboards(
         except Exception as e:
             account_id = f"error: {e}"
             logger.debug(f"Could not get account ID: {e}")
-
         response = cloudwatch_client.list_dashboards()
         live_resources: Dict[str, LiveResourceData] = {}
-
-        # Extract the dashboard name we're looking for from attributes
+        # Extract the dashboard name from attributes
         target_dashboard_name = attributes.get("dashboard_name") or attributes.get("id")
-
         if not target_dashboard_name:
             logger.warning(f"No dashboard name found in attributes for {resource_key}")
             return live_resources
-
         logger.debug(f"Looking for CloudWatch dashboard: {target_dashboard_name}")
-
-        # Replicate core.py logic to determine what key format it used
-        # Check the same conditions as core.py to determine the key format
-        state_arn = attributes.get("arn")  # Note: looking for "arn", not "dashboard_arn"
-        state_account_id = attributes.get("account_id")
-        
-        print(f"DEBUG: CloudWatch dashboard state_arn={state_arn}, state_account_id={state_account_id}")
-        print(f"DEBUG: CloudWatch dashboard region={region}, dashboard_name={target_dashboard_name}")
-
-        # Find the matching dashboard and construct proper key using same logic as core.py
+        # Construct the ARN for the dashboard key
+        dashboard_arn = f"arn:aws:cloudwatch:{region}:{account_id}:dashboard/{target_dashboard_name}"
+        print(f"DEBUG: Will use dashboard ARN as key: {dashboard_arn} and dashboard name as key: {target_dashboard_name}")
+        # Find the matching dashboard and return it keyed by both ARN and name
         for dashboard in response.get("DashboardEntries", []):
             dashboard_name = dashboard.get("DashboardName")
             if dashboard_name == target_dashboard_name:
-                # Use the same logic as core.py to determine the key
-                if state_arn:
-                    # Core.py would use ARN
-                    key = state_arn
-                    logger.debug(f"Using state ARN as key (matching core.py logic): {key}")
-                elif target_dashboard_name and region != "unknown" and state_account_id:
-                    # Core.py would construct ARN
-                    key = f"arn:aws:cloudwatch:{region}:{state_account_id}:dashboard/{target_dashboard_name}"
-                    logger.debug(f"Using constructed ARN key (matching core.py logic): {key}")
-                else:
-                    # Core.py would fall back to dashboard name
-                    key = target_dashboard_name
-                    logger.debug(f"Using dashboard name as key (matching core.py fallback): {key}")
-                
-                live_resources[key] = dashboard
-                logger.debug(f"Successfully matched dashboard {dashboard_name} with key {key}")
-                print(f"DEBUG: CloudWatch dashboard matched with key={key}")
+                # Key by ARN
+                live_resources[dashboard_arn] = dashboard
+                logger.debug(f"Successfully matched dashboard {dashboard_name} with ARN key {dashboard_arn}")
+                print(f"DEBUG: CloudWatch dashboard matched with ARN key={dashboard_arn}")
+                # Also key by dashboard name
+                live_resources[dashboard_name] = dashboard
+                logger.debug(f"Also returning dashboard {dashboard_name} with name key {dashboard_name}")
+                print(f"DEBUG: CloudWatch dashboard also matched with name key={dashboard_name}")
                 return live_resources
-
         logger.debug(f"Dashboard {target_dashboard_name} not found in AWS response")
         return live_resources
     except Exception as e:
