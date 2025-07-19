@@ -157,7 +157,7 @@ def _fetch_route_tables(
     """
     try:
         import boto3
-        
+
         # Get region and account information for ARN construction
         region = getattr(ec2_client.meta, "region_name", "unknown")
         try:
@@ -191,7 +191,7 @@ def _fetch_route_tables(
                     # Fallback to route table ID if region/account unavailable
                     arn_key = rt_id
                     logger.debug(f"Using route table ID as key (missing region/account): {arn_key}")
-                
+
                 live_resources[arn_key] = rt
                 logger.debug(f"Successfully matched route table {rt_id} with key {arn_key}")
                 return live_resources
@@ -214,6 +214,7 @@ def _fetch_route_table_associations(
     print("DEBUG: ec2_fetchers.py __file__:", __file__)
     print("DEBUG: sys.path:", sys.path)
     import traceback
+
     import boto3
 
     try:

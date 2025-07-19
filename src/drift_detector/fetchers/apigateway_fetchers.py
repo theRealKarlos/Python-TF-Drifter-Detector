@@ -4,7 +4,7 @@ API Gateway Resource Fetchers Module.
 This module contains functions for fetching API Gateway-related AWS resources.
 """
 
-from typing import Dict
+from typing import Dict, Any
 
 from ...utils import fetcher_error_handler, setup_logging
 from ..types import APIGatewayClient, LiveResourceData, ResourceAttributes
@@ -65,7 +65,7 @@ def fetch_apigateway_resources(
 ) -> Dict[str, LiveResourceData]:
     # Log every call to this fetcher for traceability
     logger.debug(f"[API Gateway] fetch_apigateway_resources CALLED: resource_key={resource_key}, attributes={attributes}")
-    
+
     # Check for composite keys first (these contain resource type info)
     if "agi-" in resource_key:  # API Gateway Integration
         return _fetch_apigw_integrations(apigateway_client, resource_key, attributes)
@@ -73,7 +73,9 @@ def fetch_apigateway_resources(
         return _fetch_apigateway_methods(apigateway_client, resource_key, attributes)
     elif resource_key.startswith("arn:aws:apigateway:") and "/stages/" in resource_key:  # API Gateway Stage ARN
         return _fetch_apigateway_stages(apigateway_client, resource_key, attributes)
-    elif resource_key.startswith("arn:aws:apigateway:") and "/restapis/" in resource_key and "/stages/" not in resource_key:  # API Gateway REST API ARN
+    elif (
+        resource_key.startswith("arn:aws:apigateway:") and "/restapis/" in resource_key and "/stages/" not in resource_key
+    ):  # API Gateway REST API ARN
         return _fetch_apigateway_rest_apis(apigateway_client, resource_key, attributes)
     elif resource_key.isdigit() or len(resource_key) < 20:  # Simple ID (deployment or resource)
         # Check attributes to determine if it's a deployment or resource
@@ -86,7 +88,7 @@ def fetch_apigateway_resources(
         return {}
 
 
-def get_attr(attrs, *keys):
+def get_attr(attrs: dict, *keys: str) -> Any:
     """
     Try to get an attribute from a dict using multiple possible keys (snake_case, camelCase, etc).
     """
@@ -107,11 +109,13 @@ def _fetch_apigateway_rest_apis(
     Returns a dictionary of ARN keys to API data.
     """
     try:
-        logger.debug(f"[API Gateway] _fetch_apigateway_rest_apis called with resource_key={resource_key}, attributes={attributes}")
-        
+        logger.debug(
+            f"[API Gateway] _fetch_apigateway_rest_apis called with resource_key={resource_key}, attributes={attributes}"
+        )
+
         # Extract the REST API ID we're looking for from attributes
         target_api_id = get_attr(attributes, "id", "rest_api_id", "restApiId")
-        
+
         if not target_api_id:
             logger.warning(f"No REST API ID found in attributes for {resource_key}")
             return {}
@@ -131,7 +135,10 @@ def _fetch_apigateway_rest_apis(
                 logger.debug(f"Successfully matched REST API {api_id} with key {resource_key}")
                 return live_resources
 
-        logger.debug(f"REST API {target_api_id} not found in AWS response. Available IDs: {[api.get('id') for api in response.get('items', [])]}")
+        logger.debug(
+            f"REST API {target_api_id} not found in AWS response. Available IDs: "
+            f"{[api.get('id') for api in response.get('items', [])]}"
+        )
         return live_resources
     except Exception as e:
         logger.error(f"Error fetching API Gateway REST APIs: {e}")
@@ -149,7 +156,10 @@ def _fetch_apigateway_resources_internal(
     Returns a dictionary of resource keys to resource data.
     """
     try:
-        logger.debug(f"[API Gateway] _fetch_apigateway_resources_internal called with resource_key={resource_key}, attributes={attributes}")
+        logger.debug(
+            f"[API Gateway] _fetch_apigateway_resources_internal called with resource_key={resource_key}, "
+            f"attributes={attributes}"
+        )
         # Normalise keys: always use the resource ID as the key, matching the state file
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         target_resource_id = get_attr(attributes, "id", "resource_id", "resourceId")
@@ -168,10 +178,16 @@ def _fetch_apigateway_resources_internal(
                 if resource_id == target_resource_id:
                     found = True
                     # Always key by the resource ID (as in the state file)
-                    logger.debug(f"[API Gateway] Matched resource_id={resource_id} to target_resource_id={target_resource_id}. Returning with key={resource_id}")
+                    logger.debug(
+                        f"[API Gateway] Matched resource_id={resource_id} to target_resource_id={target_resource_id}. "
+                        f"Returning with key={resource_id}"
+                    )
                     return {resource_id: resource}
             if not found:
-                logger.debug(f"[API Gateway] Resource {target_resource_id} not found in API {rest_api_id}. Available IDs: {[r.get('id') for r in resources_response.get('items', [])]}")
+                logger.debug(
+                    f"[API Gateway] Resource {target_resource_id} not found in API {rest_api_id}. "
+                    f"Available IDs: {[r.get('id') for r in resources_response.get('items', [])]}"
+                )
             return {}
         except Exception as e:
             logger.error(f"Could not get resources for API {rest_api_id}: {e}")
@@ -192,15 +208,17 @@ def _fetch_apigateway_methods(
     Returns a dictionary of composite keys to method data.
     """
     try:
-        logger.debug(f"[API Gateway] _fetch_apigateway_methods called with resource_key={resource_key}, attributes={attributes}")
-        
+        logger.debug(
+            f"[API Gateway] _fetch_apigateway_methods called with resource_key={resource_key}, attributes={attributes}"
+        )
+
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         resource_id = get_attr(attributes, "resource_id", "resourceId", "id")
         http_method = get_attr(attributes, "http_method", "httpMethod")
         if not rest_api_id or not resource_id or not http_method:
             logger.warning(f"Missing required attributes for method {resource_key}")
             return {}
-        
+
         try:
             response = apigateway_client.get_method(restApiId=rest_api_id, resourceId=resource_id, httpMethod=http_method)
             logger.debug(f"[API Gateway] get_method AWS response: {response}")
@@ -228,17 +246,21 @@ def _fetch_apigw_integrations(
     Returns a dictionary of composite keys to integration data.
     """
     try:
-        logger.debug(f"[API Gateway] _fetch_apigw_integrations called with resource_key={resource_key}, attributes={attributes}")
-        
+        logger.debug(
+            f"[API Gateway] _fetch_apigw_integrations called with resource_key={resource_key}, attributes={attributes}"
+        )
+
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         resource_id = get_attr(attributes, "resource_id", "resourceId", "id")
         http_method = get_attr(attributes, "http_method", "httpMethod")
         if not rest_api_id or not resource_id or not http_method:
             logger.warning(f"Missing required attributes for integration {resource_key}")
             return {}
-        
+
         try:
-            response = apigateway_client.get_integration(restApiId=rest_api_id, resourceId=resource_id, httpMethod=http_method)
+            response = apigateway_client.get_integration(
+                restApiId=rest_api_id, resourceId=resource_id, httpMethod=http_method
+            )
             logger.debug(f"[API Gateway] get_integration AWS response: {response}")
             # Use the resource_key directly since it's already constructed in core.py
             # This ensures we're using the exact same key format
@@ -252,21 +274,20 @@ def _fetch_apigw_integrations(
         return {}
 
 
-
-
-
 def _fetch_apigateway_deployments(
     apigateway_client: APIGatewayClient,
     resource_key: str,
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch API Gateway deployments from AWS and map them by both the canonical state key and the short ID for drift comparison.
-    Returns a dictionary keyed by both 'apigw_deployment:{rest_api_id}:{deployment_id}' and '{deployment_id}', ensuring robust matching.
-    Adds debug logging to show both keys and the mapping.
+    Get API Gateway deployments from AWS and map them by both the canonical state key and the short ID for drift comparison.
+    Returns a dictionary keyed by both 'apigw_deployment:{rest_api_id}:{deployment_id}'
+    and '{deployment_id}', ensuring robust matching.  Adds debug logging to show both keys and the mapping.
     """
     try:
-        logger.debug(f"[API Gateway] _fetch_apigateway_deployments called with resource_key={resource_key}, attributes={attributes}")
+        logger.debug(
+            f"[API Gateway] _fetch_apigateway_deployments called with resource_key={resource_key}, attributes={attributes}"
+        )
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         deployment_id = get_attr(attributes, "id", "deployment_id", "deploymentId")
         if not rest_api_id or not deployment_id:
@@ -298,21 +319,23 @@ def _fetch_apigateway_stages(
     Returns a dictionary of ARNs to stage data.
     """
     try:
-        logger.debug(f"[API Gateway] _fetch_apigateway_stages called with resource_key={resource_key}, attributes={attributes}")
+        logger.debug(
+            f"[API Gateway] _fetch_apigateway_stages called with resource_key={resource_key}, attributes={attributes}"
+        )
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         stage_name = get_attr(attributes, "stage_name", "stageName")
-        
+
         if not rest_api_id or not stage_name:
             logger.warning(f"Missing rest_api_id or stage_name in attributes for {resource_key}")
             return {}
-            
+
         try:
             response = apigateway_client.get_stage(restApiId=rest_api_id, stageName=stage_name)
             logger.debug(f"[API Gateway] get_stage AWS response: {response}")
             # Use the resource_key directly since it's already constructed in core.py
             # This ensures we're using the exact same key format
             logger.debug(f"Using resource_key for stage: {resource_key}")
-            
+
             return {resource_key: response}
         except Exception as e:
             logger.error(f"Error fetching API Gateway stages: {e}")
@@ -333,12 +356,15 @@ def fetch_apigateway_resource(
     then matches by resource id (and optionally by path/path_part as a fallback).
     """
     from ...utils import setup_logging
+
     logger = setup_logging()
 
     # Extract the rest_api_id from the state attributes
     rest_api_id = attributes.get("rest_api_id")
     if not rest_api_id:
-        logger.warning(f"[API Gateway] No rest_api_id found in attributes for resource_key={resource_key}. Cannot fetch resources.")
+        logger.warning(
+            f"[API Gateway] No rest_api_id found in attributes for resource_key={resource_key}. Cannot fetch resources."
+        )
         return {}
 
     logger.debug(f"[API Gateway] Fetching all resources for rest_api_id={rest_api_id} (resource_key={resource_key})")
@@ -352,18 +378,13 @@ def fetch_apigateway_resource(
         logger.debug(f"[API Gateway] Found {len(all_resources)} resources for rest_api_id={rest_api_id}")
         # Log all resource ids and paths for debugging
         for res in all_resources:
-            logger.debug(f"[API Gateway] Resource: id={res.get('id')}, path={res.get('path')}, pathPart={res.get('pathPart')}")
+            logger.debug(
+                f"[API Gateway] Resource: id={res.get('id')}, path={res.get('path')}, pathPart={res.get('pathPart')}"
+            )
         # Build a dict keyed by resource id
         resource_dict = {res["id"]: res for res in all_resources if "id" in res}
-        # Optionally, also build dicts keyed by path and pathPart for fallback matching
-        path_dict = {res["path"]: res for res in all_resources if "path" in res}
-        path_part_dict = {res["pathPart"]: res for res in all_resources if "pathPart" in res}
         # Return the main dict (by id) for drift comparison
         return resource_dict
     except Exception as e:
         logger.error(f"[API Gateway] Error fetching resources for rest_api_id={rest_api_id}: {e}")
         return {}
-
-
-
-

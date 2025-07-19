@@ -146,11 +146,11 @@ def extract_apigateway_key(attributes: dict, resource_type: str, resource_name: 
     # Try ARN
     arn = attributes.get("arn")
     if arn:
-        return arn
+        return str(arn)
     # Try ID
     resource_id = attributes.get("id")
     if resource_id:
-        return resource_id
+        return str(resource_id)
     # Try composite key for methods/integrations
     if resource_type == "aws_api_gateway_method":
         rest_api_id = attributes.get("rest_api_id") or attributes.get("restApiId")
@@ -166,6 +166,36 @@ def extract_apigateway_key(attributes: dict, resource_type: str, resource_name: 
             return f"agi-{rest_api_id}-{resource_id}-{http_method}"
     # Fallback
     return f"{resource_type}.{resource_name}_{idx}"
+
+
+def extract_hybrid_key_from_apigateway(resource: dict, resource_type: str, resource_id: str = "") -> str:
+    """
+    Extract the best available key for an API Gateway resource using hybrid logic.
+    1. Try ARN
+    2. Try ID
+    3. Fallback to resource_type.<id>
+    """
+    # For API Gateway resources, we'll use the ID as the primary key since ARNs are complex
+    if resource_id:
+        return str(resource_id)
+
+    # Try to extract ID from the resource
+    for id_key in (
+        "id",
+        "Id",
+        "ID",
+        "restApiId",
+        "resourceId",
+        "deploymentId",
+        "stageName",
+    ):
+        if id_key in resource and resource[id_key]:
+            value = resource[id_key]
+            if isinstance(value, str):
+                return value
+            return str(value)
+
+    return f"{resource_type}.unknown"
 
 
 def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> Dict[str, Any]:
@@ -330,8 +360,12 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                 else:
                     live_resources.update(fetch_ec2_resources(ec2_client, unique_resource_key, attributes, resource_type))
             elif resource_type == "aws_api_gateway_resource":
-                print(f"DEBUG: Calling fetch_apigateway_resource for resource_key={unique_resource_key}, attributes={attributes}")
+                print(
+                    f"DEBUG: Calling fetch_apigateway_resource for resource_key={unique_resource_key}, "
+                    f"attributes={attributes}"
+                )
                 from .apigateway_fetchers import fetch_apigateway_resource
+
                 result = fetch_apigateway_resource(apigateway_client, unique_resource_key, attributes)
                 print(f"DEBUG: fetch_apigateway_resource returned keys: {list(result.keys())}")
                 live_resources.update(result)
@@ -375,6 +409,5 @@ def get_live_aws_resources(state_data: Dict, region_name: str = "eu-west-2") -> 
                         queue_name = queue_name.split("/")[-1]
                     unique_resource_key = f"{unique_resource_key}_{queue_name}"
                 live_resources.update(fetch_sqs_resources(sqs_client, unique_resource_key, attributes))
-
 
     return live_resources

@@ -61,6 +61,7 @@ def _fetch_cloudwatch_dashboards(
     dashboards = {}
     try:
         import boto3
+
         # Get region and account information
         session = boto3.session.Session()
         region = attributes.get("region")
@@ -88,7 +89,7 @@ def _fetch_cloudwatch_dashboards(
         dashboards[arn_with_region] = dashboard_data
         dashboards[arn_without_region] = dashboard_data
         # Also return under dashboard name for legacy matching
-        dashboards[dashboard_name] = dashboard_data
+        dashboards[str(dashboard_name)] = dashboard_data  # Ensure key is a string for type safety
         print(f"DEBUG: Returning dashboard under keys: {arn_with_region}, {arn_without_region}, {dashboard_name}")
         return dashboards
     except Exception as e:
