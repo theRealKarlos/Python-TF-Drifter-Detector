@@ -261,26 +261,24 @@ def _fetch_apigateway_deployments(
     attributes: ResourceAttributes,
 ) -> Dict[str, LiveResourceData]:
     """
-    Fetch API Gateway deployments from AWS and map them by deployment ID for drift comparison.
-    Uses the resource_key directly since it's already constructed in core.py for consistent resource matching.
-    Returns a dictionary of deployment IDs to deployment data.
+    Fetch API Gateway deployments from AWS and map them by both the canonical state key and the short ID for drift comparison.
+    Returns a dictionary keyed by both 'apigw_deployment:{rest_api_id}:{deployment_id}' and '{deployment_id}', ensuring robust matching.
+    Adds debug logging to show both keys and the mapping.
     """
     try:
         logger.debug(f"[API Gateway] _fetch_apigateway_deployments called with resource_key={resource_key}, attributes={attributes}")
-        
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         deployment_id = get_attr(attributes, "id", "deployment_id", "deploymentId")
         if not rest_api_id or not deployment_id:
             logger.warning(f"Missing rest_api_id or deployment_id in attributes for {resource_key}")
             return {}
-        
         try:
             response = apigateway_client.get_deployment(restApiId=rest_api_id, deploymentId=deployment_id)
             logger.debug(f"[API Gateway] get_deployment AWS response: {response}")
-            # Use the resource_key directly since it's already constructed in core.py
-            # This ensures we're using the exact same key format
-            logger.debug(f"Using resource_key for deployment: {resource_key}")
-            return {resource_key: response}
+            canonical_key = str(f"apigw_deployment:{rest_api_id}:{deployment_id}")
+            short_id_key = str(deployment_id)
+            logger.debug(f"[API Gateway] Returning deployment under keys: {canonical_key}, {short_id_key}")
+            return {canonical_key: response, short_id_key: response}
         except Exception as e:
             logger.error(f"[APIGW] Error fetching API Gateway deployment: {e}")
             return {}
