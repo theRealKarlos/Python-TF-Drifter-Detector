@@ -163,7 +163,7 @@ def extract_apigateway_key(attributes: dict, resource_type: str, resource_name: 
         resource_id = attributes.get("resource_id") or attributes.get("resourceId") or attributes.get("id")
         http_method = attributes.get("http_method") or attributes.get("httpMethod")
         if rest_api_id and resource_id and http_method:
-            return f"agi-{rest_api_id}-{resource_id}-{http_method}"
+            return f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
     # Fallback
     return f"{resource_type}.{resource_name}_{idx}"
 

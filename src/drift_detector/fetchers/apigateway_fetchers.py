@@ -67,10 +67,18 @@ def fetch_apigateway_resources(
     logger.debug(f"[API Gateway] fetch_apigateway_resources CALLED: resource_key={resource_key}, attributes={attributes}")
 
     # Check for composite keys first (these contain resource type info)
-    if "agi-" in resource_key:  # API Gateway Integration
+    if resource_key.startswith("apigw_integration:") or resource_key.startswith("agi-"):
         return _fetch_apigw_integrations(apigateway_client, resource_key, attributes)
-    elif "agm-" in resource_key:  # API Gateway Method
+    elif resource_key.startswith("apigw_method:") or resource_key.startswith("agm-"):
         return _fetch_apigateway_methods(apigateway_client, resource_key, attributes)
+    elif resource_key.startswith("apigw_resource:"):
+        return _fetch_apigateway_resources_internal(apigateway_client, resource_key, attributes)
+    elif resource_key.startswith("apigw_deployment:"):
+        return _fetch_apigateway_deployments(apigateway_client, resource_key, attributes)
+    elif resource_key.startswith("apigw_stage:"):
+        return _fetch_apigateway_stages(apigateway_client, resource_key, attributes)
+    elif resource_key.startswith("apigw_rest_api:"):
+        return _fetch_apigateway_rest_apis(apigateway_client, resource_key, attributes)
     elif resource_key.startswith("arn:aws:apigateway:") and "/stages/" in resource_key:  # API Gateway Stage ARN
         return _fetch_apigateway_stages(apigateway_client, resource_key, attributes)
     elif (
@@ -253,6 +261,7 @@ def _fetch_apigw_integrations(
         rest_api_id = get_attr(attributes, "rest_api_id", "restApiId")
         resource_id = get_attr(attributes, "resource_id", "resourceId", "id")
         http_method = get_attr(attributes, "http_method", "httpMethod")
+        legacy_id = get_attr(attributes, "id")
         if not rest_api_id or not resource_id or not http_method:
             logger.warning(f"Missing required attributes for integration {resource_key}")
             return {}
@@ -262,10 +271,11 @@ def _fetch_apigw_integrations(
                 restApiId=rest_api_id, resourceId=resource_id, httpMethod=http_method
             )
             logger.debug(f"[API Gateway] get_integration AWS response: {response}")
-            # Use the resource_key directly since it's already constructed in core.py
-            # This ensures we're using the exact same key format
-            logger.debug(f"Using resource_key for integration: {resource_key}")
-            return {resource_key: response}
+            # Always return under both composite and legacy keys
+            composite_key = f"apigw_integration:{rest_api_id}:{resource_id}:{http_method}"
+            legacy_key = legacy_id if legacy_id else f"agi-{rest_api_id}-{resource_id}-{http_method}"
+            logger.debug(f"Returning integration under keys: {composite_key}, {legacy_key}")
+            return {composite_key: response, legacy_key: response}
         except Exception as e:
             logger.error(f"[APIGW] Error fetching API Gateway integration: {e}")
             return {}
